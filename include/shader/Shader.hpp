@@ -14,6 +14,8 @@ private:
 
 public:
     Shader();
+    Shader(const Shader&);
+    Shader(Shader&&);
     Shader(const std::string& vert_path, const std::string& frag_path);
     static Shader from_shader_dir(const std::string& name);
     void use_shader() const;
