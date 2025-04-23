@@ -7,11 +7,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     endif()
 endif()
 find_package(glfw3 REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 add_executable(islands
     src/main.cc
     src/glad/glad.c
     src/shader/Shader.cc
+    src/Camera.cc
 )
 
 target_include_directories(islands
@@ -20,6 +22,10 @@ target_include_directories(islands
 
 target_link_libraries(islands
     PRIVATE glfw3
+)
+
+target_link_libraries(islands
+    PRIVATE glm::glm
 )
 
 add_custom_target(copyGameData ALL)

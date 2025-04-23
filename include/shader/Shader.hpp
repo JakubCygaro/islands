@@ -8,7 +8,7 @@
 #include <glad/glad.h>
 #include <sstream>
 #include <stdexcept>
-class Shader {
+class Shader final {
 private:
     std::uint32_t m_shader_id{};
 
