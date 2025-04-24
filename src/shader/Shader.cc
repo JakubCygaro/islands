@@ -1,13 +1,8 @@
+#include <glm/gtc/type_ptr.hpp>
 #include <shader/Shader.hpp>
 
 constexpr const char* SHADER_DIR_PREFIX = "./game_data/shaders/";
 Shader::Shader() {
-
-}
-Shader::Shader(const Shader& other): m_shader_id{other.m_shader_id}{
-
-}
-Shader::Shader(Shader&& other): m_shader_id{other.m_shader_id}{
 
 }
 Shader::Shader(const std::string& vert_path, const std::string& frag_path) {
@@ -95,4 +90,12 @@ Shader Shader::from_shader_dir(const std::string& name) {
 }
 void Shader::use_shader() const {
     glUseProgram(m_shader_id);
+}
+void Shader::set_vec3(const char* uniform_name, const glm::vec3& v) {
+    int loc = glGetUniformLocation(m_shader_id, uniform_name);
+    glUniform3fv(loc, 1, glm::value_ptr(v));
+}
+void Shader::set_mat4(const char* uniform_name, glm::mat4 m) {
+    int loc = glGetUniformLocation(m_shader_id, uniform_name);
+    glUniformMatrix4fv(loc, 1, GL_FALSE, &m[0][0]);
 }
