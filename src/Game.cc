@@ -60,44 +60,21 @@ void Game::initialize() {
     m_test_object = Object("test");
 }
 void Game::run() {
-    glEnable(GL_DEPTH_TEST);
-    Object obj("test");
-    glm::mat4 projection = glm::perspective(glm::radians(70.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);
     while(!glfwWindowShouldClose(m_window_ptr)){
         m_current_frame_t = glfwGetTime();
         m_delta_t = m_current_frame_t - m_last_frame_t;
         m_last_frame_t = m_current_frame_t;
-        keyboard_input();
-        glClearColor(.2, .3, .3, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glm::mat4 view = m_camera.get_look_at();
-        m_test_object.render(view, projection);
-        /*test_shader.use_shader();*/
-        /**/
-        /*test_shader.set_mat4(name_of(model), model);*/
-        /*test_shader.set_mat4(name_of(view), view);*/
-        /*test_shader.set_mat4(name_of(projection), projection);*/
-
-        /*glBindVertexArray(vao);*/
-        /*glDrawArrays(GL_TRIANGLES, 0, 36);*/
+        update();
+        render();
         glfwSwapBuffers(m_window_ptr);
-        glfwPollEvents();
     }
-    /*while(!glfwWindowShouldClose(m_window_ptr)){*/
-    /*    m_current_frame_t = glfwGetTime();*/
-    /*    m_delta_t = m_current_frame_t - m_last_frame_t;*/
-    /*    m_last_frame_t = m_current_frame_t;*/
-    /*    update();*/
-    /*    render();*/
-    /*    glfwSwapBuffers(m_window_ptr);*/
-    /*}*/
 }
 void Game::update() {
     keyboard_input();
     glfwPollEvents();
 }
 void Game::render() {
-    glClearColor(.2, .3, .3, 1.0);
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glm::mat4 view = m_camera.get_look_at();
     glm::mat4 projection = glm::perspective(glm::radians(70.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);

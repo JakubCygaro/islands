@@ -14,6 +14,10 @@ private:
 public:
     Object();
     Object(const char* shader);
+    Object(const Object&);
+    Object& operator=(const Object&);
+    Object(Object&&);
+    Object& operator=(Object&&);
     ~Object();
     void update();
     void render(glm::mat4& view, glm::mat4& projection);

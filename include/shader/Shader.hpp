@@ -16,6 +16,11 @@ private:
 
 public:
     Shader();
+    Shader(const Shader& other);
+    Shader& operator=(const Shader& other);
+    Shader(Shader&& other);
+    Shader& operator=(Shader&& other);
+    ~Shader();
     Shader(const std::string& vert_path, const std::string& frag_path);
     static Shader from_shader_dir(const std::string& name);
     void use_shader() const;

@@ -6,6 +6,28 @@ constexpr const char* SHADER_DIR_PREFIX = "./game_data/shaders/";
 Shader::Shader() {
 
 }
+Shader::Shader(const Shader& other):
+    m_shader_id{other.m_shader_id}
+{
+
+}
+Shader& Shader::operator=(const Shader& other){
+    m_shader_id = other.m_shader_id;
+    return *this;
+}
+Shader::Shader(Shader&& other):
+    m_shader_id{other.m_shader_id}
+{
+    other.m_shader_id = 0;
+}
+Shader& Shader::operator=(Shader&& other){
+    m_shader_id = other.m_shader_id;
+    other.m_shader_id = 0;
+    return *this;
+}
+Shader::~Shader(){
+    glDeleteShader(m_shader_id);
+}
 Shader::Shader(const std::string& vert_path, const std::string& frag_path) {
     /*std::cout << "vert_path: " << vert_path << "\nfrag_path: " << frag_path << '\n';*/
     std::ifstream vert_file;
