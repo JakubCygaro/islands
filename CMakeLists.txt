@@ -14,6 +14,8 @@ add_executable(islands
     src/glad/glad.c
     src/shader/Shader.cc
     src/Camera.cc
+    src/Game.cc
+    src/Object.cc
 )
 
 target_include_directories(islands

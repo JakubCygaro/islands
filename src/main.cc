@@ -1,3 +1,4 @@
+#include "Game.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <glad/glad.h>
@@ -9,6 +10,7 @@
 #include <glm/ext/vector_float3.hpp>
 #include <glm/trigonometric.hpp>
 #include <iostream>
+#include <iterator>
 #include <ostream>
 #include <stb_image/stb_image.h>
 #include <shader/Shader.hpp>
@@ -32,6 +34,15 @@ float last_mouse_x = (float)SCR_WIDTH / 2;
 float last_mouse_y = (float)SCR_HEIGHT / 2;
 
 int main(void) {
+    try{
+        Game game(SCR_WIDTH, SCR_HEIGHT);
+        game.run();
+    } catch(const std::runtime_error& e){
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
+    return 0;
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -62,69 +73,69 @@ int main(void) {
         return -1;
     }
 
-    std::uint32_t vbo, vao;
-    glGenBuffers(1, &vbo);
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    float verts[] = {
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-
-        -0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f, -0.5f,  0.5f,
-
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f, -0.5f,
-        -0.5f, -0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f, -0.5f,
-
-        -0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-         0.5f,  0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f,
-    };
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    Shader test_shader;
-    try {
-        test_shader = Shader::from_shader_dir("test");
-    } catch(const std::runtime_error& e) {
-        std::cout << e.what() << std::endl;
-        return 0;
-    }
-    std::cout << "shader loaded successfully\n";
+    /*std::uint32_t vbo, vao;*/
+    /*glGenBuffers(1, &vbo);*/
+    /*glGenVertexArrays(1, &vao);*/
+    /*glBindVertexArray(vao);*/
+    /*glBindBuffer(GL_ARRAY_BUFFER, vbo);*/
+    /*float verts[] = {*/
+    /*    -0.5f, -0.5f, -0.5f,*/
+    /*     0.5f, -0.5f, -0.5f,*/
+    /*     0.5f,  0.5f, -0.5f,*/
+    /*     0.5f,  0.5f, -0.5f,*/
+    /*    -0.5f,  0.5f, -0.5f,*/
+    /*    -0.5f, -0.5f, -0.5f,*/
+    /**/
+    /*    -0.5f, -0.5f,  0.5f,*/
+    /*     0.5f, -0.5f,  0.5f,*/
+    /*     0.5f,  0.5f,  0.5f,*/
+    /*     0.5f,  0.5f,  0.5f,*/
+    /*    -0.5f,  0.5f,  0.5f,*/
+    /*    -0.5f, -0.5f,  0.5f,*/
+    /**/
+    /*    -0.5f,  0.5f,  0.5f,*/
+    /*    -0.5f,  0.5f, -0.5f,*/
+    /*    -0.5f, -0.5f, -0.5f,*/
+    /*    -0.5f, -0.5f, -0.5f,*/
+    /*    -0.5f, -0.5f,  0.5f,*/
+    /*    -0.5f,  0.5f,  0.5f,*/
+    /**/
+    /*     0.5f,  0.5f,  0.5f,*/
+    /*     0.5f,  0.5f, -0.5f,*/
+    /*     0.5f, -0.5f, -0.5f,*/
+    /*     0.5f, -0.5f, -0.5f,*/
+    /*     0.5f, -0.5f,  0.5f,*/
+    /*     0.5f,  0.5f,  0.5f,*/
+    /**/
+    /*    -0.5f, -0.5f, -0.5f,*/
+    /*     0.5f, -0.5f, -0.5f,*/
+    /*     0.5f, -0.5f,  0.5f,*/
+    /*     0.5f, -0.5f,  0.5f,*/
+    /*    -0.5f, -0.5f,  0.5f,*/
+    /*    -0.5f, -0.5f, -0.5f,*/
+    /**/
+    /*    -0.5f,  0.5f, -0.5f,*/
+    /*     0.5f,  0.5f, -0.5f,*/
+    /*     0.5f,  0.5f,  0.5f,*/
+    /*     0.5f,  0.5f,  0.5f,*/
+    /*    -0.5f,  0.5f,  0.5f,*/
+    /*    -0.5f,  0.5f, -0.5f,*/
+    /*};*/
+    /*glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);*/
+    /*glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);*/
+    /*glEnableVertexAttribArray(0);*/
+    /**/
+    /*Shader test_shader;*/
+    /*try {*/
+    /*    test_shader = Shader::from_shader_dir("test");*/
+    /*} catch(const std::runtime_error& e) {*/
+    /*    std::cout << e.what() << std::endl;*/
+    /*    return 0;*/
+    /*}*/
+    Object obj("test");
     glm::mat4 projection = glm::perspective(glm::radians(70.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0));
+    /*glm::mat4 model = glm::mat4(1.0f);*/
+    /*model = glm::translate(model, glm::vec3(0));*/
 
     glEnable(GL_DEPTH_TEST);
     while(!glfwWindowShouldClose(window)){
@@ -135,19 +146,20 @@ int main(void) {
         glClearColor(.2, .3, .3, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glm::mat4 view = camera.get_look_at();
-        test_shader.use_shader();
+        obj.render(view, projection);
+        /*test_shader.use_shader();*/
+        /**/
+        /*test_shader.set_mat4(name_of(model), model);*/
+        /*test_shader.set_mat4(name_of(view), view);*/
+        /*test_shader.set_mat4(name_of(projection), projection);*/
 
-        test_shader.set_mat4(name_of(model), model);
-        test_shader.set_mat4(name_of(view), view);
-        test_shader.set_mat4(name_of(projection), projection);
-
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        /*glBindVertexArray(vao);*/
+        /*glDrawArrays(GL_TRIANGLES, 0, 36);*/
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &vbo);
+    /*glDeleteVertexArrays(1, &vao);*/
+    /*glDeleteBuffers(1, &vbo);*/
 
     glfwDestroyWindow(window);
     glfwTerminate();

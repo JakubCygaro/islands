@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <glm/gtc/type_ptr.hpp>
 #include <shader/Shader.hpp>
 

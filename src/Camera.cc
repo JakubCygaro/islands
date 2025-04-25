@@ -4,7 +4,6 @@
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
-#include <iterator>
 
 Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 world_up, float yaw,
          float pitch):
@@ -40,11 +39,8 @@ void Camera::keyboard_input(GLFWwindow* window, double delta_t) {
         m_pos += m_up * camera_speed;
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         m_pos -= m_up * camera_speed;
-    std::printf("Camera::m_pos: { %f, %f, %f }\n", m_pos.x, m_pos.y, m_pos.z);
+    /*std::printf("Camera::m_pos: { %f, %f, %f }\n", m_pos.x, m_pos.y, m_pos.z);*/
 }
-/*void Camera::mouse_input(GLFWwindow *window, double delta_t){*/
-/**/
-/*}*/
 void Camera::update_vectors() {
     if(m_pitch > 89.0f)
         m_pitch = 89.0f;
