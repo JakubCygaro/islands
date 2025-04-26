@@ -5,6 +5,7 @@
 #include <Camera.hpp>
 #include <cstdint>
 #include <GLFW/glfw3.h>
+#include <glm/ext/matrix_float4x4.hpp>
 #include <stdexcept>
 
 class Game final {
@@ -19,7 +20,10 @@ private:
     bool m_first_mouse{true};
     GLFWwindow* m_window_ptr{nullptr};
     Camera m_camera;
-    Object m_test_object;
+
+    uint32_t m_uniform_buffer{};
+    glm::mat4 m_view{};
+    glm::mat4 m_projection{};
 private:
     void initialize();
     void update();

@@ -1,15 +1,14 @@
+#include "Object.hpp"
 #include <Game.hpp>
-#include <cstdio>
 #include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/vector_float3.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 static Game* get_game_instance_ptr_from_window(GLFWwindow* window);
 
 Game::Game(int32_t window_width, int32_t window_height):
     m_width{window_width},
     m_height{window_height},
-    m_camera{Camera(glm::vec3(0,0,3), glm::vec3(0))},
-    m_test_object{Object()}
+    m_camera{Camera(glm::vec3(0,0,3), glm::vec3(0))}
 {
     initialize();
 }
@@ -57,7 +56,17 @@ void Game::initialize() {
         throw std::runtime_error("Failed to initialize GLAD");
     }
     glEnable(GL_DEPTH_TEST);
-    m_test_object = Object("test");
+
+    glGenBuffers(1, &m_uniform_buffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
+    glBufferData(m_uniform_buffer,
+            // view                     projection
+            4 * sizeof(glm::vec4) + 4 * sizeof(glm::vec4),
+            NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);
+    m_projection = glm::perspective(glm::radians(70.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 void Game::run() {
     while(!glfwWindowShouldClose(m_window_ptr)){
@@ -70,15 +79,18 @@ void Game::run() {
     }
 }
 void Game::update() {
+    m_view = m_camera.get_look_at();
+    //update uniform buffer
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(m_view));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
     keyboard_input();
     glfwPollEvents();
 }
 void Game::render() {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glm::mat4 view = m_camera.get_look_at();
-    glm::mat4 projection = glm::perspective(glm::radians(70.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);
-    m_test_object.render(view, projection);
 }
 void Game::keyboard_input(){
     if (glfwGetKey(m_window_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS){
@@ -104,10 +116,10 @@ void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos){
     x_offset *= sensitivity;
     y_offset *= sensitivity;
 
-    auto yaw = m_camera.yaw();
+    auto yaw = m_camera.get_yaw();
     yaw += x_offset;
     m_camera.set_yaw(yaw);
-    auto pitch = m_camera.pitch();
+    auto pitch = m_camera.get_pitch();
     pitch += y_offset;
     m_camera.set_pitch(pitch);
 }

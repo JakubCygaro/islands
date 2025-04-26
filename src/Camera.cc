@@ -1,9 +1,4 @@
 #include <Camera.hpp>
-#include <cstdio>
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/quaternion_geometric.hpp>
-#include <glm/geometric.hpp>
-#include <glm/trigonometric.hpp>
 
 Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 world_up, float yaw,
          float pitch):
@@ -16,13 +11,8 @@ Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 world_up, float yaw,
 {
     update_vectors();
 }
-void Camera::set_pos(glm::vec3&& new_pos){
-    this->m_pos = new_pos;
-}
-glm::vec3& Camera::get_pos() {
-    return m_pos;
-}
-glm::mat4 Camera::get_look_at() const {
+glm::mat4 Camera::get_look_at() {
+    update_vectors();
     return glm::lookAt(m_pos, m_pos + m_front, m_up);
 }
 void Camera::keyboard_input(GLFWwindow* window, double delta_t) {
@@ -55,17 +45,17 @@ void Camera::update_vectors() {
 
     m_up = glm::normalize(glm::cross(m_right, m_front));
 }
-float Camera::yaw(){
-    return m_yaw;
-}
-float Camera::pitch(){
-    return m_pitch;
-}
-void Camera::set_yaw(float v){
-    m_yaw = v;
-    update_vectors();
-}
-void Camera::set_pitch(float v){
-    m_pitch = v;
-    update_vectors();
-}
+/*float& Camera::yaw(){*/
+/*    return m_yaw;*/
+/*}*/
+/*float& Camera::pitch(){*/
+/*    return m_pitch;*/
+/*}*/
+/*void Camera::set_yaw(float v){*/
+/*    m_yaw = v;*/
+/*    update_vectors();*/
+/*}*/
+/*void Camera::set_pitch(float v){*/
+/*    m_pitch = v;*/
+/*    update_vectors();*/
+/*}*/
