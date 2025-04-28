@@ -1,4 +1,5 @@
 #include "Object.hpp"
+#include "shader/Shader.hpp"
 #include <Game.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -57,17 +58,20 @@ void Game::initialize() {
         throw std::runtime_error("Failed to initialize GLAD");
     }
     glEnable(GL_DEPTH_TEST);
+    m_projection = glm::perspective(glm::radians(70.0f),
+            (float)m_width / (float)m_height, 0.1f, 100.0f);
 
     glGenBuffers(1, &m_uniform_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
     glBufferData(m_uniform_buffer,
             // view                     projection
-            4 * sizeof(glm::vec4) + 4 * sizeof(glm::vec4),
+            2 * sizeof(glm::mat4),
             NULL, GL_STATIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);
-    m_projection = glm::perspective(glm::radians(70.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);
-    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
+    glBufferSubData(GL_UNIFORM_BUFFER,
+            sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_uniform_buffer, 0, 2 * sizeof(glm::mat4));
+    /*glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);*/
 
     m_bodies.push_back(std::make_shared<obj::CelestialBody>(obj::CelestialBody("test")));
 }
@@ -95,7 +99,7 @@ void Game::render() {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for(auto& c_obj : m_bodies){
-        c_obj->render();
+        c_obj->render(m_view, m_projection);
     }
 }
 void Game::keyboard_input(){
