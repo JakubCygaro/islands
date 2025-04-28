@@ -38,6 +38,8 @@ public:
     Game() = delete;
     ~Game();
     Game(int32_t window_width, int32_t window_height);
+    Game(const Game&) = delete;
+    Game& operator=(const Game&) = delete;
     void run();
 };
 #endif

@@ -16,7 +16,7 @@ namespace obj{
     protected:
         uint32_t m_vao{};
         uint32_t m_vbo{};
-        uint32_t m_vertices{0};
+        int32_t m_num_verticies{0};
         std::shared_ptr<Shader> m_shader;
         PROTECTED_PROPERTY(glm::vec3, pos)
         PROTECTED_PROPERTY(glm::vec3, speed)

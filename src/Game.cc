@@ -3,6 +3,9 @@
 #include <Game.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <type_traits>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
 #include <memory>
 
 static Game* get_game_instance_ptr_from_window(GLFWwindow* window);
@@ -10,11 +13,13 @@ static Game* get_game_instance_ptr_from_window(GLFWwindow* window);
 Game::Game(int32_t window_width, int32_t window_height):
     m_width{window_width},
     m_height{window_height},
-    m_camera{Camera(glm::vec3(0,0,3), glm::vec3(0))}
+    m_camera{Camera(glm::vec3(0,0,3), glm::vec3(0))},
+    m_uniform_buffer{0}
 {
     initialize();
 }
 Game::~Game(){
+    glDeleteBuffers(1, &m_uniform_buffer);
     glfwDestroyWindow(m_window_ptr);
     glfwTerminate();
 }
@@ -60,19 +65,18 @@ void Game::initialize() {
     glEnable(GL_DEPTH_TEST);
     m_projection = glm::perspective(glm::radians(70.0f),
             (float)m_width / (float)m_height, 0.1f, 100.0f);
+    /*std::cout << "m_projection = " << glm::to_string(m_projection) << std::endl;*/
 
     glGenBuffers(1, &m_uniform_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
-    glBufferData(m_uniform_buffer,
+    glBufferData(GL_UNIFORM_BUFFER,
             // view                     projection
-            2 * sizeof(glm::mat4),
+            sizeof(glm::mat4) + sizeof(glm::mat4),
             NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_UNIFORM_BUFFER,
             sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_uniform_buffer, 0, 2 * sizeof(glm::mat4));
-    /*glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);*/
-
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);
     m_bodies.push_back(std::make_shared<obj::CelestialBody>(obj::CelestialBody("test")));
 }
 void Game::run() {
@@ -87,7 +91,6 @@ void Game::run() {
 }
 void Game::update() {
     m_view = m_camera.get_look_at();
-    //update uniform buffer
     glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(m_view));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
