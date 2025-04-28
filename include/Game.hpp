@@ -6,7 +6,9 @@
 #include <cstdint>
 #include <GLFW/glfw3.h>
 #include <glm/ext/matrix_float4x4.hpp>
+#include <memory>
 #include <stdexcept>
+#include <vector>
 
 class Game final {
 private:
@@ -24,6 +26,7 @@ private:
     uint32_t m_uniform_buffer{};
     glm::mat4 m_view{};
     glm::mat4 m_projection{};
+    std::vector<std::shared_ptr<obj::CelestialBody>> m_bodies{};
 private:
     void initialize();
     void update();

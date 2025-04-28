@@ -10,34 +10,36 @@
 #include <vector>
 #include <Util.hpp>
 
-class GameObject {
-protected:
-    uint32_t m_vao{};
-    std::vector<uint32_t> m_vbo{};
-    std::shared_ptr<Shader> m_shader;
-    PROTECTED_PROPERTY(glm::vec3, pos)
-public:
-    GameObject();
-    GameObject(std::shared_ptr<Shader> shader);
-    GameObject(const char* shader_name);
-    GameObject(const char* vert, const char* frag);
-    GameObject(const GameObject&);
-    GameObject& operator=(const GameObject&);
-    GameObject(GameObject&&);
-    GameObject& operator=(GameObject&&);
-    ~GameObject();
-    virtual void update() = 0;
-    virtual void render() = 0;
-};
+namespace obj{
 
-class CelestialBody : public GameObject {
-    PROPERTY(glm::vec3, speed)
-    PROPERTY(glm::vec3, acceleration)
-public:
-    CelestialBody(std::shared_ptr<Shader> shader);
-
-    void update() override;
-    void render() override;
-};
+    class CelestialBody {
+    protected:
+        uint32_t m_vao{};
+        uint32_t m_vbo{};
+        uint32_t m_vertices{0};
+        std::shared_ptr<Shader> m_shader;
+        PROTECTED_PROPERTY(glm::vec3, pos)
+        PROTECTED_PROPERTY(glm::vec3, speed)
+        PROTECTED_PROPERTY(glm::vec3, acceleration)
+    public:
+        CelestialBody();
+        CelestialBody(std::shared_ptr<Shader> shader);
+        CelestialBody(const char* shader_name);
+        CelestialBody(const char* vert, const char* frag);
+        CelestialBody(const CelestialBody&);
+        CelestialBody& operator=(const CelestialBody&);
+        CelestialBody(CelestialBody&&);
+        CelestialBody& operator=(CelestialBody&&);
+        virtual ~CelestialBody();
+        virtual void update();
+        virtual void render();
+    };
+    struct UnitSphereData {
+        using vec = std::vector<UnitSphereData>;
+        glm::vec3 vertex;
+    };
+    uint32_t make_unit_sphere_vbo(const UnitSphereData::vec& data);
+    UnitSphereData::vec make_unit_sphere();
+}
 
 #endif

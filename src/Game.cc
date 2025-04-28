@@ -2,6 +2,7 @@
 #include <Game.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <memory>
 
 static Game* get_game_instance_ptr_from_window(GLFWwindow* window);
 
@@ -67,6 +68,8 @@ void Game::initialize() {
     m_projection = glm::perspective(glm::radians(70.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);
     glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    m_bodies.push_back(std::make_shared<obj::CelestialBody>(obj::CelestialBody("test")));
 }
 void Game::run() {
     while(!glfwWindowShouldClose(m_window_ptr)){
@@ -91,6 +94,9 @@ void Game::update() {
 void Game::render() {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    for(auto& c_obj : m_bodies){
+        c_obj->render();
+    }
 }
 void Game::keyboard_input(){
     if (glfwGetKey(m_window_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS){
