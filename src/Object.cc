@@ -7,8 +7,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <exception>
-#include <ranges>
+#include <cstdlib>
+#include <glm/detail/qualifier.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_transform.hpp>
@@ -20,6 +20,68 @@
 namespace obj {
     CelestialBody::CelestialBody(const char *shader): m_pos{glm::vec3(0)} {
         m_shader = std::make_shared<Shader>(Shader::from_shader_dir(shader));
+        m_sphere = std::make_shared<UnitSphere>(UnitSphere());
+        m_acceleration = glm::vec3(0, 0, 0);
+        m_speed = glm::vec3(1, 0, 0);
+    }
+
+    CelestialBody::CelestialBody() : m_shader{nullptr}, m_sphere{nullptr} {}
+
+    CelestialBody::CelestialBody(std::shared_ptr<Shader> shader)
+        : m_shader{shader} {
+        }
+    CelestialBody::CelestialBody(const char *vert, const char *frag)
+        : m_shader{std::make_unique<Shader>(Shader(vert, frag))} {}
+    // copy constructor
+    CelestialBody::CelestialBody(const CelestialBody &other)
+        : m_pos{other.m_pos}, m_shader{other.m_shader}, m_sphere{other.m_sphere},
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}
+    {}
+    // copy assign
+    CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
+      m_pos = other.m_pos;
+      m_shader = other.m_shader;
+      m_sphere = other.m_sphere;
+      m_acceleration = other.m_acceleration;
+      m_speed = other.m_speed;
+      return *this;
+    }
+    //move constructor
+    CelestialBody::CelestialBody(CelestialBody &&other)
+        : m_pos{other.m_pos}, m_shader{std::move(other.m_shader)}, m_sphere{std::move(other.m_sphere)},
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}
+    {
+      other.m_shader = nullptr;
+      other.m_sphere = nullptr;
+    }
+    // move assign
+    CelestialBody &CelestialBody::operator=(CelestialBody &&other) {
+      m_pos = other.m_pos;
+      m_shader = std::move(other.m_shader);
+      m_sphere = std::move(other.m_sphere);
+      m_acceleration = other.m_acceleration;
+      m_speed = other.m_speed;
+      other.m_sphere = nullptr;
+      other.m_shader = nullptr;
+      return *this;
+    }
+    CelestialBody::~CelestialBody() {}
+
+    void CelestialBody::update(double delta_t){
+        /*m_speed += m_acceleration;*/
+        auto tmp = m_speed;
+        tmp *= delta_t;
+        m_pos += tmp;
+    }
+    void CelestialBody::render(){
+        auto model = glm::mat4(1);
+        model = glm::translate(model, m_pos);
+        m_shader->use_shader();
+        m_shader->set_mat4(name_of(model), model);
+        m_sphere->draw();
+    }
+
+    UnitSphere::UnitSphere(){
         auto sphere = make_unit_sphere();
         m_num_verticies = sphere.vertices.size();
         m_num_indices = sphere.indices.size();
@@ -34,78 +96,55 @@ namespace obj {
             (void*)0);
         glEnableVertexAttribArray(0);
     }
-
-    CelestialBody::CelestialBody() : m_vao{0}, m_vbo{0}, m_shader{nullptr}, m_num_verticies{0} {}
-
-    CelestialBody::CelestialBody(std::shared_ptr<Shader> shader)
-        : m_vao{0}, m_vbo{0}, m_shader{shader} {
-            auto sphere = make_unit_sphere();
-            m_vbo = make_unit_sphere_vbo(sphere);
-        }
-    CelestialBody::CelestialBody(const char *vert, const char *frag)
-        : m_vao{0}, m_vbo{0},
-          m_shader{std::make_unique<Shader>(Shader(vert, frag))} {}
-    // copy constructor
-    CelestialBody::CelestialBody(const CelestialBody &other)
-        : m_vbo{other.m_vbo}, m_vao{other.m_vao}, m_pos{other.m_pos},
-          m_shader{other.m_shader}, m_num_verticies{other.m_num_verticies},
-          m_ebo{other.m_ebo}, m_num_indices{other.m_num_indices} {}
-    // copy assign
-    CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
-      m_pos = other.m_pos;
-      m_vao = other.m_vao;
-      m_pos = other.m_pos;
-      m_ebo = other.m_ebo;
-      m_shader = other.m_shader;
-      m_num_verticies = other.m_num_verticies;
-      m_num_indices = other.m_num_indices;
-      return *this;
-    }
     //move constructor
-    CelestialBody::CelestialBody(CelestialBody &&other)
-        : m_vbo{other.m_vbo}, m_vao{other.m_vao}, m_pos{other.m_pos},
-          m_shader{std::move(other.m_shader)}, m_num_verticies{other.m_num_verticies},
-          m_ebo{other.m_ebo}, m_num_indices{other.m_num_indices} {
-      other.m_vao = 0;
-      other.m_vbo = 0;
-      other.m_shader = nullptr;
-      other.m_num_verticies = 0;
-      other.m_ebo = 0;
-      other.m_num_indices = 0;
+    UnitSphere::UnitSphere(UnitSphere&& other):
+        m_vao{other.m_vao}, m_vbo{other.m_vbo}, m_ebo{other.m_ebo},
+        m_num_indices{other.m_num_indices}, m_num_verticies{other.m_num_verticies}
+    {
+        other.m_vao = 0;
+        other.m_vbo = 0;
+        other.m_ebo = 0;
+        other.m_num_verticies = 0;
+        other.m_num_indices = 0;
     }
-    // move assign
-    CelestialBody &CelestialBody::operator=(CelestialBody &&other) {
-      m_vbo = other.m_vbo;
-      m_vao = other.m_vao;
-      m_pos = other.m_pos;
-      m_num_verticies = other.m_num_verticies;
-      m_ebo = other.m_ebo;
-      m_num_indices = other.m_num_indices;
-      other.m_vao = 0;
-      other.m_vbo = 0;
-      other.m_num_verticies = 0;
-      m_shader = std::move(other.m_shader);
-      other.m_ebo = 0;
-      other.m_num_indices = 0;
-      return *this;
+    //move assign
+    UnitSphere& UnitSphere::operator=(UnitSphere&& other){
+        m_vao = other.m_vao;
+        m_vbo = other.m_vbo;
+        m_ebo = other.m_ebo;
+        m_num_verticies = other.m_num_verticies;
+        m_num_indices = other.m_num_indices;
+        other.m_vao = 0;
+        other.m_vbo = 0;
+        other.m_ebo = 0;
+        other.m_num_verticies = 0;
+        other.m_num_indices = 0;
+        return *this;
     }
-    CelestialBody::~CelestialBody() {
+    //destructor
+    UnitSphere::~UnitSphere(){
         if(m_vao) glDeleteVertexArrays(1, &m_vao);
         if(m_vbo) glDeleteBuffers(1, &m_vbo);
         if(m_ebo) glDeleteBuffers(1, &m_ebo);
     }
 
-    uint32_t make_unit_sphere_vbo(const UnitSphereData& data) {
+    void UnitSphere::draw() const {
+        glBindVertexArray(m_vao);
+        glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+
+    uint32_t UnitSphere::make_unit_sphere_vbo(const UnitSphere::UnitSphereCreationData& data) {
         uint32_t vbo = 0;
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER,
-                data.vertices.size() * sizeof(obj::UnitSphereData::vertex_t),
+                data.vertices.size() * sizeof(obj::UnitSphere::UnitSphereCreationData::vertex_t),
                 data.vertices.data(),
                 GL_STATIC_DRAW);
         return vbo;
     }
-    uint32_t make_unit_sphere_ebo(const UnitSphereData& data){
+    uint32_t UnitSphere::make_unit_sphere_ebo(const UnitSphereCreationData& data){
         uint32_t ebo = 0;
         glGenBuffers(1, &ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -115,20 +154,7 @@ namespace obj {
                 GL_STATIC_DRAW);
         return ebo;
     }
-    void CelestialBody::update(){
-
-    }
-    void CelestialBody::render(){
-        auto model = glm::mat4(1);
-        model = glm::translate(model, m_pos);
-        m_shader->use_shader();
-        m_shader->set_mat4(name_of(model), model);
-        glBindVertexArray(m_vao);
-        glPointSize(2.0f);
-        /*glDrawArrays(GL_POINTS, 0, m_num_verticies);*/
-        glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);
-    }
-    UnitSphereData make_unit_sphere() {
+    UnitSphere::UnitSphereCreationData UnitSphere::make_unit_sphere() {
         std::vector<glm::vec3> vertices{};
         std::vector<int32_t> indices{};
 
@@ -203,7 +229,7 @@ namespace obj {
         /*for (auto idx : indices | std::views::drop(indices.size() - 31)){*/
         /*    std::printf("{ %d }\n", idx);*/
         /*}*/
-        return UnitSphereData{
+        return UnitSphereCreationData{
             .vertices = std::move(vertices),
             .indices = std::move(indices)
         };

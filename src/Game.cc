@@ -99,6 +99,9 @@ void Game::update() {
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     keyboard_input();
+    for (auto& obj : m_bodies){
+        obj->update(m_delta_t);
+    }
     glfwPollEvents();
 }
 void Game::render() {

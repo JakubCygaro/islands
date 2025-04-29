@@ -11,15 +11,34 @@
 #include <Util.hpp>
 
 namespace obj{
+    // Wrapper around a sphere mesh stored in the GPU
+    class UnitSphere {
+    private:
+        struct UnitSphereCreationData {
+            using vec = std::vector<UnitSphereCreationData>;
+            using vertex_t = glm::vec3;
+            std::vector<vertex_t> vertices;
+            std::vector<int32_t> indices;
+        };
+        uint32_t m_vao{}, m_vbo{}, m_ebo{};
+        size_t m_num_indices{}, m_num_verticies{};
+        uint32_t make_unit_sphere_vbo(const UnitSphereCreationData& data);
+        uint32_t make_unit_sphere_ebo(const UnitSphereCreationData& data);
+        UnitSphereCreationData make_unit_sphere();
+    public:
+        UnitSphere();
+        UnitSphere(const UnitSphere&) = delete;
+        UnitSphere& operator=(const UnitSphere&) = delete;
+        UnitSphere(UnitSphere&& other);
+        UnitSphere& operator=(UnitSphere&& other);
+        ~UnitSphere();
+        void draw() const;
+    };
 
     class CelestialBody {
     protected:
-        uint32_t m_vao{};
-        uint32_t m_vbo{};
-        uint32_t m_ebo{};
-        int32_t m_num_verticies{0};
-        int32_t m_num_indices{0};
         std::shared_ptr<Shader> m_shader;
+        std::shared_ptr<UnitSphere> m_sphere;
         PROTECTED_PROPERTY(glm::vec3, pos)
         PROTECTED_PROPERTY(glm::vec3, speed)
         PROTECTED_PROPERTY(glm::vec3, acceleration)
@@ -33,18 +52,9 @@ namespace obj{
         CelestialBody(CelestialBody&&);
         CelestialBody& operator=(CelestialBody&&);
         virtual ~CelestialBody();
-        virtual void update();
+        virtual void update(double delta_t);
         virtual void render();
     };
-    struct UnitSphereData {
-        using vec = std::vector<UnitSphereData>;
-        using vertex_t = glm::vec3;
-        std::vector<vertex_t> vertices;
-        std::vector<int32_t> indices;
-    };
-    uint32_t make_unit_sphere_vbo(const UnitSphereData& data);
-    uint32_t make_unit_sphere_ebo(const UnitSphereData& data);
-    UnitSphereData make_unit_sphere();
 }
 
 #endif
