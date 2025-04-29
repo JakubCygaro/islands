@@ -63,6 +63,7 @@ void Game::initialize() {
         throw std::runtime_error("Failed to initialize GLAD");
     }
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     m_projection = glm::perspective(glm::radians(70.0f),
             (float)m_width / (float)m_height, 0.1f, 100.0f);
     /*std::cout << "m_projection = " << glm::to_string(m_projection) << std::endl;*/

@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <exception>
+#include <ranges>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_transform.hpp>
@@ -20,6 +21,7 @@ namespace obj {
         m_shader = std::make_shared<Shader>(Shader::from_shader_dir(shader));
         auto sphere = make_unit_sphere();
         m_num_verticies = sphere.vertices.size();
+        m_num_indices = sphere.indices.size();
         m_vbo = make_unit_sphere_vbo(sphere);
         m_ebo = make_unit_sphere_ebo(sphere);
         glGenVertexArrays(1, &m_vao);
@@ -124,7 +126,7 @@ namespace obj {
         glBindVertexArray(m_vao);
         glPointSize(2.0f);
         glDrawArrays(GL_POINTS, 0, m_num_verticies);
-        glDrawElements(GL_TRIANGLES, m_num_verticies, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);
     }
     UnitSphereData make_unit_sphere() {
         std::vector<glm::vec3> vertices{};
@@ -152,21 +154,45 @@ namespace obj {
         glm::vec3 top_pole = glm::vec3(0, 1.0f, 0);
         vertices.push_back({top_pole});
 
-        //indices for the bottom pole (triangles with the bottom pole)
+        //indices for the bottom pole cap (triangles with the bottom pole)
+        const auto bottom_idx = 0;
         for(size_t idx = 1; idx < step; idx++){
-            indices.push_back(0);
+            indices.push_back(bottom_idx);
             indices.push_back(idx);
             indices.push_back(idx + 1);
             if(idx == step - 1){
-                indices.push_back(0);
+                indices.push_back(bottom_idx);
                 indices.push_back(step);
                 indices.push_back(1);
             }
         }
-        for(size_t idx = step; idx < vertices.size() - (step + 1); idx++){
-
+        //body of the sphere up to the top pole cap
+        /*for(size_t idx = 1; idx < vertices.size() - (step * 2 + 1); idx++){*/
+        /*    indices.push_back(idx + step);*/
+        /*    indices.push_back(idx + 1);*/
+        /*    indices.push_back(idx);*/
+        /**/
+        /*    indices.push_back(idx + step - 1);*/
+        /*    indices.push_back(idx + step);*/
+        /*    indices.push_back(idx);*/
+        /*}*/
+        //indices for the bottom pole cap (triangles with the bottom pole)
+        const auto top_idx = vertices.size() - 1;
+        const auto start = top_idx - (step * 2);
+        for(size_t idx = start; idx < top_idx; idx++){
+            indices.push_back(idx + 1);
+            indices.push_back(idx);
+            indices.push_back(top_idx);
+            if(idx == top_idx - 1){
+                indices.push_back(top_idx);
+                indices.push_back(start);
+                indices.push_back(idx);
+            }
         }
 
+        /*for (auto idx : indices | std::views::drop(vertices.size() - (step  * 2  + 1))){*/
+        /*    std::printf("{ %d }\n", idx);*/
+        /*}*/
         return UnitSphereData{
             .vertices = std::move(vertices),
             .indices = std::move(indices)

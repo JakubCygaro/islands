@@ -18,15 +18,22 @@ add_executable(islands
     src/Object.cc
 )
 
+add_library(features INTERFACE)
+
+target_compile_features(features INTERFACE cxx_std_20)
+
+target_compile_options(islands
+    PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>
+)
+target_link_libraries(islands PRIVATE features)
+
 target_include_directories(islands
     PRIVATE include/
 )
 
 target_link_libraries(islands
     PRIVATE glfw3
-)
-
-target_link_libraries(islands
     PRIVATE glm::glm
 )
 
