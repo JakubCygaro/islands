@@ -32,14 +32,16 @@ namespace obj{
         CelestialBody& operator=(CelestialBody&&);
         virtual ~CelestialBody();
         virtual void update();
-        virtual void render(glm::mat4 view, glm::mat4 projection);
+        virtual void render();
     };
     struct UnitSphereData {
         using vec = std::vector<UnitSphereData>;
-        glm::vec3 vertex;
+        using vertex_t = glm::vec3;
+        std::vector<vertex_t> vertices;
+        std::vector<int32_t> indicies;
     };
-    uint32_t make_unit_sphere_vbo(const UnitSphereData::vec& data);
-    UnitSphereData::vec make_unit_sphere();
+    uint32_t make_unit_sphere_vbo(const UnitSphereData& data);
+    UnitSphereData make_unit_sphere();
 }
 
 #endif

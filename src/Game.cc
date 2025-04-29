@@ -102,7 +102,7 @@ void Game::render() {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for(auto& c_obj : m_bodies){
-        c_obj->render(m_view, m_projection);
+        c_obj->render();
     }
 }
 void Game::keyboard_input(){

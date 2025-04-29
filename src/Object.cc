@@ -17,7 +17,7 @@ namespace obj {
     CelestialBody::CelestialBody(const char *shader): m_pos{glm::vec3(0)} {
         m_shader = std::make_shared<Shader>(Shader::from_shader_dir(shader));
         auto sphere = make_unit_sphere();
-        m_num_verticies = sphere.size();
+        m_num_verticies = sphere.vertices.size();
         m_vbo = make_unit_sphere_vbo(sphere);
         glGenVertexArrays(1, &m_vao);
         glBindVertexArray(m_vao);
@@ -77,27 +77,30 @@ namespace obj {
         if(m_vbo) glDeleteBuffers(1, &m_vbo);
     }
 
-    uint32_t make_unit_sphere_vbo(const UnitSphereData::vec& data) {
+    uint32_t make_unit_sphere_vbo(const UnitSphereData& data) {
         uint32_t vbo = 0;
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(obj::UnitSphereData), data.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER,
+                data.vertices.size() * sizeof(obj::UnitSphereData::vertex_t),
+                data.vertices.data(),
+                GL_STATIC_DRAW);
         return vbo;
     }
     void CelestialBody::update(){
 
     }
-    void CelestialBody::render(glm::mat4 view, glm::mat4 projection){
+    void CelestialBody::render(){
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);
         m_shader->use_shader();
         m_shader->set_mat4(name_of(model), model);
         glBindVertexArray(m_vao);
         glPointSize(10.0f);
-        glDrawArrays(GL_TRIANGLES, 0, m_num_verticies);
+        glDrawArrays(GL_LINES, 0, m_num_verticies);
     }
-    UnitSphereData::vec make_unit_sphere() {
-        UnitSphereData::vec ret{};
+    UnitSphereData make_unit_sphere() {
+        std::vector<glm::vec3> ret{};
         float pitch = -90, yaw = 0;
         const int step = 30;
         const int pitch_step = 180 / step;
@@ -120,7 +123,10 @@ namespace obj {
         }
         glm::vec3 top_pole = glm::vec3(0, 1.0f, 0);
         ret.push_back({top_pole});
-        return ret;
+        return UnitSphereData{
+            .vertices = std::move(ret),
+            .indicies = {}
+        };
 
     }
 
