@@ -20,6 +20,7 @@ private:
     double m_last_mouse_x{};
     double m_last_mouse_y{};
     bool m_first_mouse{true};
+    bool m_wireframe{false};
     GLFWwindow* m_window_ptr{nullptr};
     Camera m_camera;
 

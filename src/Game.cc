@@ -1,5 +1,6 @@
 #include "Object.hpp"
 #include "shader/Shader.hpp"
+#include <GLFW/glfw3.h>
 #include <Game.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -64,6 +65,7 @@ void Game::initialize() {
     }
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    /*glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);*/
     m_projection = glm::perspective(glm::radians(70.0f),
             (float)m_width / (float)m_height, 0.1f, 100.0f);
     /*std::cout << "m_projection = " << glm::to_string(m_projection) << std::endl;*/
@@ -110,6 +112,12 @@ void Game::keyboard_input(){
     if (glfwGetKey(m_window_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(m_window_ptr, true);
     }
+    /*if (glfwGetKey(m_window_ptr, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(m_window_ptr, GLFW_KEY_W) == GLFW_PRESS){*/
+    /*    if(m_wireframe)*/
+    /*        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);*/
+    /*    else*/
+    /*        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
+    /*}*/
     m_camera.keyboard_input(m_window_ptr, m_delta_t);
 }
 void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height){

@@ -2,6 +2,7 @@
 #include "Util.hpp"
 #include <GL/gl.h>
 #include <Object.hpp>
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -89,7 +90,6 @@ namespace obj {
       return *this;
     }
     CelestialBody::~CelestialBody() {
-        std::printf("Destructor VAO %d VBO %d \n", m_vao, m_vbo);
         if(m_vao) glDeleteVertexArrays(1, &m_vao);
         if(m_vbo) glDeleteBuffers(1, &m_vbo);
         if(m_ebo) glDeleteBuffers(1, &m_ebo);
@@ -125,7 +125,7 @@ namespace obj {
         m_shader->set_mat4(name_of(model), model);
         glBindVertexArray(m_vao);
         glPointSize(2.0f);
-        glDrawArrays(GL_POINTS, 0, m_num_verticies);
+        /*glDrawArrays(GL_POINTS, 0, m_num_verticies);*/
         glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);
     }
     UnitSphereData make_unit_sphere() {
@@ -156,41 +156,51 @@ namespace obj {
 
         //indices for the bottom pole cap (triangles with the bottom pole)
         const auto bottom_idx = 0;
+        const auto start = 1;
         for(size_t idx = 1; idx < step; idx++){
             indices.push_back(bottom_idx);
             indices.push_back(idx);
             indices.push_back(idx + 1);
-            if(idx == step - 1){
-                indices.push_back(bottom_idx);
-                indices.push_back(step);
-                indices.push_back(1);
-            }
+            /*if(idx == step - 1){*/
+            /*    indices.push_back(bottom_idx);*/
+            /*    indices.push_back(step);*/
+            /*    indices.push_back(start);*/
+            /*}*/
         }
-        //body of the sphere up to the top pole cap
-        /*for(size_t idx = 1; idx < vertices.size() - (step * 2 + 1); idx++){*/
-        /*    indices.push_back(idx + step);*/
-        /*    indices.push_back(idx + 1);*/
-        /*    indices.push_back(idx);*/
-        /**/
-        /*    indices.push_back(idx + step - 1);*/
-        /*    indices.push_back(idx + step);*/
-        /*    indices.push_back(idx);*/
-        /*}*/
-        //indices for the bottom pole cap (triangles with the bottom pole)
         const auto top_idx = vertices.size() - 1;
-        const auto start = top_idx - (step * 2);
-        for(size_t idx = start; idx < top_idx; idx++){
+        //body of the sphere up to the top pole cap, i guess it also does the cap? no idea why tho, but cool that it works i guess
+        for(size_t idx = 0; idx < vertices.size() - (step  + 1); idx++){
+            indices.push_back(idx + step);
             indices.push_back(idx + 1);
             indices.push_back(idx);
-            indices.push_back(top_idx);
-            if(idx == top_idx - 1){
-                indices.push_back(top_idx);
-                indices.push_back(start);
-                indices.push_back(idx);
-            }
-        }
 
-        /*for (auto idx : indices | std::views::drop(vertices.size() - (step  * 2  + 1))){*/
+            indices.push_back(std::clamp(idx + step - 1, idx, top_idx));
+            indices.push_back(std::clamp(idx + step, idx, top_idx));
+            indices.push_back(idx);
+        }
+        //indices for the bottom pole cap (triangles with the bottom pole), NOT NEEDED since the loop above magically does this
+
+
+        /*std::printf("vertices.size(): %lld\n", vertices.size());*/
+        /*std::printf("top_idx: %lld\n", top_idx);*/
+        /**/
+        /*start = top_idx - step - 1;*/
+        /*start = vertices.size() - (step * 2 + 1);*/
+        /**/
+        /*std::printf("start: %d\n", start);*/
+
+        /*for(size_t idx = start; idx < top_idx; idx++){*/
+        /*    indices.push_back(idx + 1);*/
+        /*    indices.push_back(idx);*/
+        /*    indices.push_back(top_idx);*/
+        /*    if(idx == top_idx - 1){*/
+        /*        indices.push_back(top_idx);*/
+        /*        indices.push_back(idx);*/
+        /*        indices.push_back(start);*/
+        /*    }*/
+        /*}*/
+
+        /*for (auto idx : indices | std::views::drop(indices.size() - 31)){*/
         /*    std::printf("{ %d }\n", idx);*/
         /*}*/
         return UnitSphereData{
