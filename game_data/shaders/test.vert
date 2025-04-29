@@ -12,6 +12,8 @@ layout(std140, binding = 0) uniform Matrices {
     mat4 projection;
 };
 
+out vec3 VertColor;
 void main() {
+    VertColor = vert_pos;
     gl_Position = projection * view * model * vec4(vert_pos, 1.0);
 }

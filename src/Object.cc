@@ -4,15 +4,15 @@
 #include <Object.hpp>
 #include <cmath>
 #include <cstdio>
+#include <exception>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/quaternion_transform.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/string_cast.hpp>
 #include <memory>
+
 namespace obj {
     CelestialBody::CelestialBody(const char *shader): m_pos{glm::vec3(0)} {
         m_shader = std::make_shared<Shader>(Shader::from_shader_dir(shader));
@@ -94,7 +94,7 @@ namespace obj {
         m_shader->set_mat4(name_of(model), model);
         glBindVertexArray(m_vao);
         glPointSize(10.0f);
-        glDrawArrays(GL_POINTS, 0, 834);
+        glDrawArrays(GL_TRIANGLES, 0, m_num_verticies);
     }
     UnitSphereData::vec make_unit_sphere() {
         UnitSphereData::vec ret{};
@@ -106,27 +106,20 @@ namespace obj {
         ret.push_back({bottom_pole});
 
         auto ring_base = glm::vec3(0);
-        for(int i = 0; i < step - 1; i++){
+        for(int i = 0; i < step; i++){
             pitch += pitch_step;
             ring_base.y = std::sin(glm::radians(pitch));
             ring_base.x = std::cos(glm::radians(pitch));
-            for(int j = 0; j < step - 1; j++){
+            for(int j = 0; j < step; j++){
                 glm::vec3 current_vert = { ring_base };
-                current_vert.x += std::sin(glm::radians(yaw));
-                current_vert.z += std::cos(glm::radians(yaw));
-                /*current_vert = glm::normalize(current_vert);*/
+                current_vert.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+                current_vert.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 yaw += yaw_step;
                 ret.push_back({current_vert});
             }
-            /*ret.push_back({current_vert});*/
         }
         glm::vec3 top_pole = glm::vec3(0, 1.0f, 0);
         ret.push_back({top_pole});
-        for (auto& d : ret){
-            auto& vert = d.vertex;
-            /*std::printf("{ %f, %f, %f }\n", vert.x, vert.y, vert.z);*/
-        }
-        std::printf("size: %lld\n", ret.size());
         return ret;
 
     }
