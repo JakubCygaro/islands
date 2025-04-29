@@ -16,7 +16,9 @@ namespace obj{
     protected:
         uint32_t m_vao{};
         uint32_t m_vbo{};
+        uint32_t m_ebo{};
         int32_t m_num_verticies{0};
+        int32_t m_num_indices{0};
         std::shared_ptr<Shader> m_shader;
         PROTECTED_PROPERTY(glm::vec3, pos)
         PROTECTED_PROPERTY(glm::vec3, speed)
@@ -38,9 +40,10 @@ namespace obj{
         using vec = std::vector<UnitSphereData>;
         using vertex_t = glm::vec3;
         std::vector<vertex_t> vertices;
-        std::vector<int32_t> indicies;
+        std::vector<int32_t> indices;
     };
     uint32_t make_unit_sphere_vbo(const UnitSphereData& data);
+    uint32_t make_unit_sphere_ebo(const UnitSphereData& data);
     UnitSphereData make_unit_sphere();
 }
 

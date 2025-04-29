@@ -3,6 +3,8 @@
 #include <GL/gl.h>
 #include <Object.hpp>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <exception>
 #include <glm/ext/matrix_float4x4.hpp>
@@ -19,15 +21,18 @@ namespace obj {
         auto sphere = make_unit_sphere();
         m_num_verticies = sphere.vertices.size();
         m_vbo = make_unit_sphere_vbo(sphere);
+        m_ebo = make_unit_sphere_ebo(sphere);
         glGenVertexArrays(1, &m_vao);
         glBindVertexArray(m_vao);
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
             (void*)0);
         glEnableVertexAttribArray(0);
     }
 
-    CelestialBody::CelestialBody() : m_vao{0}, m_vbo{0}, m_shader{nullptr} {}
+    CelestialBody::CelestialBody() : m_vao{0}, m_vbo{0}, m_shader{nullptr}, m_num_verticies{0} {}
 
     CelestialBody::CelestialBody(std::shared_ptr<Shader> shader)
         : m_vao{0}, m_vbo{0}, m_shader{shader} {
@@ -40,24 +45,30 @@ namespace obj {
     // copy constructor
     CelestialBody::CelestialBody(const CelestialBody &other)
         : m_vbo{other.m_vbo}, m_vao{other.m_vao}, m_pos{other.m_pos},
-          m_shader{other.m_shader}, m_num_verticies{other.m_num_verticies} {}
+          m_shader{other.m_shader}, m_num_verticies{other.m_num_verticies},
+          m_ebo{other.m_ebo}, m_num_indices{other.m_num_indices} {}
     // copy assign
     CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
       m_pos = other.m_pos;
       m_vao = other.m_vao;
       m_pos = other.m_pos;
+      m_ebo = other.m_ebo;
       m_shader = other.m_shader;
       m_num_verticies = other.m_num_verticies;
+      m_num_indices = other.m_num_indices;
       return *this;
     }
     //move constructor
     CelestialBody::CelestialBody(CelestialBody &&other)
         : m_vbo{other.m_vbo}, m_vao{other.m_vao}, m_pos{other.m_pos},
-          m_shader{std::move(other.m_shader)}, m_num_verticies{other.m_num_verticies} {
+          m_shader{std::move(other.m_shader)}, m_num_verticies{other.m_num_verticies},
+          m_ebo{other.m_ebo}, m_num_indices{other.m_num_indices} {
       other.m_vao = 0;
       other.m_vbo = 0;
       other.m_shader = nullptr;
       other.m_num_verticies = 0;
+      other.m_ebo = 0;
+      other.m_num_indices = 0;
     }
     // move assign
     CelestialBody &CelestialBody::operator=(CelestialBody &&other) {
@@ -65,16 +76,21 @@ namespace obj {
       m_vao = other.m_vao;
       m_pos = other.m_pos;
       m_num_verticies = other.m_num_verticies;
+      m_ebo = other.m_ebo;
+      m_num_indices = other.m_num_indices;
       other.m_vao = 0;
       other.m_vbo = 0;
       other.m_num_verticies = 0;
       m_shader = std::move(other.m_shader);
+      other.m_ebo = 0;
+      other.m_num_indices = 0;
       return *this;
     }
     CelestialBody::~CelestialBody() {
         std::printf("Destructor VAO %d VBO %d \n", m_vao, m_vbo);
         if(m_vao) glDeleteVertexArrays(1, &m_vao);
         if(m_vbo) glDeleteBuffers(1, &m_vbo);
+        if(m_ebo) glDeleteBuffers(1, &m_ebo);
     }
 
     uint32_t make_unit_sphere_vbo(const UnitSphereData& data) {
@@ -87,6 +103,16 @@ namespace obj {
                 GL_STATIC_DRAW);
         return vbo;
     }
+    uint32_t make_unit_sphere_ebo(const UnitSphereData& data){
+        uint32_t ebo = 0;
+        glGenBuffers(1, &ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                data.indices.size() * sizeof(int32_t),
+                data.indices.data(),
+                GL_STATIC_DRAW);
+        return ebo;
+    }
     void CelestialBody::update(){
 
     }
@@ -96,18 +122,20 @@ namespace obj {
         m_shader->use_shader();
         m_shader->set_mat4(name_of(model), model);
         glBindVertexArray(m_vao);
-        glPointSize(10.0f);
-        glDrawArrays(GL_LINES, 0, m_num_verticies);
+        glPointSize(2.0f);
+        glDrawArrays(GL_POINTS, 0, m_num_verticies);
+        glDrawElements(GL_TRIANGLES, m_num_verticies, GL_UNSIGNED_INT, 0);
     }
     UnitSphereData make_unit_sphere() {
-        std::vector<glm::vec3> ret{};
+        std::vector<glm::vec3> vertices{};
+        std::vector<int32_t> indices{};
+
         float pitch = -90, yaw = 0;
         const int step = 30;
         const int pitch_step = 180 / step;
         const int yaw_step = 360 / step;
         glm::vec3 bottom_pole = glm::vec3(0, -1.0f, 0);
-        ret.push_back({bottom_pole});
-
+        vertices.push_back({bottom_pole});
         auto ring_base = glm::vec3(0);
         for(int i = 0; i < step; i++){
             pitch += pitch_step;
@@ -118,14 +146,30 @@ namespace obj {
                 current_vert.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 current_vert.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 yaw += yaw_step;
-                ret.push_back({current_vert});
+                vertices.push_back({current_vert});
             }
         }
         glm::vec3 top_pole = glm::vec3(0, 1.0f, 0);
-        ret.push_back({top_pole});
+        vertices.push_back({top_pole});
+
+        //indices for the bottom pole (triangles with the bottom pole)
+        for(size_t idx = 1; idx < step; idx++){
+            indices.push_back(0);
+            indices.push_back(idx);
+            indices.push_back(idx + 1);
+            if(idx == step - 1){
+                indices.push_back(0);
+                indices.push_back(step);
+                indices.push_back(1);
+            }
+        }
+        for(size_t idx = step; idx < vertices.size() - (step + 1); idx++){
+
+        }
+
         return UnitSphereData{
-            .vertices = std::move(ret),
-            .indicies = {}
+            .vertices = std::move(vertices),
+            .indices = std::move(indices)
         };
 
     }
