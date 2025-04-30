@@ -31,6 +31,7 @@ private:
 private:
     void initialize();
     void update();
+    void update_bodies_pos();
     void render();
     void keyboard_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);

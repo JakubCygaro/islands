@@ -15,10 +15,11 @@
 #include <glm/ext/vector_float3.hpp>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
+#include <iostream>
 #include <memory>
 
 namespace obj {
-    CelestialBody::CelestialBody(const char *shader): m_pos{glm::vec3(0)} {
+    CelestialBody::CelestialBody(const char *shader): m_pos{glm::vec3(0)}, m_mass{1} {
         m_shader = std::make_shared<Shader>(Shader::from_shader_dir(shader));
         m_sphere = std::make_shared<UnitSphere>(UnitSphere());
         m_acceleration = glm::vec3(0, 0, 0);
@@ -27,15 +28,21 @@ namespace obj {
 
     CelestialBody::CelestialBody() : m_shader{nullptr}, m_sphere{nullptr} {}
 
-    CelestialBody::CelestialBody(std::shared_ptr<Shader> shader)
-        : m_shader{shader} {
-        }
+    CelestialBody::CelestialBody(std::shared_ptr<Shader> shader,
+                glm::vec3 pos,
+                glm::vec3 speed,
+                glm::vec3 acc,
+                float mass)
+        : m_shader{shader}, m_pos{pos}, m_speed{speed}, m_acceleration{acc}, m_mass{mass}
+    {
+        m_sphere = std::make_shared<UnitSphere>(UnitSphere());
+    }
     CelestialBody::CelestialBody(const char *vert, const char *frag)
         : m_shader{std::make_unique<Shader>(Shader(vert, frag))} {}
     // copy constructor
     CelestialBody::CelestialBody(const CelestialBody &other)
         : m_pos{other.m_pos}, m_shader{other.m_shader}, m_sphere{other.m_sphere},
-          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}
     {}
     // copy assign
     CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
@@ -44,12 +51,13 @@ namespace obj {
       m_sphere = other.m_sphere;
       m_acceleration = other.m_acceleration;
       m_speed = other.m_speed;
+      m_mass = other.m_mass;
       return *this;
     }
     //move constructor
     CelestialBody::CelestialBody(CelestialBody &&other)
         : m_pos{other.m_pos}, m_shader{std::move(other.m_shader)}, m_sphere{std::move(other.m_sphere)},
-          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}
     {
       other.m_shader = nullptr;
       other.m_sphere = nullptr;
@@ -61,17 +69,18 @@ namespace obj {
       m_sphere = std::move(other.m_sphere);
       m_acceleration = other.m_acceleration;
       m_speed = other.m_speed;
+      m_mass = other.m_mass;
       other.m_sphere = nullptr;
       other.m_shader = nullptr;
       return *this;
     }
     CelestialBody::~CelestialBody() {}
 
-    void CelestialBody::update(double delta_t){
-        /*m_speed += m_acceleration;*/
-        auto tmp = m_speed;
-        tmp *= delta_t;
-        m_pos += tmp;
+    void CelestialBody::update(){
+        m_speed += m_acceleration;
+        m_pos += m_speed;
+        /*std::printf("pos: { %f, %f, %f }\n", m_pos.x, m_pos.y, m_pos.z);*/
+        /*std::printf("acc: { %f, %f, %f }\n", m_acceleration.x, m_acceleration.y, m_acceleration.z);*/
     }
     void CelestialBody::render(){
         auto model = glm::mat4(1);

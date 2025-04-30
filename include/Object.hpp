@@ -42,9 +42,14 @@ namespace obj{
         PROTECTED_PROPERTY(glm::vec3, pos)
         PROTECTED_PROPERTY(glm::vec3, speed)
         PROTECTED_PROPERTY(glm::vec3, acceleration)
+        PROTECTED_PROPERTY(float, mass)
     public:
         CelestialBody();
-        CelestialBody(std::shared_ptr<Shader> shader);
+        CelestialBody(std::shared_ptr<Shader> shader,
+                glm::vec3 pos = glm::vec3(0),
+                glm::vec3 speed = glm::vec3(0),
+                glm::vec3 acc = glm::vec3(0),
+                float mass = 1.0);
         CelestialBody(const char* shader_name);
         CelestialBody(const char* vert, const char* frag);
         CelestialBody(const CelestialBody&);
@@ -52,7 +57,7 @@ namespace obj{
         CelestialBody(CelestialBody&&);
         CelestialBody& operator=(CelestialBody&&);
         virtual ~CelestialBody();
-        virtual void update(double delta_t);
+        virtual void update();
         virtual void render();
     };
 }
