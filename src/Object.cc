@@ -21,7 +21,7 @@
 namespace obj {
     CelestialBody::CelestialBody(const char *shader): m_pos{glm::vec3(0)}, m_mass{1} {
         m_shader = std::make_shared<Shader>(Shader::from_shader_dir(shader));
-        m_sphere = std::make_shared<UnitSphere>(UnitSphere());
+        m_sphere = UnitSphere::instance();
         m_acceleration = glm::vec3(0, 0, 0);
         m_speed = glm::vec3(1, 0, 0);
     }
@@ -35,7 +35,7 @@ namespace obj {
                 float mass)
         : m_shader{shader}, m_pos{pos}, m_speed{speed}, m_acceleration{acc}, m_mass{mass}
     {
-        m_sphere = std::make_shared<UnitSphere>(UnitSphere());
+        m_sphere = UnitSphere::instance();
     }
     CelestialBody::CelestialBody(const char *vert, const char *frag)
         : m_shader{std::make_unique<Shader>(Shader(vert, frag))} {}
@@ -76,17 +76,18 @@ namespace obj {
     }
     CelestialBody::~CelestialBody() {}
 
-    void CelestialBody::update(){
+    void CelestialBody::update(double& delta_t){
         m_speed += m_acceleration;
-        m_pos += m_speed;
-        /*std::printf("pos: { %f, %f, %f }\n", m_pos.x, m_pos.y, m_pos.z);*/
-        /*std::printf("acc: { %f, %f, %f }\n", m_acceleration.x, m_acceleration.y, m_acceleration.z);*/
+        auto tmp_speed = m_speed;
+        tmp_speed *= delta_t;
+        m_pos += tmp_speed;
     }
     void CelestialBody::render(){
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);
         m_shader->use_shader();
         m_shader->set_mat4(name_of(model), model);
+        m_shader->set_vec3(name_of(color), m_color);
         m_sphere->draw();
     }
 
@@ -243,6 +244,15 @@ namespace obj {
             .indices = std::move(indices)
         };
 
+    }
+    // get shared_ptr to singleton instane of a UnitSphere
+    std::shared_ptr<UnitSphere> UnitSphere::instance() {
+        if(s_instance) {
+            return s_instance;
+        } else [[likely]] {
+            s_instance = std::make_shared<UnitSphere>(UnitSphere());
+            return s_instance;
+        }
     }
 
 } // namespace obj

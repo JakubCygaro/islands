@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <Game.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
+#include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <type_traits>
@@ -10,7 +11,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
 
-const float GRAV_CONST = 6.674 * std::pow(10, -11);
+const float GRAV_CONST = 6.674e-11;
 
 static Game* get_game_instance_ptr_from_window(GLFWwindow* window);
 
@@ -86,14 +87,17 @@ void Game::initialize() {
 
 
     auto shader = std::make_shared<Shader>(Shader::from_shader_dir("test"));
-    m_bodies.push_back(std::make_shared<obj::CelestialBody>(
-                obj::CelestialBody(shader, {2.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 1000)
-                ));
+    auto c_body =   std::make_shared<obj::CelestialBody>(
+                obj::CelestialBody(shader, {2.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.05f}, {0.0f, 0.0f, 0.0f}, 4000)
+                );
+    c_body->set_color({1.0, .1, .1});
+    m_bodies.push_back(c_body);
 
-    shader = std::make_shared<Shader>(Shader::from_shader_dir("test"));
-    m_bodies.push_back(std::make_shared<obj::CelestialBody>(
-                obj::CelestialBody(shader, {-20.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 1000)
-                ));
+    c_body = std::make_shared<obj::CelestialBody>(
+                obj::CelestialBody(shader, {-20.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.05f}, {0.0f, 0.0f, 0.0f}, 5000)
+                );
+    c_body->set_color({0.0, 1.0, .1});
+    m_bodies.push_back(c_body);
 }
 void Game::run() {
     while(!glfwWindowShouldClose(m_window_ptr)){
@@ -123,22 +127,25 @@ void Game::update() {
 
             auto r_21 = b_2->get_pos() - b_1->get_pos();
             auto r_21_hat = glm::normalize(r_21);
+            auto distance = glm::distance(b_1->get_pos(), b_2->get_pos());
             /*std::cout << "r_21: " << glm::to_string(r_21) <<"\nr21_hat: " << glm::to_string(r_21_hat) << std::endl;*/
             //attraction force
-            auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (r_21 * r_21)) * r_21_hat;
+            auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (distance * distance)) * r_21_hat;
             auto f_12 = -f_21;
 
             /*std::cout << "f_21: " << glm::to_string(f_21) << "\nf_12: " << glm::to_string(f_12) << std::endl;*/
-            /*continue;*/
-            /*auto b_1_acc = b_1->get_acceleration();*/
-            /*b_1_acc += f_12;*/
-            /*b_1->set_acceleration(b_1_acc);*/
-            b_1->set_acceleration(f_12);
-            b_2->set_acceleration(f_21);
+            /*break;*/
 
-            /*auto b_2_acc = b_2->get_acceleration();*/
-            /*b_2_acc += f_21;*/
-            /*b_2->set_acceleration(b_2_acc);*/
+            /*continue;*/
+            auto b_1_acc = b_1->get_acceleration();
+            b_1_acc += f_12;
+            /*std::cout << "b_1_acc: " << glm::to_string(b_1_acc) << std::endl;*/
+            b_1->set_acceleration(b_1_acc);
+
+            auto b_2_acc = b_2->get_acceleration();
+            b_2_acc += f_21;
+            /*std::cout << "b_2_acc: " << glm::to_string(b_2_acc) << std::endl;*/
+            b_2->set_acceleration(b_2_acc);
         }
     }
     update_bodies_pos();
@@ -146,13 +153,7 @@ void Game::update() {
 }
 void Game::update_bodies_pos() {
     for (auto& obj : m_bodies){
-        /*auto speed = obj->get_speed();*/
-        /*speed += obj->get_acceleration();*/
-        /*speed *= m_delta_t;*/
-        /*std::cout<< "speed: " << glm::to_string(speed) << std::endl;*/
-        /*obj->set_speed(speed);*/
-
-        obj->update();
+        obj->update(m_delta_t);
     }
 }
 void Game::render() {

@@ -25,6 +25,9 @@ namespace obj{
         uint32_t make_unit_sphere_vbo(const UnitSphereCreationData& data);
         uint32_t make_unit_sphere_ebo(const UnitSphereCreationData& data);
         UnitSphereCreationData make_unit_sphere();
+
+        inline static std::shared_ptr<UnitSphere> s_instance = nullptr;
+
     public:
         UnitSphere();
         UnitSphere(const UnitSphere&) = delete;
@@ -33,6 +36,8 @@ namespace obj{
         UnitSphere& operator=(UnitSphere&& other);
         ~UnitSphere();
         void draw() const;
+
+        static std::shared_ptr<UnitSphere> instance();
     };
 
     class CelestialBody {
@@ -42,6 +47,7 @@ namespace obj{
         PROTECTED_PROPERTY(glm::vec3, pos)
         PROTECTED_PROPERTY(glm::vec3, speed)
         PROTECTED_PROPERTY(glm::vec3, acceleration)
+        PROTECTED_PROPERTY(glm::vec3, color)
         PROTECTED_PROPERTY(float, mass)
     public:
         CelestialBody();
@@ -57,7 +63,7 @@ namespace obj{
         CelestialBody(CelestialBody&&);
         CelestialBody& operator=(CelestialBody&&);
         virtual ~CelestialBody();
-        virtual void update();
+        virtual void update(double& delta_t);
         virtual void render();
     };
 }
