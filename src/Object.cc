@@ -101,6 +101,8 @@ namespace obj {
         return m_radius;
     }
     void CelestialBody::update_radius() {
+        //get radius of a sphere form density equation,
+        //assuming the density of a planet to be equal to the density of earth
         m_radius = std::pow(m_mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
     }
     std::shared_ptr<Shader> CelestialBody::shader_instance(){

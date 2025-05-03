@@ -1,4 +1,7 @@
 #include "Object.hpp"
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include "shader/Shader.hpp"
 #include <GLFW/glfw3.h>
 #include <Game.hpp>
@@ -25,6 +28,10 @@ Game::Game(int32_t window_width, int32_t window_height):
 }
 Game::~Game(){
     glDeleteBuffers(1, &m_uniform_buffer);
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    m_bodies.clear();
     glfwDestroyWindow(m_window_ptr);
     glfwTerminate();
 }
@@ -103,6 +110,13 @@ void Game::initialize() {
                 );
     c_body->set_color({0.0, 0.0, 1.0});
     m_bodies.push_back(c_body);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui_ImplGlfw_InitForOpenGL(m_window_ptr, true);
+    ImGui_ImplOpenGL3_Init("#version 460");
 }
 void Game::run() {
     while(!glfwWindowShouldClose(m_window_ptr)){
@@ -111,16 +125,25 @@ void Game::run() {
         m_last_frame_t = m_current_frame_t;
         update();
         render();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(m_window_ptr);
     }
 }
 void Game::update() {
+    glfwPollEvents();
     m_view = m_camera.get_look_at();
     glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(m_view));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     keyboard_input();
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
+
     for(size_t body = 0; body < m_bodies.size(); body++){
         for(size_t next_body = body + 1; next_body < m_bodies.size(); next_body++){
             //https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
@@ -142,7 +165,6 @@ void Game::update() {
         }
     }
     update_bodies_pos();
-    glfwPollEvents();
 }
 void Game::update_bodies_pos() {
     for (auto& obj : m_bodies){

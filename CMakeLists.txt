@@ -16,6 +16,15 @@ add_executable(islands
     src/Camera.cc
     src/Game.cc
     src/Object.cc
+    src/imgui/imgui.cpp
+    src/imgui/imgui_demo.cpp
+    src/imgui/imgui_draw.cpp
+    src/imgui/imgui_tables.cpp
+    src/imgui/imgui_widgets.cpp
+    src/imgui/imgui_stdlib.cpp
+    src/imgui/backend/imgui_impl_glfw.cpp
+    # src/imgui/backend/imgui_impl_win32.cpp
+    src/imgui/backend/imgui_impl_opengl3.cpp
 )
 
 add_library(features INTERFACE)
