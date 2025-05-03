@@ -19,14 +19,9 @@
 #include <memory>
 
 namespace obj {
-    CelestialBody::CelestialBody(const char *shader): m_pos{glm::vec3(0)}, m_mass{1} {
-        m_shader = std::make_shared<Shader>(Shader::from_shader_dir(shader));
-        m_sphere = UnitSphere::instance();
-        m_acceleration = glm::vec3(0, 0, 0);
-        m_speed = glm::vec3(1, 0, 0);
+    CelestialBody::CelestialBody() : m_shader{nullptr}, m_sphere{nullptr} {
+        update_radius();
     }
-
-    CelestialBody::CelestialBody() : m_shader{nullptr}, m_sphere{nullptr} {}
 
     CelestialBody::CelestialBody(std::shared_ptr<Shader> shader,
                 glm::vec3 pos,
@@ -36,13 +31,15 @@ namespace obj {
         : m_shader{shader}, m_pos{pos}, m_speed{speed}, m_acceleration{acc}, m_mass{mass}
     {
         m_sphere = UnitSphere::instance();
+        if (!m_shader){
+            m_shader = CelestialBody::shader_instance();
+        }
+        update_radius();
     }
-    CelestialBody::CelestialBody(const char *vert, const char *frag)
-        : m_shader{std::make_unique<Shader>(Shader(vert, frag))} {}
     // copy constructor
     CelestialBody::CelestialBody(const CelestialBody &other)
         : m_pos{other.m_pos}, m_shader{other.m_shader}, m_sphere{other.m_sphere},
-          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}
     {}
     // copy assign
     CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
@@ -52,12 +49,13 @@ namespace obj {
       m_acceleration = other.m_acceleration;
       m_speed = other.m_speed;
       m_mass = other.m_mass;
+      m_radius = other.m_radius;
       return *this;
     }
     //move constructor
     CelestialBody::CelestialBody(CelestialBody &&other)
         : m_pos{other.m_pos}, m_shader{std::move(other.m_shader)}, m_sphere{std::move(other.m_sphere)},
-          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}
     {
       other.m_shader = nullptr;
       other.m_sphere = nullptr;
@@ -70,6 +68,7 @@ namespace obj {
       m_acceleration = other.m_acceleration;
       m_speed = other.m_speed;
       m_mass = other.m_mass;
+      m_radius = other.m_radius;
       other.m_sphere = nullptr;
       other.m_shader = nullptr;
       return *this;
@@ -85,10 +84,32 @@ namespace obj {
     void CelestialBody::render(){
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);
+        model = glm::scale(model, glm::vec3(1) * m_radius);
         m_shader->use_shader();
         m_shader->set_mat4(name_of(model), model);
         m_shader->set_vec3(name_of(color), m_color);
         m_sphere->draw();
+    }
+    float CelestialBody::get_mass() const {
+        return m_mass;
+    }
+    void CelestialBody::set_mass(float m){
+        m_mass = m;
+        update_radius();
+    }
+    float CelestialBody::get_radius() const {
+        return m_radius;
+    }
+    void CelestialBody::update_radius() {
+        m_radius = std::pow(m_mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
+    }
+    std::shared_ptr<Shader> CelestialBody::shader_instance(){
+        if(s_c_body_shader){
+            return s_c_body_shader;
+        } else {
+            s_c_body_shader = std::make_shared<Shader>(Shader::from_shader_dir(CelestialBody::C_BODY_SHADER_FILE));
+            return s_c_body_shader;
+        }
     }
 
     UnitSphere::UnitSphere(){

@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <functional>
 #include <glm/gtc/type_ptr.hpp>
+#include <memory>
 #include <shader/Shader.hpp>
 
 constexpr const char* SHADER_DIR_PREFIX = "./game_data/shaders/";
@@ -30,7 +31,7 @@ Shader& Shader::operator=(Shader&& other){
 Shader::~Shader(){
     glDeleteShader(m_shader_id);
 }
-Shader::Shader(const std::string& vert_path, const std::string& frag_path) {
+Shader::Shader(const std::string& vert_path, const std::string& frag_path) try {
     /*std::cout << "vert_path: " << vert_path << "\nfrag_path: " << frag_path << '\n';*/
     std::ifstream vert_file;
     std::ifstream frag_file;
@@ -66,7 +67,6 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path) {
         std::stringstream err_stream;
         err_stream << "Vertex shader compile error: ";
         err_stream << info_log;
-        err_stream << "\n";
         std::string err_msg = err_stream.str();
         throw std::runtime_error{std::move(err_msg)};
     }
@@ -79,7 +79,6 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path) {
         std::stringstream err_stream;
         err_stream << "Fragment shader compile error: ";
         err_stream << info_log;
-        err_stream << "\n";
         std::string err_msg = err_stream.str();
         throw std::runtime_error{std::move(err_msg)};
     }
@@ -94,14 +93,20 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path) {
         std::stringstream err_stream;
         err_stream << "Shader link error: ";
         err_stream << info_log;
-        err_stream << "\n";
         std::string err_msg = err_stream.str();
         throw std::runtime_error{std::move(err_msg)};
     }
 
     glDeleteShader(vert_id);
     glDeleteShader(frag_id);
+} catch(const std::runtime_error& e){
+    std::stringstream err_stream;
+    err_stream << "Shader creation error: ";
+    err_stream << e.what();
+    std::string err_msg = err_stream.str();
+    throw std::runtime_error{std::move(err_msg)};
 }
+
 Shader Shader::from_shader_dir(const std::string& name) {
     std::stringstream ss{};
     ss << SHADER_DIR_PREFIX;

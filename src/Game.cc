@@ -71,7 +71,7 @@ void Game::initialize() {
     glEnable(GL_CULL_FACE);
     /*glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);*/
     m_projection = glm::perspective(glm::radians(70.0f),
-            (float)m_width / (float)m_height, 0.1f, 100.0f);
+            (float)m_width / (float)m_height, 0.1f, 1000.0f);
     /*std::cout << "m_projection = " << glm::to_string(m_projection) << std::endl;*/
 
     glGenBuffers(1, &m_uniform_buffer);
@@ -86,17 +86,22 @@ void Game::initialize() {
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);
 
 
-    auto shader = std::make_shared<Shader>(Shader::from_shader_dir("test"));
-    auto c_body =   std::make_shared<obj::CelestialBody>(
-                obj::CelestialBody(shader, {2.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.05f}, {0.0f, 0.0f, 0.0f}, 4000)
+    auto c_body = std::make_shared<obj::CelestialBody>(
+                obj::CelestialBody(nullptr, {2.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 100)
                 );
     c_body->set_color({1.0, .1, .1});
     m_bodies.push_back(c_body);
 
     c_body = std::make_shared<obj::CelestialBody>(
-                obj::CelestialBody(shader, {-20.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.05f}, {0.0f, 0.0f, 0.0f}, 5000)
+                obj::CelestialBody(nullptr, {-10.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, 0.0f}, 10)
                 );
     c_body->set_color({0.0, 1.0, .1});
+    m_bodies.push_back(c_body);
+
+    c_body = std::make_shared<obj::CelestialBody>(
+                obj::CelestialBody(nullptr, {0.0f, 0.0f, 10.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 25)
+                );
+    c_body->set_color({0.0, 0.0, 1.0});
     m_bodies.push_back(c_body);
 }
 void Game::run() {
@@ -122,30 +127,18 @@ void Game::update() {
             auto b_1 = m_bodies[body];
             auto b_2 = m_bodies[next_body];
 
-            auto m_1 = b_1->get_mass();
-            auto m_2 = b_2->get_mass();
+            auto m_1 = b_1->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;
+            auto m_2 = b_2->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;
 
             auto r_21 = b_2->get_pos() - b_1->get_pos();
             auto r_21_hat = glm::normalize(r_21);
             auto distance = glm::distance(b_1->get_pos(), b_2->get_pos());
-            /*std::cout << "r_21: " << glm::to_string(r_21) <<"\nr21_hat: " << glm::to_string(r_21_hat) << std::endl;*/
             //attraction force
             auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (distance * distance)) * r_21_hat;
             auto f_12 = -f_21;
 
-            /*std::cout << "f_21: " << glm::to_string(f_21) << "\nf_12: " << glm::to_string(f_12) << std::endl;*/
-            /*break;*/
-
-            /*continue;*/
-            auto b_1_acc = b_1->get_acceleration();
-            b_1_acc += f_12;
-            /*std::cout << "b_1_acc: " << glm::to_string(b_1_acc) << std::endl;*/
-            b_1->set_acceleration(b_1_acc);
-
-            auto b_2_acc = b_2->get_acceleration();
-            b_2_acc += f_21;
-            /*std::cout << "b_2_acc: " << glm::to_string(b_2_acc) << std::endl;*/
-            b_2->set_acceleration(b_2_acc);
+            b_1->set_speed(b_1->get_speed() + f_12);
+            b_2->set_speed(b_2->get_speed() + f_21);
         }
     }
     update_bodies_pos();

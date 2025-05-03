@@ -16,7 +16,7 @@ glm::mat4 Camera::get_look_at() {
     return glm::lookAt(m_pos, m_pos + m_front, m_up);
 }
 void Camera::keyboard_input(GLFWwindow* window, double delta_t) {
-    const float camera_speed = 2.5f * delta_t; // adjust accordingly
+    const float camera_speed = 5.5f * delta_t; // adjust accordingly
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         m_pos += camera_speed * m_front;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
