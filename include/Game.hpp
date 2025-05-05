@@ -1,6 +1,7 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 #include "Object.hpp"
+#include "Gui.hpp"
 #include <glad/glad.h>
 #include <Camera.hpp>
 #include <cstdint>
@@ -28,6 +29,7 @@ private:
     glm::mat4 m_view{};
     glm::mat4 m_projection{};
     std::vector<std::shared_ptr<obj::CelestialBody>> m_bodies{};
+    gui::GameUI m_gui{};
 private:
     void initialize();
     void update();

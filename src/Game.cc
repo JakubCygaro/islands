@@ -142,7 +142,7 @@ void Game::update() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
+    /*ImGui::ShowDemoWindow();*/
 
     for(size_t body = 0; body < m_bodies.size(); body++){
         for(size_t next_body = body + 1; next_body < m_bodies.size(); next_body++){
