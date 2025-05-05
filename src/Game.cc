@@ -66,7 +66,7 @@ void Game::initialize() {
     /*glfwSetScrollCallback(window, scroll_callback);*/
 
     // tell GLFW to capture our mouse
-    glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    /*glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);*/
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -144,6 +144,8 @@ void Game::update() {
     ImGui::NewFrame();
     /*ImGui::ShowDemoWindow();*/
 
+    if (m_gui_enabled) draw_gui();
+
     for(size_t body = 0; body < m_bodies.size(); body++){
         for(size_t next_body = body + 1; next_body < m_bodies.size(); next_body++){
             //https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
@@ -178,6 +180,12 @@ void Game::render() {
         c_obj->render();
     }
 }
+void Game::draw_gui() {
+    ImGui::Begin("Spawn menu");
+
+    ImGui::End();
+
+}
 void Game::keyboard_input(){
     if (glfwGetKey(m_window_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(m_window_ptr, true);
@@ -188,7 +196,15 @@ void Game::keyboard_input(){
     /*    else*/
     /*        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
     /*}*/
-    m_camera.keyboard_input(m_window_ptr, m_delta_t);
+    // toggle the gui with [E]dit
+    if (glfwGetKey(m_window_ptr, GLFW_KEY_E) == GLFW_PRESS){
+        m_gui_enabled = !m_gui_enabled;
+        if(m_gui_enabled)
+            glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        else
+            glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+    if(!m_gui_enabled) m_camera.keyboard_input(m_window_ptr, m_delta_t);
 }
 void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height){
     glViewport(0, 0, width, height);
@@ -204,6 +220,7 @@ void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos){
     m_last_mouse_x = xpos;
     m_last_mouse_y = ypos;
 
+    if(m_gui_enabled) return;
     const float sensitivity = 0.1f;
     x_offset *= sensitivity;
     y_offset *= sensitivity;

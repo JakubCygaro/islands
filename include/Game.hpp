@@ -22,6 +22,7 @@ private:
     double m_last_mouse_y{};
     bool m_first_mouse{true};
     bool m_wireframe{false};
+    bool m_gui_enabled{true};
     GLFWwindow* m_window_ptr{nullptr};
     Camera m_camera;
 
@@ -38,6 +39,7 @@ private:
     void keyboard_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);
     void mouse_handler(GLFWwindow* window, double x, double y);
+    void draw_gui();
 public:
     Game() = delete;
     ~Game();

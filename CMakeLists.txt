@@ -16,6 +16,7 @@ add_executable(islands
     src/Camera.cc
     src/Game.cc
     src/Object.cc
+    src/Gui.cc
     src/imgui/imgui.cpp
     src/imgui/imgui_demo.cpp
     src/imgui/imgui_draw.cpp
