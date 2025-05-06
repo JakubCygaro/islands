@@ -7,6 +7,7 @@
 #include <Game.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
@@ -126,6 +127,7 @@ void Game::initialize() {
     ImGui_ImplOpenGL3_Init("#version 460");
     m_gui.game_options_menu.camera_speed = m_camera.get_speed();
     m_gui.game_options_menu.fov = m_fov;
+    m_gui.help_menu_enabled = true;
 }
 void Game::run() {
     while(!glfwWindowShouldClose(m_window_ptr)){
@@ -212,6 +214,20 @@ void Game::draw_gui() {
         }
         ImGui::End();
     }
+    if(m_gui.help_menu_enabled){
+        ImGui::Begin("Help", &m_gui.help_menu_enabled);
+        ImGui::Text("Hello! Islands is a simple 3D gravity simulation.\n");
+        ImGui::Text(
+                "You can pause the game with [P]\n"
+                "Toggle edit mode with [E]\n"
+                "In edit mode toggle the spawn menu with [S]\n"
+                "Spawn objects with [Shift-S]\n"
+                "Toggle the options menu with [O]\n"
+                "Toggle this help window with [H]\n"
+                "Exit with [Esc]"
+                );
+        ImGui::End();
+    }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods){
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
@@ -219,7 +235,6 @@ void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, in
     }
     // toggle the gui with [E]dit
     if (key == GLFW_KEY_E && action == GLFW_PRESS){
-        /*std::printf("editor mode\n");*/
         m_gui_enabled = !m_gui_enabled;
         if(m_gui_enabled)
             glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -245,6 +260,9 @@ void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, in
         }
         if(key == GLFW_KEY_S && action == GLFW_PRESS){
             m_gui.spawn_menu_enabled = !m_gui.spawn_menu_enabled;
+        }
+        if(key == GLFW_KEY_H && action == GLFW_PRESS){
+            m_gui.help_menu_enabled = !m_gui.help_menu_enabled;
         }
     }
     // Simulation mode specific keybinds
@@ -288,6 +306,17 @@ void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos){
     auto pitch = m_camera.get_pitch();
     pitch += y_offset;
     m_camera.set_pitch(pitch);
+    if(!m_gui_enabled && glfwGetMouseButton(m_window_ptr, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS){
+        float x = (2.0f * xpos) / m_width - 1.0f;
+        float y = 1.0f - (2.0f * ypos) / m_height;
+        float z = -1.0f;
+        glm::vec4 ray_clip = glm::vec4(x, y, z, 1.0f);
+        glm::vec4 ray_eye = glm::inverse(m_projection) * ray_clip;
+        ray_eye = glm::vec4(ray_eye.x, ray_eye.y, 1.0, 0.0);
+        glm::vec3 ray_world = (glm::inverse(m_view) * ray_eye);
+        ray_world = glm::normalize(ray_world);
+        // TODO: sphere ray casting
+    }
 }
 
 void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset) {

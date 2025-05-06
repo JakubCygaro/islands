@@ -13,12 +13,17 @@ namespace gui {
         float camera_speed{};
         float fov{70.0};
     };
+    struct HelpMenu {
+
+    };
     struct GameUI {
         std::weak_ptr<obj::CelestialBody> selected_body{};
         bool spawn_menu_enabled{false};
         SpawnMenu spawn_menu{};
         bool game_options_menu_enabled{false};
         GameOptionsMenu game_options_menu{};
+        bool help_menu_enabled{false};
+        HelpMenu help_menu{};
         GameUI();
     };
 }
