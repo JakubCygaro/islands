@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <Game.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
@@ -22,7 +23,8 @@ Game::Game(int32_t window_width, int32_t window_height):
     m_width{window_width},
     m_height{window_height},
     m_camera{Camera(glm::vec3(0,0,3), glm::vec3(0))},
-    m_uniform_buffer{0}
+    m_uniform_buffer{0},
+    m_fov{70}
 {
     initialize();
 }
@@ -59,11 +61,16 @@ void Game::initialize() {
         instance->mouse_handler(window, x, y);
     };
     glfwSetCursorPosCallback(m_window_ptr, mouse_callback);
-    /*auto scroll_callback = [](GLFWwindow* window, double x, double y){*/
-    /*    Game* instance = get_game_instance_ptr_from_window(window);*/
-    /*    instance->mouse_handler(window, x, y);*/
-    /*};*/
-    /*glfwSetScrollCallback(window, scroll_callback);*/
+    auto key_callback = [](GLFWwindow* window, int key, int scancode, int action, int mods){
+        Game* instance = get_game_instance_ptr_from_window(window);
+        instance->key_handler(window, key, scancode, action, mods);
+    };
+    glfwSetKeyCallback(m_window_ptr, key_callback);
+    auto scroll_callback = [](GLFWwindow* window, double xoffset, double yoffset){
+        Game* instance = get_game_instance_ptr_from_window(window);
+        instance->scroll_handler(window, xoffset, yoffset);
+    };
+    glfwSetScrollCallback(m_window_ptr, scroll_callback);
 
     // tell GLFW to capture our mouse
     /*glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);*/
@@ -77,7 +84,7 @@ void Game::initialize() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     /*glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);*/
-    m_projection = glm::perspective(glm::radians(70.0f),
+    m_projection = glm::perspective(glm::radians(m_fov),
             (float)m_width / (float)m_height, 0.1f, 1000.0f);
     /*std::cout << "m_projection = " << glm::to_string(m_projection) << std::endl;*/
 
@@ -117,6 +124,8 @@ void Game::initialize() {
 
     ImGui_ImplGlfw_InitForOpenGL(m_window_ptr, true);
     ImGui_ImplOpenGL3_Init("#version 460");
+    m_gui.game_options_menu.camera_speed = m_camera.get_speed();
+    m_gui.game_options_menu.fov = m_fov;
 }
 void Game::run() {
     while(!glfwWindowShouldClose(m_window_ptr)){
@@ -135,17 +144,21 @@ void Game::update() {
     m_view = m_camera.get_look_at();
     glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(m_view));
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    keyboard_input();
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     /*ImGui::ShowDemoWindow();*/
-
+    continuos_key_input();
     if (m_gui_enabled) draw_gui();
-
+    if(!m_paused){
+        update_bodies_pos();
+    }
+}
+void Game::update_bodies_pos() {
     for(size_t body = 0; body < m_bodies.size(); body++){
         for(size_t next_body = body + 1; next_body < m_bodies.size(); next_body++){
             //https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
@@ -166,9 +179,6 @@ void Game::update() {
             b_2->set_speed(b_2->get_speed() + f_21);
         }
     }
-    update_bodies_pos();
-}
-void Game::update_bodies_pos() {
     for (auto& obj : m_bodies){
         obj->update(m_delta_t);
     }
@@ -181,30 +191,77 @@ void Game::render() {
     }
 }
 void Game::draw_gui() {
-    ImGui::Begin("Spawn menu");
+    if(m_gui.spawn_menu_enabled){
+        ImGui::Begin("Spawn menu", &m_gui.spawn_menu_enabled);
+        ImGui::ColorEdit3("Color", glm::value_ptr(m_gui.spawn_menu.color));
+        ImGui::SliderFloat("Mass", &m_gui.spawn_menu.mass, 0.001, 100, NULL, 0);
+        if(m_gui.spawn_menu.mass <= 0) m_gui.spawn_menu.mass = 0.001;
+        ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
+        ImGui::End();
+    }
 
-    ImGui::End();
-
+    if(m_gui.game_options_menu_enabled){
+        ImGui::Begin("Game Options", &m_gui.game_options_menu_enabled, 0);
+        if(ImGui::SliderFloat("Camera speed", &m_gui.game_options_menu.camera_speed, 0, 100, NULL, ImGuiSliderFlags_AlwaysClamp)){
+            m_camera.set_speed(m_gui.game_options_menu.camera_speed);
+        }
+        if(ImGui::SliderFloat("Camera FOV", &m_gui.game_options_menu.fov, 30, 120, NULL, ImGuiSliderFlags_AlwaysClamp)){
+            m_fov = m_gui.game_options_menu.fov;
+            m_projection = glm::perspective(glm::radians(m_fov),
+                    (float)m_width / (float)m_height, 0.1f, 1000.0f);
+        }
+        ImGui::End();
+    }
 }
-void Game::keyboard_input(){
-    if (glfwGetKey(m_window_ptr, GLFW_KEY_ESCAPE) == GLFW_PRESS){
+void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods){
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         glfwSetWindowShouldClose(m_window_ptr, true);
     }
-    /*if (glfwGetKey(m_window_ptr, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(m_window_ptr, GLFW_KEY_W) == GLFW_PRESS){*/
-    /*    if(m_wireframe)*/
-    /*        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);*/
-    /*    else*/
-    /*        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
-    /*}*/
     // toggle the gui with [E]dit
-    if (glfwGetKey(m_window_ptr, GLFW_KEY_E) == GLFW_PRESS){
+    if (key == GLFW_KEY_E && action == GLFW_PRESS){
+        /*std::printf("editor mode\n");*/
         m_gui_enabled = !m_gui_enabled;
         if(m_gui_enabled)
             glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         else
             glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
-    if(!m_gui_enabled) m_camera.keyboard_input(m_window_ptr, m_delta_t);
+    if(key == GLFW_KEY_P && action == GLFW_PRESS){
+        m_paused = !m_paused;
+    }
+    // Shift + S -> spawn object
+    if(key == GLFW_KEY_S && action == GLFW_PRESS && glfwGetKey(m_window_ptr, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+        auto front = m_camera.get_front();
+        auto pos = m_camera.get_pos() + front;
+        auto vel = glm::normalize(front) * m_gui.spawn_menu.initial_velocity;
+        auto obj = std::make_shared<obj::CelestialBody>(obj::CelestialBody(nullptr, pos, vel, glm::vec3(0), m_gui.spawn_menu.mass));
+        obj->set_color(m_gui.spawn_menu.color);
+        m_bodies.emplace_back(std::move(obj));
+    }
+    // Editor mode specifyc keybinds
+    if(m_gui_enabled){
+        if(key == GLFW_KEY_O && action == GLFW_PRESS){
+            m_gui.game_options_menu_enabled = !m_gui.game_options_menu_enabled;
+        }
+        if(key == GLFW_KEY_S && action == GLFW_PRESS){
+            m_gui.spawn_menu_enabled = !m_gui.spawn_menu_enabled;
+        }
+    }
+    // Simulation mode specific keybinds
+    else {
+        m_camera.keyboard_input(m_window_ptr, m_delta_t);
+    }
+}
+
+void Game::continuos_key_input() {
+    // Editor mode specifyc keybinds
+    if(m_gui_enabled){
+
+    }
+    // Simulation mode specific keybinds
+    else {
+        m_camera.keyboard_input(m_window_ptr, m_delta_t);
+    }
 }
 void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height){
     glViewport(0, 0, width, height);
@@ -231,6 +288,10 @@ void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos){
     auto pitch = m_camera.get_pitch();
     pitch += y_offset;
     m_camera.set_pitch(pitch);
+}
+
+void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset) {
+    m_camera.set_speed(m_camera.get_speed() + yoffset);
 }
 
 static Game* get_game_instance_ptr_from_window(GLFWwindow* window){

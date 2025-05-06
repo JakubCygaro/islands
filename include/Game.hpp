@@ -20,9 +20,11 @@ private:
     double m_current_frame_t{};
     double m_last_mouse_x{};
     double m_last_mouse_y{};
+    float m_fov{};
     bool m_first_mouse{true};
     bool m_wireframe{false};
     bool m_gui_enabled{true};
+    bool m_paused{false};
     GLFWwindow* m_window_ptr{nullptr};
     Camera m_camera;
 
@@ -36,10 +38,13 @@ private:
     void update();
     void update_bodies_pos();
     void render();
-    void keyboard_input();
+    void continuos_key_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);
-    void mouse_handler(GLFWwindow* window, double x, double y);
     void draw_gui();
+
+    void key_handler(GLFWwindow* window, int key, int scancode, int action, int mods);
+    void mouse_handler(GLFWwindow* window, double x, double y);
+    void scroll_handler(GLFWwindow* window, double xoffset, double yoffset);
 public:
     Game() = delete;
     ~Game();

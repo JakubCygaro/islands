@@ -21,6 +21,7 @@ private:
   PROPERTY(float, yaw);
   PROPERTY(float, pitch);
   PROPERTY(glm::vec3, pos);
+  PROPERTY(float, speed);
 
 public:
   Camera(glm::vec3 pos = glm::vec3(0), glm::vec3 target = glm::vec3(0),
@@ -29,6 +30,7 @@ public:
   glm::mat4 get_look_at() ;
   void keyboard_input(GLFWwindow *window, double delta_t);
   /*void mouse_input(GLFWwindow *window, double delta_t);*/
+  glm::vec3 get_front() const;
 
 private:
   void update_vectors();

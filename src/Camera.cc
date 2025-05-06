@@ -7,7 +7,8 @@ Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 world_up, float yaw,
     m_world_up{world_up},
     m_front{-glm::normalize(pos - target)},
     m_yaw{yaw},
-    m_pitch{pitch}
+    m_pitch{pitch},
+    m_speed{3.0f}
 {
     update_vectors();
 }
@@ -16,15 +17,15 @@ glm::mat4 Camera::get_look_at() {
     return glm::lookAt(m_pos, m_pos + m_front, m_up);
 }
 void Camera::keyboard_input(GLFWwindow* window, double delta_t) {
-    const float camera_speed = 5.5f * delta_t; // adjust accordingly
+    const float camera_speed = m_speed * delta_t; // adjust accordingly
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         m_pos += camera_speed * m_front;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         m_pos -= camera_speed * m_front;
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        m_pos -= glm::normalize(glm::cross(m_front, m_world_up)) * camera_speed;
+        m_pos -= m_right * camera_speed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        m_pos += glm::normalize(glm::cross(m_front, m_world_up)) * camera_speed;
+        m_pos += m_right * camera_speed;
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         m_pos += m_up * camera_speed;
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
@@ -44,6 +45,9 @@ void Camera::update_vectors() {
     m_right = glm::normalize(glm::cross(m_front, m_world_up));
 
     m_up = glm::normalize(glm::cross(m_right, m_front));
+}
+glm::vec3 Camera::get_front() const {
+    return this->m_front;
 }
 /*float& Camera::yaw(){*/
 /*    return m_yaw;*/
