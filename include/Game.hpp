@@ -46,6 +46,7 @@ private:
     void key_handler(GLFWwindow* window, int key, int scancode, int action, int mods);
     void mouse_handler(GLFWwindow* window, double x, double y);
     void scroll_handler(GLFWwindow* window, double xoffset, double yoffset);
+    void mouse_button_handler(GLFWwindow* window, int button, int action, int mods);
 
 public:
     Game() = delete;
