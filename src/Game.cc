@@ -362,6 +362,7 @@ void Game::initialize_key_bindings() {
     });
     // [P]ause the game
     m_keybinds.add_binding(GLFW_KEY_P, GLFW_PRESS, BindMode::Any, [this](){
+        std::printf("pause\n");
         m_paused = !m_paused;
     });
     // Shift + S -> spawn object
@@ -383,9 +384,11 @@ void Game::initialize_key_bindings() {
     // }
     // Editor mode specifyc keybinds
     m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this](){
+        std::printf("options\n");
         this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled;
     });
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Editor, [this](){
+        std::printf("spawn\n");
         this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled;
     });
     // Simulation mode specific keybinds

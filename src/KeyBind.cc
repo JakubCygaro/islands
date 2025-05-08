@@ -4,8 +4,8 @@
 KeyBind::KeyBind(int key, int action, BindMode mode, int mods)
     : m_key { key }
     , m_action { action }
-    , m_mode { mode }
-    , m_mods(mods)
+    , m_mode { mods }
+    , m_mods {mods}
 {
 }
 
