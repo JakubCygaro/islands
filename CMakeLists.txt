@@ -17,6 +17,7 @@ add_executable(islands
     src/Game.cc
     src/Object.cc
     src/Gui.cc
+    src/KeyBind.cc
     src/imgui/imgui.cpp
     src/imgui/imgui_demo.cpp
     src/imgui/imgui_draw.cpp
