@@ -1,4 +1,5 @@
 #include "Object.hpp"
+#include <glm/ext/vector_float3.hpp>
 #include <memory>
 #ifndef GUI_HPP
 #define GUI_HPP
@@ -15,8 +16,13 @@ struct GameOptionsMenu {
 };
 struct HelpMenu {
 };
+struct SelectedBodyMenu {
+    glm::vec3 color;
+    float mass;
+};
 struct GameUI {
-    std::shared_ptr<obj::CelestialBody> selected_body {};
+    std::weak_ptr<obj::CelestialBody> selected_body {};
+    SelectedBodyMenu selected_body_menu{};
     bool spawn_menu_enabled { false };
     SpawnMenu spawn_menu {};
     bool game_options_menu_enabled { false };

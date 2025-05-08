@@ -237,9 +237,16 @@ void Game::draw_gui()
             "Exit with [Esc]");
         ImGui::End();
     }
-    if (m_gui.selected_body){
+    if (!m_gui.selected_body.expired()){
         ImGui::Begin("Selected Celestial Body");
-
+        if(ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))){
+            m_gui.selected_body.lock()->set_color(m_gui.selected_body_menu.color);
+        }
+        if(ImGui::SliderFloat("Object mass", &m_gui.selected_body_menu.mass, 0.001, 1000)) {
+            if (m_gui.selected_body_menu.mass <= 0)
+                m_gui.selected_body_menu.mass = 0.001;
+            m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
+        }
         ImGui::End();
     }
 }
@@ -338,19 +345,15 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
     double xpos = 0, ypos = 0;
     glfwGetCursorPos(window, &xpos, &ypos);
     if (m_gui_enabled && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        /*std::printf("ray cast\n");*/
-        /*std::printf("xpos = %f, ypos = %f\n", xpos, ypos);*/
         float x = (2.0f * xpos) / m_width - 1.0f;
         float y = 1.0f - (2.0f * ypos) / m_height;
         float z = 1.0f;
-        /*std::printf("x = %f, y = %f\n", x, y);*/
         glm::vec3 ray_nds = glm::vec3(x, y, z);
         glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, -1.0f, 1.0f);
         glm::vec4 ray_eye = glm::inverse(m_projection) * ray_clip;
         ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0, 0.0);
         glm::vec3 ray_world = (glm::inverse(m_view) * ray_eye);
         ray_world = glm::normalize(ray_world);
-        // TODO: sphere ray casting
         glm::vec3 origin = m_camera.get_pos();
         std::optional<float> smallest_distance = std::nullopt;
         for (auto& obj : m_bodies) {
@@ -363,17 +366,15 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
             std::optional<float> distance;
             if(discr < 0) continue;
             else if(discr > 0){
-                std::printf("delta > 0\n");
                 distance = std::min(-b + std::sqrt(discr), -b - std::sqrt(discr)) / 2.0;
             } else {
-                std::printf("delta = 0\n");
                 distance = -b / 2.0;
             }
-            printf("distance = %f\n", distance.value_or(-1));
             if (distance < smallest_distance.value_or(1000) && distance >= 0){
-                printf("sellecting\n");
                 smallest_distance = distance;
                 m_gui.selected_body = obj;
+                m_gui.selected_body_menu.mass = obj->get_mass();
+                m_gui.selected_body_menu.color = obj->get_color();
             }
         }
     }
