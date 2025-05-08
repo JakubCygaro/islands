@@ -237,7 +237,7 @@ void Game::draw_gui()
             "Exit with [Esc]");
         ImGui::End();
     }
-    if (!m_gui.selected_body.expired()){
+    if (m_gui.selected_body){
         ImGui::Begin("Selected Celestial Body");
 
         ImGui::End();
@@ -338,14 +338,14 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
     double xpos = 0, ypos = 0;
     glfwGetCursorPos(window, &xpos, &ypos);
     if (m_gui_enabled && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        std::printf("ray cast\n");
-        std::printf("xpos = %f, ypos = %f\n", xpos, ypos);
+        /*std::printf("ray cast\n");*/
+        /*std::printf("xpos = %f, ypos = %f\n", xpos, ypos);*/
         float x = (2.0f * xpos) / m_width - 1.0f;
         float y = 1.0f - (2.0f * ypos) / m_height;
-        float z = -1.0f;
-        std::printf("x = %f, y = %f\n", x, y);
+        float z = 1.0f;
+        /*std::printf("x = %f, y = %f\n", x, y);*/
         glm::vec3 ray_nds = glm::vec3(x, y, z);
-        glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, z, 1.0f);
+        glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, -1.0f, 1.0f);
         glm::vec4 ray_eye = glm::inverse(m_projection) * ray_clip;
         ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0, 0.0);
         glm::vec3 ray_world = (glm::inverse(m_view) * ray_eye);
@@ -355,19 +355,23 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
         std::optional<float> smallest_distance = std::nullopt;
         for (auto& obj : m_bodies) {
             glm::vec3 center = obj->get_pos();
-            auto b = glm::length(ray_world * (origin - center));
-            auto c = std::pow(glm::distance(origin, center), 2) - std::pow(obj->get_radius(), 2);
-            auto delta = (b * b) - c;
+            auto l = origin - center;
+            auto a  = 1;
+            auto b = 2 * glm::dot(ray_world, l);
+            auto c = glm::dot(l, l) - std::pow(obj->get_radius(), 2);
+            auto discr = (b * b) - 4 * c;
             std::optional<float> distance;
-            if(delta < 0) continue;
-            else if(delta > 0){
+            if(discr < 0) continue;
+            else if(discr > 0){
                 std::printf("delta > 0\n");
-                distance = std::min(-b + std::sqrt(delta), -b - std::sqrt(delta));
+                distance = std::min(-b + std::sqrt(discr), -b - std::sqrt(discr)) / 2.0;
             } else {
                 std::printf("delta = 0\n");
                 distance = -b / 2.0;
             }
-            if (distance < smallest_distance){
+            printf("distance = %f\n", distance.value_or(-1));
+            if (distance < smallest_distance.value_or(1000) && distance >= 0){
+                printf("sellecting\n");
                 smallest_distance = distance;
                 m_gui.selected_body = obj;
             }
