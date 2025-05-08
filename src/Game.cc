@@ -25,12 +25,13 @@ static Game* get_game_instance_ptr_from_window(GLFWwindow* window);
 Game::Game(int32_t window_width, int32_t window_height)
     : m_width { window_width }
     , m_height { window_height }
+    , m_fov { 70 }
     , m_camera { Camera(glm::vec3(0, 0, 3), glm::vec3(0)) }
     , m_uniform_buffer { 0 }
-    , m_fov { 70 }
 {
     initialize();
     initialize_key_bindings();
+    m_gui.help_menu.help_text = m_keybinds.gen_help_text();
 }
 Game::~Game()
 {
@@ -92,10 +93,8 @@ void Game::initialize()
     }
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    /*glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);*/
     m_projection = glm::perspective(glm::radians(m_fov),
         (float)m_width / (float)m_height, 0.1f, 1000.0f);
-    /*std::cout << "m_projection = " << glm::to_string(m_projection) << std::endl;*/
 
     glGenBuffers(1, &m_uniform_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
@@ -229,14 +228,7 @@ void Game::draw_gui()
     if (m_gui.help_menu_enabled) {
         ImGui::Begin("Help", &m_gui.help_menu_enabled);
         ImGui::Text("Hello! Islands is a simple 3D gravity simulation.\n");
-        ImGui::Text(
-            "You can pause the game with [P]\n"
-            "Toggle edit mode with [E]\n"
-            "In edit mode toggle the spawn menu with [S]\n"
-            "Spawn objects with [Shift-S]\n"
-            "Toggle the options menu with [O]\n"
-            "Toggle this help window with [H]\n"
-            "Exit with [Esc]");
+        ImGui::Text("%s", m_gui.help_menu.help_text.c_str());
         ImGui::End();
     }
     if (!m_gui.selected_body.expired()){
@@ -249,14 +241,18 @@ void Game::draw_gui()
                 m_gui.selected_body_menu.mass = 0.001;
             m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
         }
+        if(ImGui::Button("Delete body")){
+            
+        }
         ImGui::End();
     }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    (void)window;
+    (void)scancode;
     m_keybinds.handle(key, action, m_gui_enabled ? BindMode::Editor : BindMode::Normal, mods);
     m_keybinds.handle(key, action, BindMode::Any, mods);
-
 }
 
 void Game::continuos_key_input()
@@ -272,12 +268,14 @@ void Game::continuos_key_input()
 }
 void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
 {
+    (void)window;
     glViewport(0, 0, width, height);
     m_width = width;
     m_height = height;
 }
 void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos)
 {
+    (void)window;
     if (m_first_mouse) {
         m_last_mouse_x = xpos;
         m_last_mouse_y = ypos;
@@ -304,10 +302,13 @@ void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos)
 
 void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset)
 {
-    m_camera.set_speed(m_camera.get_speed() + yoffset);
+    (void)window;
+    (void)xoffset;
+    m_camera.set_speed(std::max(m_camera.get_speed() + yoffset, 0.0));
 }
 
 void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int mods) {
+    (void)mods;
     double xpos = 0, ypos = 0;
     glfwGetCursorPos(window, &xpos, &ypos);
     if (m_gui_enabled && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
@@ -325,7 +326,6 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
         for (auto& obj : m_bodies) {
             glm::vec3 center = obj->get_pos();
             auto l = origin - center;
-            auto a  = 1;
             auto b = 2 * glm::dot(ray_world, l);
             auto c = glm::dot(l, l) - std::pow(obj->get_radius(), 2);
             auto discr = (b * b) - 4 * c;
@@ -348,24 +348,23 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
 void Game::initialize_key_bindings() {
     m_keybinds.add_binding(GLFW_KEY_H, GLFW_PRESS, BindMode::Editor, [this](){
         this->m_gui.help_menu_enabled = !this->m_gui.help_menu_enabled;
-    });
+    }, "Toggle this help menu");
     m_keybinds.add_binding(GLFW_KEY_ESCAPE, GLFW_PRESS, BindMode::Any, [this](){
         glfwSetWindowShouldClose(this->m_window_ptr, true);
-    });
-    // toggle the gui with [E]dit
+    }, "Exit the simulation");
+    // // toggle the gui with [E]dit
     m_keybinds.add_binding(GLFW_KEY_E, GLFW_PRESS, BindMode::Any, [this](){
         this->m_gui_enabled = !this->m_gui_enabled;
         if (this->m_gui_enabled)
             glfwSetInputMode(this->m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         else
             glfwSetInputMode(this->m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    });
-    // [P]ause the game
+    }, "Toggle edit mode");
+    // // [P]ause the game
     m_keybinds.add_binding(GLFW_KEY_P, GLFW_PRESS, BindMode::Any, [this](){
-        std::printf("pause\n");
-        m_paused = !m_paused;
-    });
-    // Shift + S -> spawn object
+        this->m_paused = !this->m_paused;
+    }, "Pause the simulation");
+    // // Shift + S -> spawn object
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this](){
         auto front = this->m_camera.get_front();
         auto pos = this->m_camera.get_pos() + front;
@@ -373,24 +372,14 @@ void Game::initialize_key_bindings() {
         auto obj = std::make_shared<obj::CelestialBody>(obj::CelestialBody(nullptr, pos, vel, glm::vec3(0), this->m_gui.spawn_menu.mass));
         obj->set_color(this->m_gui.spawn_menu.color);
         this->m_bodies.emplace_back(std::move(obj));
-    }, GLFW_MOD_SHIFT);
-    // if (key == GLFW_KEY_S && action == GLFW_PRESS && glfwGetKey(m_window_ptr, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-    //     auto front = m_camera.get_front();
-    //     auto pos = m_camera.get_pos() + front;
-    //     auto vel = glm::normalize(front) * m_gui.spawn_menu.initial_velocity;
-    //     auto obj = std::make_shared<obj::CelestialBody>(obj::CelestialBody(nullptr, pos, vel, glm::vec3(0), m_gui.spawn_menu.mass));
-    //     obj->set_color(m_gui.spawn_menu.color);
-    //     m_bodies.emplace_back(std::move(obj));
-    // }
+    }, "Spawn a new celestial body in front of the camera", GLFW_MOD_SHIFT);
     // Editor mode specifyc keybinds
     m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this](){
-        std::printf("options\n");
         this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled;
-    });
+    }, "Open game settings");
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Editor, [this](){
-        std::printf("spawn\n");
         this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled;
-    });
+    }, "Open spawn menu");
     // Simulation mode specific keybinds
 }
 static Game* get_game_instance_ptr_from_window(GLFWwindow* window)

@@ -15,6 +15,7 @@ struct GameOptionsMenu {
     float fov { 70.0 };
 };
 struct HelpMenu {
+    std::string help_text{};
 };
 struct SelectedBodyMenu {
     glm::vec3 color;
