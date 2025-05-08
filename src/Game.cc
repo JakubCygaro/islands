@@ -13,9 +13,7 @@
 #include <glm/ext/vector_float4.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
 #include <optional>
-#include <type_traits>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
@@ -302,6 +300,8 @@ void Game::continuos_key_input()
 void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    m_width = width;
+    m_height = height;
 }
 void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos)
 {
@@ -339,12 +339,15 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
     glfwGetCursorPos(window, &xpos, &ypos);
     if (m_gui_enabled && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         std::printf("ray cast\n");
+        std::printf("xpos = %f, ypos = %f\n", xpos, ypos);
         float x = (2.0f * xpos) / m_width - 1.0f;
         float y = 1.0f - (2.0f * ypos) / m_height;
         float z = -1.0f;
-        glm::vec4 ray_clip = glm::vec4(x, y, z, 1.0f);
+        std::printf("x = %f, y = %f\n", x, y);
+        glm::vec3 ray_nds = glm::vec3(x, y, z);
+        glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, z, 1.0f);
         glm::vec4 ray_eye = glm::inverse(m_projection) * ray_clip;
-        ray_eye = glm::vec4(ray_eye.x, ray_eye.y, 1.0, 0.0);
+        ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0, 0.0);
         glm::vec3 ray_world = (glm::inverse(m_view) * ray_eye);
         ray_world = glm::normalize(ray_world);
         // TODO: sphere ray casting
