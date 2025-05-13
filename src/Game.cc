@@ -242,7 +242,10 @@ void Game::draw_gui()
             m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
         }
         if(ImGui::Button("Delete body")){
-            
+            auto body_idx = std::ranges::find(m_bodies, m_gui.selected_body.lock());
+            if (body_idx != m_bodies.end()){
+                m_bodies.erase(body_idx);
+            }
         }
         ImGui::End();
     }
