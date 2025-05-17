@@ -20,7 +20,13 @@
 
 const float GRAV_CONST = 6.674e-11;
 
-static Game* get_game_instance_ptr_from_window(GLFWwindow* window);
+namespace {
+    Game* get_game_instance_ptr_from_window(GLFWwindow* window)
+    {
+        Game* instance = static_cast<Game*>(glfwGetWindowUserPointer(window));
+        return instance;
+    }
+}
 
 Game::Game(int32_t window_width, int32_t window_height)
     : m_width { window_width }
@@ -232,7 +238,8 @@ void Game::draw_gui()
         ImGui::End();
     }
     if (!m_gui.selected_body.expired()){
-        ImGui::Begin("Selected Celestial Body");
+        bool discarded = true;
+        ImGui::Begin("Selected Celestial Body", &discarded);
         if(ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))){
             m_gui.selected_body.lock()->set_color(m_gui.selected_body_menu.color);
         }
@@ -248,6 +255,9 @@ void Game::draw_gui()
             }
         }
         ImGui::End();
+        if (!discarded){
+            m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
+        }
     }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -383,10 +393,8 @@ void Game::initialize_key_bindings() {
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Editor, [this](){
         this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled;
     }, "Open spawn menu");
+    m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Editor, [this](){
+        this->m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
+    }, "Deselect currently selected body");
     // Simulation mode specific keybinds
-}
-static Game* get_game_instance_ptr_from_window(GLFWwindow* window)
-{
-    Game* instance = static_cast<Game*>(glfwGetWindowUserPointer(window));
-    return instance;
 }
