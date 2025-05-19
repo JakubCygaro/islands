@@ -41,6 +41,7 @@ target_link_libraries(islands PRIVATE features)
 
 target_include_directories(islands
     PRIVATE include/
+    PRIVATE include/freetype2
 )
 
 target_link_libraries(islands

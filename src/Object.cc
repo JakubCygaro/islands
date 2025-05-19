@@ -215,7 +215,6 @@ namespace obj {
 
         //indices for the bottom pole cap (triangles with the bottom pole)
         const auto bottom_idx = 0;
-        const auto start = 1;
         for(size_t idx = 1; idx < step; idx++){
             indices.push_back(bottom_idx);
             indices.push_back(idx);
