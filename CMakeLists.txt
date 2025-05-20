@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.30)
 project(islands VERSION 0.1.0.0)
 
+set(FREETYPE_ROOT_PATHS "C:/Program Files (x86)/freetype" CACHE FILEPATH "Where to search for the freetype library install directory")
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     if(CMAKE_BUILD_TYPE STREQUAL "")
         set(CMAKE_BUILD_TYPE "Debug")
@@ -8,6 +10,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 find_package(glfw3 REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(Freetype REQUIRED
+    PATHS ${FREETYPE_ROOT_PATHS}
+)
 
 add_executable(islands
     src/main.cc
@@ -18,6 +23,7 @@ add_executable(islands
     src/Object.cc
     src/Gui.cc
     src/KeyBind.cc
+    src/Font.cc
     src/imgui/imgui.cpp
     src/imgui/imgui_demo.cpp
     src/imgui/imgui_draw.cpp
@@ -25,7 +31,6 @@ add_executable(islands
     src/imgui/imgui_widgets.cpp
     src/imgui/imgui_stdlib.cpp
     src/imgui/backend/imgui_impl_glfw.cpp
-    # src/imgui/backend/imgui_impl_win32.cpp
     src/imgui/backend/imgui_impl_opengl3.cpp
 )
 
@@ -41,12 +46,12 @@ target_link_libraries(islands PRIVATE features)
 
 target_include_directories(islands
     PRIVATE include/
-    PRIVATE include/freetype2
 )
 
 target_link_libraries(islands
     PRIVATE glfw3
     PRIVATE glm::glm
+    PRIVATE Freetype::Freetype
 )
 
 add_custom_target(copyGameData ALL)

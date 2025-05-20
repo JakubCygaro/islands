@@ -17,7 +17,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
-#include "freetype2/ft2build.h"
 const float GRAV_CONST = 6.674e-11;
 
 namespace {
