@@ -1,8 +1,30 @@
 #include "Font.hpp"
+#include "shader/Shader.hpp"
 #include <cmath>
 #include <cstdint>
 
 namespace {
+    const char* VERT =
+        "#version 460\n"
+        "layout (location = 0) in vec2 position;\n"
+        "layout (location = 1) in vec2 tex_coords;\n"
+        "out vec2 texture_coords;\n"
+        "void main(){\n"
+        "   gl_position = vec4(position.x, position.y, 0.0, 1.0);\n"
+        "   texture_coords = tex_coords;\n"
+        "}"
+        ;
+    const char* FRAG =
+        "#version 460\n"
+        "out vec4 FragColor;\n"
+        "in vec2 texture_coords;\n"
+        "in vec2 texture_coords;\n"
+        "uniform sampler2D glyph_texture;\n"
+        "void main(){\n"
+        "   FragColor = texture(glyph_texture, texture_coords);\n"
+        "   texture_coords = tex_coords;\n"
+        "}"
+        ;
     uint32_t gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& width, const uint32_t& height){
         auto total_width = static_cast<uint32_t>(std::sqrt(chars.size()));
         uint32_t total_height = total_width + 1;
@@ -13,8 +35,8 @@ namespace {
             GL_TEXTURE_2D,
             0,
             GL_RED,
-            total_width,
-            total_height,
+            total_width * width,
+            total_height * height,
             0,
             GL_RED,
             GL_UNSIGNED_BYTE,
@@ -41,6 +63,58 @@ namespace {
 
         if(glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
             throw std::runtime_error("Failed to complete the framebuffer");
+        }
+        auto glyph_shader = Shader(VERT, FRAG);
+
+        glClearColor(0.0, 0.0, 0.0, 0.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+
+        uint32_t glyph_vbo = 0;
+        uint32_t glyph_vao = 0;
+        uint32_t glyph_ebo = 0;
+        glGenBuffers(1, &glyph_vbo);
+        glGenVertexArrays(1, &glyph_vao);
+        glBindVertexArray(glyph_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
+        glBufferData(GL_ARRAY_BUFFER, 4 * (sizeof(glm::vec2)) + sizeof(glm::vec2), NULL, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
+            (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        glGenBuffers(1, &glyph_ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glyph_ebo);
+        uint32_t ebo[] = {
+            1, 2, 3,
+            2, 4, 3
+        };
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ebo), ebo, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glm::vec2 glyph_data[] = {
+            {0, 0}, {0, 1}, // top-left
+            {0, 0}, {0, 0}, // bottom-left
+            {0, 0}, {1, 1}, // top-right
+            {0, 0}, {1, 0}, // bottom-right
+        };
+        glyph_shader.use_shader();
+        glBindVertexArray(glyph_vao);
+        glActiveTexture(GL_TEXTURE0);
+
+        for(size_t i = 0; i < chars.size(); i++){
+            size_t x = i % total_width;
+            size_t y = static_cast<size_t>(i / total_width);
+            auto& glyph = chars[i];
+            glyph_data[0] = { x * width, y * height };
+            glyph_data[1] = { x * width, (y + 1) * height };
+            glyph_data[2] = { (x + 1) * width, y * height };
+            glyph_data[3] = { (x + 1) * width, (y + 1) * height };
+            glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(glyph_data), glyph_data, GL_DYNAMIC_DRAW);
+            glBindTexture(GL_TEXTURE_2D, glyph.texture_id);
+
         }
 
         return font_bitmap;

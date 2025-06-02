@@ -10,6 +10,7 @@
 #include <glad/glad.h>
 #include <sstream>
 #include <vector>
+#include "shader/Shader.hpp"
 namespace font{
     struct Character {
         uint32_t texture_id{};
