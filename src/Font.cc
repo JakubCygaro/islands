@@ -123,6 +123,7 @@ namespace {
             glBufferData(GL_ARRAY_BUFFER, sizeof(glyph_data), glyph_data, GL_DYNAMIC_DRAW);
             glBindTexture(GL_TEXTURE_2D, glyph.texture_id);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            glDeleteTextures(1, glyph.texture_id);
         }
         glDeleteRenderbuffers(1, &rbo);
         glDeleteFramebuffers(1, &fbo);
