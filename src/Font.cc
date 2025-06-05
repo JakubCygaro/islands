@@ -1,16 +1,21 @@
 #include "Font.hpp"
 #include "shader/Shader.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace {
     const char* VERT =
         "#version 460\n"
         "layout (location = 0) in vec2 position;\n"
         "layout (location = 1) in vec2 tex_coords;\n"
+        "uniform mat4 projection;\n"
         "out vec2 texture_coords;\n"
         "void main(){\n"
-        "   gl_position = vec4(position.x, position.y, 0.0, 1.0);\n"
+        "   vec4 pos = projection * vec4(position.xy, 0, 1.0);\n"
+        "   gl_position = vec4(pos.x, pos.y, 0.0, 1.0);\n"
         "   texture_coords = tex_coords;\n"
         "}"
         ;
@@ -25,7 +30,7 @@ namespace {
         "   texture_coords = tex_coords;\n"
         "}"
         ;
-    uint32_t gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& width, const uint32_t& height){
+    uint32_t gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& glyph_width, const uint32_t& glyph_height){
         auto total_width = static_cast<uint32_t>(std::sqrt(chars.size()));
         uint32_t total_height = total_width + 1;
         uint32_t font_bitmap;
@@ -35,8 +40,8 @@ namespace {
             GL_TEXTURE_2D,
             0,
             GL_RED,
-            total_width * width,
-            total_height * height,
+            total_width * glyph_width,
+            total_height * glyph_height,
             0,
             GL_RED,
             GL_UNSIGNED_BYTE,
@@ -99,7 +104,10 @@ namespace {
             {0, 0}, {1, 1}, // top-right
             {0, 0}, {1, 0}, // bottom-right
         };
+        auto projection = glm::ortho(0.0f, static_cast<float>(glyph_width),
+                0.0f, static_cast<float>(glyph_height), 0.0f, 1.0f);
         glyph_shader.use_shader();
+        glyph_shader.set_mat4("projection", projection);
         glBindVertexArray(glyph_vao);
         glActiveTexture(GL_TEXTURE0);
 
@@ -107,14 +115,14 @@ namespace {
             size_t x = i % total_width;
             size_t y = static_cast<size_t>(i / total_width);
             auto& glyph = chars[i];
-            glyph_data[0] = { x * width, y * height };
-            glyph_data[1] = { x * width, (y + 1) * height };
-            glyph_data[2] = { (x + 1) * width, y * height };
-            glyph_data[3] = { (x + 1) * width, (y + 1) * height };
+            glyph_data[0] = { x * glyph_width, y * glyph_height };
+            glyph_data[1] = { x * glyph_width, (y + 1) * glyph_height };
+            glyph_data[2] = { (x + 1) * glyph_width, y * glyph_height };
+            glyph_data[3] = { (x + 1) * glyph_width, (y + 1) * glyph_height };
             glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(glyph_data), glyph_data, GL_DYNAMIC_DRAW);
             glBindTexture(GL_TEXTURE_2D, glyph.texture_id);
-
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
 
         return font_bitmap;
@@ -138,7 +146,7 @@ namespace font{
             throw std::runtime_error("Failed to set pixel size for font");
         }
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        uint32_t width{}, height{};
+        uint32_t max_glyph_width{}, max_glyph_height{};
         std::vector<Character> characters{};
         for(int ascii_code = 32; ascii_code < 128; ascii_code++){
             if(FT_Load_Char(face, (char)ascii_code, FT_LOAD_RENDER)){
@@ -148,8 +156,10 @@ namespace font{
                 ss << "for font: " << '\'' << file_path << '\'';
                 throw std::runtime_error(ss.str());
             }
-            if(face->glyph->bitmap.width > width) width = face->glyph->bitmap.width;
-            if(face->glyph->bitmap.rows > height) height = face->glyph->bitmap.rows;
+            max_glyph_width = std::max(face->glyph->bitmap.width, max_glyph_width);
+            max_glyph_height = std::max(face->glyph->bitmap.rows, max_glyph_height);
+            // if(face->glyph->bitmap.width > width) width = face->glyph->bitmap.width;
+            // if(face->glyph->bitmap.rows > height) height = face->glyph->bitmap.rows;
             // generate texture
             uint32_t texture;
             glGenTextures(1, &texture);
@@ -180,7 +190,7 @@ namespace font{
             characters.emplace_back(std::move(ch));
         }
         glBindTexture(GL_TEXTURE_2D, 0);
-        gen_font_bitmap(characters, width, height);
+        gen_font_bitmap(characters, max_glyph_width, max_glyph_height);
         FT_Done_Face(face);
         FT_Done_FreeType(ft);
     }
