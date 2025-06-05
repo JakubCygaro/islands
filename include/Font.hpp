@@ -24,6 +24,11 @@ namespace font{
 
     public:
         FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y);
+        FontBitmap(const FontBitmap& other);
+        FontBitmap& operator=(const FontBitmap& other);
+        FontBitmap(FontBitmap&& other);
+        FontBitmap& operator=(FontBitmap&& other);
+
         glm::vec2 texture_coords_for(char ch) const;
         void bind_bitmap() const;
         void unbind_bitmap() const;
