@@ -18,6 +18,17 @@ namespace font{
         glm::ivec2 bearing{};
         uint32_t advance{};
     };
+    class FontBitmap {
+        uint32_t bitmap_id{};
+        uint32_t glyphs_x{}, glyphs_y{};
+
+    public:
+        FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y);
+        glm::vec2 texture_coords_for(char ch) const;
+        void bind_bitmap() const;
+        void unbind_bitmap() const;
+        ~FontBitmap();
+    };
     void load_font(const std::string& file_path, int font_size);
 }
 #endif

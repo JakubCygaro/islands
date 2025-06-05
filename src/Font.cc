@@ -31,8 +31,8 @@ namespace {
         "}"
         ;
     uint32_t gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& glyph_width, const uint32_t& glyph_height){
-        auto total_width = static_cast<uint32_t>(std::sqrt(chars.size()));
-        uint32_t total_height = total_width + 1;
+        auto glyphs_x = static_cast<uint32_t>(std::sqrt(chars.size()));
+        uint32_t glyphs_y = glyphs_x + 1;
         uint32_t font_bitmap;
         glGenTextures(1, &font_bitmap);
         glBindTexture(GL_TEXTURE_2D, font_bitmap);
@@ -40,8 +40,8 @@ namespace {
             GL_TEXTURE_2D,
             0,
             GL_RED,
-            total_width * glyph_width,
-            total_height * glyph_height,
+            glyphs_x * glyph_width,
+            glyphs_y * glyph_height,
             0,
             GL_RED,
             GL_UNSIGNED_BYTE,
@@ -61,7 +61,7 @@ namespace {
         unsigned int rbo;
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, total_width, total_height);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, glyphs_x, glyphs_y);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
         glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -112,8 +112,8 @@ namespace {
         glActiveTexture(GL_TEXTURE0);
 
         for(size_t i = 0; i < chars.size(); i++){
-            size_t x = i % total_width;
-            size_t y = static_cast<size_t>(i / total_width);
+            size_t x = i % glyphs_x;
+            size_t y = static_cast<size_t>(i / glyphs_x);
             auto& glyph = chars[i];
             glyph_data[0] = { x * glyph_width, y * glyph_height };
             glyph_data[1] = { x * glyph_width, (y + 1) * glyph_height };
@@ -124,6 +124,10 @@ namespace {
             glBindTexture(GL_TEXTURE_2D, glyph.texture_id);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
+        glDeleteRenderbuffers(1, &rbo);
+        glDeleteFramebuffers(1, &fbo);
+        glDeleteVertexArrays(1, &glyph_vao);
+        glDeleteBuffers(1, &glyph_vbo);
 
         return font_bitmap;
     }
