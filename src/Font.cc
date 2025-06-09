@@ -275,6 +275,15 @@ namespace font{
         auto x = idx % glyphs_x;
         auto y = idx / glyphs_y;
 
+        auto w_prc = (float)glyph_width / (float)total_x;
+        auto h_prc = (float)glyph_height / (float)total_y;
+        return GlyphTextureCoordinates {
+            .top_left = { x * w_prc, y * h_prc },
+            .top_right = { (x + 1) * w_prc, y * h_prc },
+            .bottom_left = { x * w_prc, (y + 1) * h_prc },
+            .bottom_right { (x + 1) * w_prc, (y + 1) * h_prc }
+        };
+
     }
     void FontBitmap::bind_bitmap() const {
         glBindTexture(GL_TEXTURE_2D, bitmap_id);
