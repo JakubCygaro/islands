@@ -129,6 +129,7 @@ namespace {
         glDeleteFramebuffers(1, &fbo);
         glDeleteVertexArrays(1, &glyph_vao);
         glDeleteBuffers(1, &glyph_vbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         return font_bitmap;
     }
@@ -198,5 +199,87 @@ namespace font{
         gen_font_bitmap(characters, max_glyph_width, max_glyph_height);
         FT_Done_Face(face);
         FT_Done_FreeType(ft);
+    }
+    FontBitmap::FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y,
+            uint32_t glyph_width, uint32_t glyph_height) :
+        bitmap_id(bitmap),
+        glyphs_x(glyphs_x),
+        glyphs_y(glyphs_y),
+        glyph_width(glyph_width),
+        glyph_height(glyph_height)
+    {
+        total_x = glyphs_x * glyph_width;
+        total_y = glyphs_y * glyph_height;
+    }
+    FontBitmap::FontBitmap(const FontBitmap& other):
+        bitmap_id(other.bitmap_id),
+        glyphs_x(other.glyphs_x),
+        glyphs_y(other.glyphs_y),
+        glyph_width(other.glyph_width),
+        glyph_height(other.glyph_height),
+        total_x(other.total_x),
+        total_y(other.total_y)
+    {}
+    FontBitmap& FontBitmap::operator=(const FontBitmap& other) {
+        bitmap_id = other.bitmap_id;
+        glyphs_x = other.glyphs_x;
+        glyphs_y = other.glyphs_y;
+        glyph_width = other.glyph_width;
+        glyph_height = other.glyph_height;
+        total_x = other.total_x;
+        total_y = other.total_y;
+        return *this;
+
+    }
+    FontBitmap::FontBitmap(FontBitmap&& other):
+        bitmap_id(other.bitmap_id),
+        glyphs_x(other.glyphs_x),
+        glyphs_y(other.glyphs_y),
+        glyph_width(other.glyph_width),
+        glyph_height(other.glyph_height),
+        total_x(other.total_x),
+        total_y(other.total_y)
+    {
+        other.bitmap_id = 0;
+        other.glyphs_x = 0;
+        other.glyphs_y = 0;
+        other.glyph_width = 0;
+        other.glyph_height = 0;
+        other.total_x = 0;
+        other.total_y = 0;
+    }
+    FontBitmap& FontBitmap::operator=(FontBitmap&& other){
+        bitmap_id = other.bitmap_id;
+        glyphs_x = other.glyphs_x;
+        glyphs_y = other.glyphs_y;
+        glyph_width = other.glyph_width;
+        glyph_height = other.glyph_height;
+        total_x = other.total_x;
+        total_y = other.total_y;
+        other.bitmap_id = 0;
+        other.glyphs_x = 0;
+        other.glyphs_y = 0;
+        other.glyph_width = 0;
+        other.glyph_height = 0;
+        other.total_x = 0;
+        other.total_y = 0;
+        return *this;
+    }
+    FontBitmap::~FontBitmap(){
+        if(bitmap_id)
+            glDeleteTextures(1, &bitmap_id);
+    }
+
+    FontBitmap::GlyphTextureCoordinates FontBitmap::texture_coords_for(char ch) const{
+        auto idx = static_cast<int>(ch - 'a');
+        auto x = idx % glyphs_x;
+        auto y = idx / glyphs_y;
+
+    }
+    void FontBitmap::bind_bitmap() const {
+        glBindTexture(GL_TEXTURE_2D, bitmap_id);
+    }
+    void FontBitmap::unbind_bitmap() const{
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
