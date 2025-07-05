@@ -49,7 +49,7 @@ target_include_directories(islands
 )
 
 target_link_libraries(islands
-    PRIVATE glfw3
+    PRIVATE glfw
     PRIVATE glm::glm
     PRIVATE Freetype::Freetype
 )
