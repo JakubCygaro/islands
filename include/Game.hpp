@@ -4,6 +4,7 @@
 #include "Object.hpp"
 #include <Camera.hpp>
 #include <GLFW/glfw3.h>
+#include <Font.hpp>
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
@@ -81,9 +82,12 @@ private:
     uint32_t m_uniform_buffer {};
     glm::mat4 m_view {};
     glm::mat4 m_projection {};
+    glm::mat4 m_text_projection {};
     std::vector<std::shared_ptr<obj::CelestialBody>> m_bodies {};
     gui::GameUI m_gui {};
     KeybindHandler m_keybinds {};
+
+    font::Text2D m_test_text;
 
 private:
     void initialize();

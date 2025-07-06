@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/glm.hpp>
+#include <memory>
 #include <string>
 #include <stdexcept>
 #include <freetype2/ft2build.h>
@@ -44,6 +45,27 @@ namespace font{
         void unbind_bitmap() const;
         ~FontBitmap();
     };
-    void load_font(const std::string& file_path, int font_size);
+    font::FontBitmap load_font(const std::string& file_path, int font_size);
+
+    class Text2D {
+    private:
+        std::string m_str{};
+        std::shared_ptr<Shader> m_text_shader{};
+        std::shared_ptr<FontBitmap> m_font_bitmap{};
+        std::vector<glm::vec4> m_letter_data{};
+
+        glm::vec2 m_pos{};
+
+    public:
+        Text2D();
+        Text2D(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader);
+        Text2D(const Text2D& other);
+        Text2D& operator=(const Text2D& other);
+        Text2D(Text2D&& other);
+        Text2D& operator=(Text2D&& other);
+        void update();
+        void draw() const;
+
+    };
 }
 #endif

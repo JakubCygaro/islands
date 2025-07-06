@@ -22,6 +22,7 @@ public:
     Shader& operator=(Shader&& other);
     ~Shader();
     Shader(const std::string& vert_path, const std::string& frag_path);
+    Shader(const char* vert, const char* frag);
     static Shader from_shader_dir(const std::string& name);
     void use_shader() const;
     void set_vec3(const char* uniform_name, const glm::vec3& v);

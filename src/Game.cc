@@ -33,6 +33,7 @@ Game::Game(int32_t window_width, int32_t window_height)
     , m_fov { 70 }
     , m_camera { Camera(glm::vec3(0, 0, 3), glm::vec3(0)) }
     , m_uniform_buffer { 0 }
+    , m_test_text{}
 {
     initialize();
     initialize_key_bindings();
@@ -101,14 +102,20 @@ void Game::initialize()
     m_projection = glm::perspective(glm::radians(m_fov),
         (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
+    m_text_projection = glm::ortho(0.0f, static_cast<float>(m_width), 0.0f, static_cast<float>(m_height), 0.0f, 1.0f);
+
     glGenBuffers(1, &m_uniform_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
     glBufferData(GL_UNIFORM_BUFFER,
-        // view                     projection
-        sizeof(glm::mat4) + sizeof(glm::mat4),
+        // view                     projection  text_projection
+        sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(glm::mat4),
         NULL, GL_STATIC_DRAW);
+    //projection
     glBufferSubData(GL_UNIFORM_BUFFER,
         sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
+    //text_projection
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_text_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);
 
@@ -136,6 +143,10 @@ void Game::initialize()
     m_gui.game_options_menu.camera_speed = m_camera.get_speed();
     m_gui.game_options_menu.fov = m_fov;
     m_gui.help_menu_enabled = true;
+
+    auto font = std::make_shared<font::FontBitmap>(font::load_font("game_data/fonts/ARCADE.TTF", 24));
+    auto font_shader = std::make_shared<Shader>(Shader::from_shader_dir("text"));
+    m_test_text = font::Text2D(font, font_shader);
 
 }
 void Game::run()
@@ -205,6 +216,7 @@ void Game::render()
     for (auto& c_obj : m_bodies) {
         c_obj->render();
     }
+    m_test_text.draw();
 }
 void Game::draw_gui()
 {

@@ -31,6 +31,63 @@ Shader& Shader::operator=(Shader&& other){
 Shader::~Shader(){
     glDeleteShader(m_shader_id);
 }
+Shader::Shader(const char* vert, const char* frag) try {
+    const char* vert_char_ptr = vert;
+    const char* frag_char_ptr = frag;
+
+    std::uint32_t vert_id, frag_id;
+    int succ;
+    char info_log[512];
+
+    vert_id = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vert_id, 1, &vert_char_ptr, NULL);
+    glCompileShader(vert_id);
+    glGetShaderiv(vert_id, GL_COMPILE_STATUS, &succ);
+    if(!succ) {
+        glGetShaderInfoLog(vert_id, 512, NULL, info_log);
+        std::stringstream err_stream;
+        err_stream << "Vertex shader compile error: ";
+        err_stream << info_log;
+        std::string err_msg = err_stream.str();
+        throw std::runtime_error{std::move(err_msg)};
+    }
+    frag_id = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(frag_id, 1, &frag_char_ptr, NULL);
+    glCompileShader(frag_id);
+    glGetShaderiv(frag_id, GL_COMPILE_STATUS, &succ);
+    if(!succ) {
+        glGetShaderInfoLog(frag_id, 512, NULL, info_log);
+        std::stringstream err_stream;
+        err_stream << "Fragment shader compile error: ";
+        err_stream << info_log;
+        std::string err_msg = err_stream.str();
+        throw std::runtime_error{std::move(err_msg)};
+    }
+    m_shader_id = glCreateProgram();
+    glAttachShader(m_shader_id, vert_id);
+    glAttachShader(m_shader_id, frag_id);
+    glLinkProgram(m_shader_id);
+
+    glGetProgramiv(m_shader_id, GL_LINK_STATUS, &succ);
+    if(!succ) {
+        glGetProgramInfoLog(m_shader_id, 512, NULL, info_log);
+        std::stringstream err_stream;
+        err_stream << "Shader link error: ";
+        err_stream << info_log;
+        std::string err_msg = err_stream.str();
+        throw std::runtime_error{std::move(err_msg)};
+    }
+
+    glDeleteShader(vert_id);
+    glDeleteShader(frag_id);
+} catch(const std::runtime_error& e){
+    std::stringstream err_stream;
+    err_stream << "Shader creation error: ";
+    err_stream << e.what();
+    std::string err_msg = err_stream.str();
+    throw std::runtime_error{std::move(err_msg)};
+}
+
 Shader::Shader(const std::string& vert_path, const std::string& frag_path) try {
     /*std::cout << "vert_path: " << vert_path << "\nfrag_path: " << frag_path << '\n';*/
     std::ifstream vert_file;

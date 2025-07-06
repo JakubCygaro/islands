@@ -15,22 +15,20 @@ namespace {
         "out vec2 texture_coords;\n"
         "void main(){\n"
         "   vec4 pos = projection * vec4(position.xy, 0, 1.0);\n"
-        "   gl_position = vec4(pos.x, pos.y, 0.0, 1.0);\n"
         "   texture_coords = tex_coords;\n"
+        "   gl_Position = vec4(pos.x, pos.y, 0.0, 1.0);\n"
         "}"
         ;
     const char* FRAG =
         "#version 460\n"
         "out vec4 FragColor;\n"
         "in vec2 texture_coords;\n"
-        "in vec2 texture_coords;\n"
         "uniform sampler2D glyph_texture;\n"
         "void main(){\n"
         "   FragColor = texture(glyph_texture, texture_coords);\n"
-        "   texture_coords = tex_coords;\n"
         "}"
         ;
-    uint32_t gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& glyph_width, const uint32_t& glyph_height){
+    font::FontBitmap gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& glyph_width, const uint32_t& glyph_height){
         auto glyphs_x = static_cast<uint32_t>(std::sqrt(chars.size()));
         uint32_t glyphs_y = glyphs_x + 1;
         uint32_t font_bitmap;
@@ -130,12 +128,11 @@ namespace {
         glDeleteVertexArrays(1, &glyph_vao);
         glDeleteBuffers(1, &glyph_vbo);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        return font_bitmap;
+        return font::FontBitmap(font_bitmap, glyphs_x, glyphs_y, glyph_width, glyph_height);
     }
 }
 namespace font{
-    void load_font(const std::string& file_path, int font_size){
+    font::FontBitmap load_font(const std::string& file_path, int font_size){
         FT_Library ft;
         if(FT_Init_FreeType(&ft)){
             throw std::runtime_error("Failed to initialize freetype");
@@ -196,9 +193,10 @@ namespace font{
             characters.emplace_back(std::move(ch));
         }
         glBindTexture(GL_TEXTURE_2D, 0);
-        gen_font_bitmap(characters, max_glyph_width, max_glyph_height);
+        auto bitmap = gen_font_bitmap(characters, max_glyph_width, max_glyph_height);
         FT_Done_Face(face);
         FT_Done_FreeType(ft);
+        return bitmap;
     }
     FontBitmap::FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y,
             uint32_t glyph_width, uint32_t glyph_height) :
@@ -290,5 +288,99 @@ namespace font{
     }
     void FontBitmap::unbind_bitmap() const{
         glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    Text2D::Text2D(){}
+    Text2D::Text2D(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader):
+        m_text_shader{text_shader},
+        m_font_bitmap{font_bitmap}
+    {
+
+    }
+    Text2D::Text2D(const Text2D& other):
+        m_str{other.m_str},
+        m_text_shader{other.m_text_shader},
+        m_font_bitmap{other.m_font_bitmap},
+        m_letter_data{other.m_letter_data},
+        m_pos{other.m_pos}
+    {
+
+    }
+    Text2D& Text2D::operator=(const Text2D& other){
+        m_str = other.m_str;
+        m_text_shader = other.m_text_shader;
+        m_font_bitmap = other.m_font_bitmap;
+        m_letter_data = other.m_letter_data;
+        m_pos = other.m_pos;
+        return *this;
+    }
+    Text2D::Text2D(Text2D&& other):
+        m_str{other.m_str},
+        m_text_shader{other.m_text_shader},
+        m_font_bitmap{other.m_font_bitmap},
+        m_letter_data{other.m_letter_data},
+        m_pos{other.m_pos}
+    {
+        other.m_str = nullptr;
+        other.m_text_shader = nullptr;
+        other.m_font_bitmap = nullptr;
+        m_letter_data.clear();
+    }
+    Text2D& Text2D::operator=(Text2D&& other){
+        m_str = other.m_str;
+        m_text_shader = other.m_text_shader;
+        m_font_bitmap = other.m_font_bitmap;
+        m_letter_data = other.m_letter_data;
+        m_pos = other.m_pos;
+
+        other.m_str = nullptr;
+        other.m_text_shader = nullptr;
+        other.m_font_bitmap = nullptr;
+        other.m_letter_data.clear();
+
+        return *this;
+    }
+    void Text2D::update() {
+        std::string::const_iterator str_iter = m_str.begin();
+        auto pos = m_pos;
+
+        for(char c = *str_iter; str_iter != m_str.end(); str_iter++){
+            auto glypth_coord = m_font_bitmap->texture_coords_for(c);
+        }
+    }
+    void Text2D::draw() const {
+
+        float data[] = {
+            0.0, 0.0, 0.0, 1.0,
+            0.0, 300.0, 0.0, 0.0,
+            300.0, 300.0, 1.0, 0.0,
+            300.0, 300.0, 1.0, 0.0,
+            300.0, 0.0, 1.0, 1.0,
+            0.0, 0.0, 0.0, 1.0,
+        };
+
+        uint32_t vbo{}, vao{};
+
+        glGenBuffers(1, &vbo);
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
+            (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        m_font_bitmap->bind_bitmap();
+        m_text_shader->use_shader();
+
+        glBindVertexArray(vao);
+
+        glDrawArrays(GL_TRIANGLES, 0, 1);
+        glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &vbo);
+
     }
 }
