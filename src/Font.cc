@@ -32,14 +32,19 @@ namespace {
         auto glyphs_x = static_cast<uint32_t>(std::sqrt(chars.size()));
         uint32_t glyphs_y = glyphs_x + 1;
         uint32_t font_bitmap;
+        uint32_t bitmap_width{}, bitmap_height{};
+
+        bitmap_width = glyphs_x * glyph_width;
+        bitmap_height = glyphs_y * glyph_height;
+
         glGenTextures(1, &font_bitmap);
         glBindTexture(GL_TEXTURE_2D, font_bitmap);
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
             GL_RED,
-            glyphs_x * glyph_width,
-            glyphs_y * glyph_height,
+            bitmap_width,
+            bitmap_height,
             0,
             GL_RED,
             GL_UNSIGNED_BYTE,
@@ -50,25 +55,28 @@ namespace {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         uint32_t fbo;
         glGenFramebuffers(1, &fbo);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, font_bitmap, 0);
 
         unsigned int rbo;
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, glyphs_x, glyphs_y);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, bitmap_width, bitmap_height);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-        glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
         if(glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
             throw std::runtime_error("Failed to complete the framebuffer");
         }
+        glBindRenderbuffer(GL_FRAMEBUFFER, 0);
         auto glyph_shader = Shader(VERT, FRAG);
 
+        glBindRenderbuffer(GL_FRAMEBUFFER, fbo);
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
@@ -76,25 +84,29 @@ namespace {
         uint32_t glyph_vbo = 0;
         uint32_t glyph_vao = 0;
         uint32_t glyph_ebo = 0;
+
         glGenBuffers(1, &glyph_vbo);
         glGenVertexArrays(1, &glyph_vao);
+
         glBindVertexArray(glyph_vao);
         glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
-        glBufferData(GL_ARRAY_BUFFER, 4 * (sizeof(glm::vec2)) + sizeof(glm::vec2), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(glm::vec2), NULL, GL_DYNAMIC_DRAW);
+
+        //position
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
             (void*)0);
         glEnableVertexAttribArray(0);
+        //texture coords
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(2 * sizeof(float)));
         glEnableVertexAttribArray(1);
 
         glGenBuffers(1, &glyph_ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glyph_ebo);
         uint32_t ebo[] = {
-            1, 2, 3,
-            2, 4, 3
+            0, 1, 3,
+            3, 2, 0
         };
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ebo), ebo, GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         glm::vec2 glyph_data[] = {
             {0, 0}, {0, 1}, // top-left
@@ -102,25 +114,34 @@ namespace {
             {0, 0}, {1, 1}, // top-right
             {0, 0}, {1, 0}, // bottom-right
         };
-        auto projection = glm::ortho(0.0f, static_cast<float>(glyph_width),
-                0.0f, static_cast<float>(glyph_height), 0.0f, 1.0f);
+        auto projection = glm::ortho(0.0f, static_cast<float>(bitmap_width),
+                0.0f, static_cast<float>(bitmap_height), 0.0f, 1.0f);
+
         glyph_shader.use_shader();
         glyph_shader.set_mat4("projection", projection);
-        glBindVertexArray(glyph_vao);
-        glActiveTexture(GL_TEXTURE0);
+
 
         for(size_t i = 0; i < chars.size(); i++){
             size_t x = i % glyphs_x;
             size_t y = static_cast<size_t>(i / glyphs_x);
+
             auto& glyph = chars[i];
+            //fill in the position data of the glyph in the buffer
             glyph_data[0] = { x * glyph_width, y * glyph_height };
-            glyph_data[1] = { x * glyph_width, (y + 1) * glyph_height };
-            glyph_data[2] = { (x + 1) * glyph_width, y * glyph_height };
-            glyph_data[3] = { (x + 1) * glyph_width, (y + 1) * glyph_height };
+            glyph_data[2] = { x * glyph_width, (y + 1) * glyph_height };
+            glyph_data[4] = { (x + 1) * glyph_width, y * glyph_height };
+            glyph_data[6] = { (x + 1) * glyph_width, (y + 1) * glyph_height };
+
             glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(glyph_data), glyph_data, GL_DYNAMIC_DRAW);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glyph_data), glyph_data);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            glBindVertexArray(glyph_vao);
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, glyph.texture_id);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            // segfaults on this call
+            glDrawArrays(GL_TRIANGLES, 0, 2);
+            // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             glDeleteTextures(1, &glyph.texture_id);
         }
         glDeleteRenderbuffers(1, &rbo);
