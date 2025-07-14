@@ -46,7 +46,7 @@ namespace {
             bitmap_width,
             bitmap_height,
             0,
-            GL_RED,
+            GL_RGBA,
             GL_UNSIGNED_BYTE,
             NULL
         );
@@ -62,24 +62,24 @@ namespace {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, font_bitmap, 0);
 
-        unsigned int rbo;
-        glGenRenderbuffers(1, &rbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, bitmap_width, bitmap_height);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        // unsigned int rbo;
+        // glGenRenderbuffers(1, &rbo);
+        // glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        // glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, bitmap_width, bitmap_height);
+        // glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        //
+        // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        // glBindRenderbuffer(GL_FRAMEBUFFER, 0);
 
         if(glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
             throw std::runtime_error("Failed to complete the framebuffer");
         }
-        glBindRenderbuffer(GL_FRAMEBUFFER, 0);
         auto glyph_shader = Shader(VERT, FRAG);
 
-        glBindRenderbuffer(GL_FRAMEBUFFER, fbo);
+
         glClearColor(0.0, 0.0, 0.0, 0.0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDisable(GL_DEPTH_TEST);
 
         uint32_t glyph_vbo = 0;
         uint32_t glyph_vao = 0;
@@ -140,11 +140,11 @@ namespace {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, glyph.texture_id);
             // segfaults on this call
-            glDrawArrays(GL_TRIANGLES, 0, 2);
-            // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             glDeleteTextures(1, &glyph.texture_id);
         }
-        glDeleteRenderbuffers(1, &rbo);
+        glEnable(GL_DEPTH_TEST);
+        // glDeleteRenderbuffers(1, &rbo);
         glDeleteFramebuffers(1, &fbo);
         glDeleteVertexArrays(1, &glyph_vao);
         glDeleteBuffers(1, &glyph_vbo);
