@@ -7,27 +7,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 namespace {
-    const char* VERT =
-        "#version 460\n"
-        "layout (location = 0) in vec2 position;\n"
-        "layout (location = 1) in vec2 tex_coords;\n"
-        "uniform mat4 projection;\n"
-        "out vec2 texture_coords;\n"
-        "void main(){\n"
-        "   vec4 pos = projection * vec4(position.xy, 0, 1.0);\n"
-        "   texture_coords = tex_coords;\n"
-        "   gl_Position = vec4(pos.x, pos.y, 0.0, 1.0);\n"
-        "}"
-        ;
-    const char* FRAG =
-        "#version 460\n"
-        "out vec4 FragColor;\n"
-        "in vec2 texture_coords;\n"
-        "uniform sampler2D glyph_texture;\n"
-        "void main(){\n"
-        "   FragColor = texture(glyph_texture, texture_coords);\n"
-        "}"
-        ;
     font::FontBitmap gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& glyph_width, const uint32_t& glyph_height){
         auto glyphs_x = static_cast<uint32_t>(std::sqrt(chars.size()));
         uint32_t glyphs_y = glyphs_x + 1;
@@ -74,12 +53,45 @@ namespace {
         if(glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
             throw std::runtime_error("Failed to complete the framebuffer");
         }
-        auto glyph_shader = Shader(VERT, FRAG);
-
+        auto glyph_shader = Shader::from_shader_dir("font_bitmap");
 
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT);
         glDisable(GL_DEPTH_TEST);
+
+///////
+        // float vertices[] = {
+        //      0.5f,  0.5f, 0.0f,  // top right
+        //      0.5f, -0.5f, 0.0f,  // bottom right
+        //     -0.5f, -0.5f, 0.0f,  // bottom left
+        //     -0.5f,  0.5f, 0.0f   // top left
+        // };
+        // unsigned int indices[] = {  // note that we start from 0!
+        //     0, 1, 3,  // first Triangle
+        //     1, 2, 3   // second Triangle
+        // };
+        // unsigned int VBO, VAO, EBO;
+        // glGenVertexArrays(1, &VAO);
+        // glGenBuffers(1, &VBO);
+        // glGenBuffers(1, &EBO);
+        // // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+        // glBindVertexArray(VAO);
+        //
+        // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        //
+        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        //
+        // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        // glEnableVertexAttribArray(0);
+        //
+        // auto test_sh = Shader::from_shader_dir("test");
+        // test_sh.use_shader();
+        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+///////
+
+
 
         uint32_t glyph_vbo = 0;
         uint32_t glyph_vao = 0;
@@ -97,7 +109,7 @@ namespace {
             (void*)0);
         glEnableVertexAttribArray(0);
         //texture coords
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(2 * sizeof(float)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(2 * sizeof(float)));
         glEnableVertexAttribArray(1);
 
         glGenBuffers(1, &glyph_ebo);
@@ -120,7 +132,6 @@ namespace {
         glyph_shader.use_shader();
         glyph_shader.set_mat4("projection", projection);
 
-
         for(size_t i = 0; i < chars.size(); i++){
             size_t x = i % glyphs_x;
             size_t y = static_cast<size_t>(i / glyphs_x);
@@ -134,12 +145,12 @@ namespace {
 
             glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glyph_data), glyph_data);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            // segfaults on this call
+            // glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             glBindVertexArray(glyph_vao);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, glyph.texture_id);
-            // segfaults on this call
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             glDeleteTextures(1, &glyph.texture_id);
         }

@@ -216,7 +216,7 @@ void Game::render()
     for (auto& c_obj : m_bodies) {
         c_obj->render();
     }
-    m_test_text.draw();
+    // m_test_text.draw();
 }
 void Game::draw_gui()
 {
