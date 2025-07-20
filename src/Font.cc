@@ -145,7 +145,7 @@ namespace {
         glPixelStorei(GL_PACK_ALIGNMENT, 4);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         std::printf("glyphs_x: %d, glyphs_y: %d\n", glyphs_x, glyphs_y);
-        return font::FontBitmap(font_bitmap, glyphs_x, glyphs_y, glyph_width, glyph_height);
+        return font::FontBitmap(font_bitmap, glyphs_x, glyphs_y, glyph_width, glyph_height, first, last);
     }
 }
 namespace font{
@@ -211,19 +211,21 @@ namespace font{
             characters.emplace_back(std::move(ch));
         }
         glBindTexture(GL_TEXTURE_2D, 0);
-        auto bitmap = gen_font_bitmap(characters, max_glyph_width, max_glyph_height);
+        auto bitmap = gen_font_bitmap(characters, max_glyph_width, max_glyph_height, start_char, last_char);
         FT_Done_Face(face);
         FT_Done_FreeType(ft);
 
         return bitmap;
     }
     FontBitmap::FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y,
-            uint32_t glyph_width, uint32_t glyph_height) :
+            uint32_t glyph_width, uint32_t glyph_height, char first, char last) :
         bitmap_id(bitmap),
         glyphs_x(glyphs_x),
         glyphs_y(glyphs_y),
         glyph_width(glyph_width),
-        glyph_height(glyph_height)
+        glyph_height(glyph_height),
+        first_char(first),
+        last_char(last)
     {
         total_x = glyphs_x * glyph_width;
         total_y = glyphs_y * glyph_height;

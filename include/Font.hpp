@@ -26,6 +26,7 @@ namespace font{
         uint32_t glyph_count{};
         uint32_t glyph_width{}, glyph_height{};
         float total_x{}, total_y{};
+        char first_char{}, last_char{};
 
     public:
         struct GlyphTextureCoordinates {
@@ -34,7 +35,7 @@ namespace font{
             glm::vec2 bottom_left{};
             glm::vec2 bottom_right{};
         };
-        FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y, uint32_t glyph_width, uint32_t glyph_height);
+        FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y, uint32_t glyph_width, uint32_t glyph_height, char first, char last);
         FontBitmap(const FontBitmap& other);
         FontBitmap& operator=(const FontBitmap& other);
         FontBitmap(FontBitmap&& other);
