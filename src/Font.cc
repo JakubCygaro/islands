@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <stdexcept>
 #include <string>
 
 namespace {
@@ -169,7 +170,7 @@ namespace font{
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         uint32_t max_glyph_width{}, max_glyph_height{};
         std::vector<Character> characters{};
-        auto start_char = '!', last_char = 'z';
+        auto start_char = ' ', last_char = 'z';
         for(int ascii_code = start_char; ascii_code <= (int)last_char; ascii_code++){
             if(FT_Load_Char(face, (char)ascii_code, FT_LOAD_RENDER)){
                 std::stringstream ss;
@@ -237,7 +238,9 @@ namespace font{
         glyph_width(other.glyph_width),
         glyph_height(other.glyph_height),
         total_x(other.total_x),
-        total_y(other.total_y)
+        total_y(other.total_y),
+        first_char(other.first_char),
+        last_char(other.last_char)
     {}
     FontBitmap& FontBitmap::operator=(const FontBitmap& other) {
         bitmap_id = other.bitmap_id;
@@ -247,6 +250,8 @@ namespace font{
         glyph_height = other.glyph_height;
         total_x = other.total_x;
         total_y = other.total_y;
+        first_char = other.first_char;
+        last_char = other.last_char;
         return *this;
 
     }
@@ -257,7 +262,9 @@ namespace font{
         glyph_width(other.glyph_width),
         glyph_height(other.glyph_height),
         total_x(other.total_x),
-        total_y(other.total_y)
+        total_y(other.total_y),
+        first_char(other.first_char),
+        last_char(other.last_char)
     {
         other.bitmap_id = 0;
         other.glyphs_x = 0;
@@ -275,6 +282,8 @@ namespace font{
         glyph_height = other.glyph_height;
         total_x = other.total_x;
         total_y = other.total_y;
+        first_char = other.first_char;
+        last_char = other.last_char;
         other.bitmap_id = 0;
         other.glyphs_x = 0;
         other.glyphs_y = 0;
@@ -290,7 +299,13 @@ namespace font{
     }
 
     FontBitmap::GlyphTextureCoordinates FontBitmap::texture_coords_for(char ch) const{
-        auto idx = static_cast<int>(ch - 'a');
+        if (ch > last_char)
+            throw std::runtime_error("tried to access a character that is outside the texture bitmap");
+
+        auto idx = static_cast<int>(ch - first_char);
+
+        if(idx < 0)
+            throw std::runtime_error("tried to access a character that is outside the texture bitmap");
         auto x = idx % glyphs_x;
         auto y = idx / glyphs_y;
 
