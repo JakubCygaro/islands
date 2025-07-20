@@ -28,27 +28,6 @@ namespace {
     }
 }
 
-Game::Game(int32_t window_width, int32_t window_height)
-    : m_width { window_width }
-    , m_height { window_height }
-    , m_fov { 70 }
-    , m_camera { Camera(glm::vec3(0, 0, 3), glm::vec3(0)) }
-    , m_uniform_buffer { 0 }
-{
-    initialize();
-    initialize_key_bindings();
-    m_gui.help_menu.help_text = m_keybinds.gen_help_text();
-}
-Game::~Game()
-{
-    glDeleteBuffers(1, &m_uniform_buffer);
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-    m_bodies.clear();
-    glfwDestroyWindow(m_window_ptr);
-    glfwTerminate();
-}
 void Game::initialize()
 {
     glfwInit();

@@ -20,10 +20,13 @@ add_executable(islands
     src/shader/Shader.cc
     src/Camera.cc
     src/Game.cc
+    src/Game_ctors.cc
     src/Object.cc
+    src/Object_ctors.cc
     src/Gui.cc
     src/KeyBind.cc
     src/Font.cc
+    src/Font_ctors.cc
     src/imgui/imgui.cpp
     src/imgui/imgui_demo.cpp
     src/imgui/imgui_draw.cpp
