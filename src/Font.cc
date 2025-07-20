@@ -362,25 +362,11 @@ namespace font{
 
         ::glBufferData(GL_ARRAY_BUFFER, m_str.length() * 6 * sizeof(GlyphVertex), NULL, GL_STATIC_DRAW);
 
-        // ::glEnableVertexAttribArray(0);
-        // ::glVertexAttribPointer(0, 1, sizeof(GlyphVertex::pos), GL_FALSE, sizeof(GlyphVertex), (void*)0);
-        //
-        // ::glEnableVertexAttribArray(1);
-        // ::glVertexAttribPointer(1, 1, sizeof(GlyphVertex::tex), GL_FALSE, sizeof(GlyphVertex), (void*)sizeof(GlyphVertex::pos));
-
         ::glEnableVertexAttribArray(0);
         ::glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 
         ::glEnableVertexAttribArray(1);
         ::glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-        // //position
-        // glEnableVertexAttribArray(0);
-        // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
-        //     (void*)0);
-        // //texture coords
-        // glEnableVertexAttribArray(1);
-        // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
         ::glBindBuffer(GL_ARRAY_BUFFER, 0);
         ::glBindVertexArray(0);
@@ -398,7 +384,9 @@ namespace font{
         m_scale{other.m_scale},
         m_color{other.m_color},
         m_vao{other.m_vao},
-        m_vbo{other.m_vbo}
+        m_vbo{other.m_vbo},
+        m_height(other.m_height),
+        m_width(other.m_width)
     {
 
     }
@@ -413,6 +401,8 @@ namespace font{
         m_rotation = other.m_rotation;
         m_scale = other.m_scale;
         m_color = other.m_color;
+        m_width = other.m_width;
+        m_height = other.m_height;
         return *this;
     }
     Text2D::Text2D(Text2D&& other):
@@ -425,7 +415,9 @@ namespace font{
         m_scale{other.m_scale},
         m_color{other.m_color},
         m_vao{other.m_vao},
-        m_vbo{other.m_vbo}
+        m_vbo{other.m_vbo},
+        m_height(other.m_height),
+        m_width(other.m_width)
     {
         other.m_text_shader = nullptr;
         other.m_font_bitmap = nullptr;
@@ -443,6 +435,8 @@ namespace font{
         m_rotation = other.m_rotation;
         m_scale = other.m_scale;
         m_color = other.m_color;
+        m_width = other.m_width;
+        m_height = other.m_height;
 
         other.m_text_shader = nullptr;
         other.m_font_bitmap = nullptr;
@@ -469,7 +463,7 @@ namespace font{
     const std::string& Text2D::get_text() const {
         return this->m_str;
     }
-    void Text2D::set_color(glm::vec3&& new_col) {
+    void Text2D::set_color(glm::vec3 new_col) {
         m_color = new_col;
     }
     const glm::vec3& Text2D::get_color() const {
@@ -488,6 +482,12 @@ namespace font{
     }
     const float& Text2D::get_scale() const {
         return m_scale;
+    }
+    float Text2D::get_text_height() const {
+        return m_height;
+    }
+    float Text2D::get_text_width() const {
+        return m_width;
     }
     void Text2D::update_position() {
         auto m = glm::mat4(1.0f);
@@ -524,14 +524,13 @@ namespace font{
             vertices[3] = {{ (i + 1) * gw, gh }, { tex.bottom_right }};
             vertices[4] = {{ (i + 1) * gw, 0 }, { tex.top_right }};
             vertices[5] = {{ i * gw, 0 }, { tex.top_left }};
-            // std::cout << c << std::endl;
-            // for (auto& v : vertices) {
-            //     std::cout << glm::to_string(v.pos)<< " " << glm::to_string(v.tex) << std::endl;
-            // }
+
             ::glBufferSubData(GL_ARRAY_BUFFER,
                     i * sizeof(GlyphVertex) * vertices.size(), sizeof(GlyphVertex) * vertices.size(), vertices.data());
             i++;
         }
+        m_width = i * gw * m_scale;
+        m_height = gh * m_scale;
         ::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     }

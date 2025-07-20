@@ -34,7 +34,6 @@ Game::Game(int32_t window_width, int32_t window_height)
     , m_fov { 70 }
     , m_camera { Camera(glm::vec3(0, 0, 3), glm::vec3(0)) }
     , m_uniform_buffer { 0 }
-    , m_test_text{}
 {
     initialize();
     initialize_key_bindings();
@@ -150,11 +149,13 @@ void Game::initialize()
 
     auto font = std::make_shared<font::FontBitmap>(font::load_font("game_data/fonts/ARCADE.TTF", 48));
     auto font_shader = std::make_shared<Shader>(Shader::from_shader_dir("text"));
-    // m_test_text = font::Text2D(font, font_shader, "JA PIERDOLE");
-    // m_test_text.set_pos({ 0, 500 });
-    // m_test_text.set_color({ 1.0, .0, .0 });
-    // m_test_text.set_scale(2.0);
 
+    m_gui.mode = font::Text2D(font, font_shader, "Edit");
+    m_gui.mode.set_pos({ 0, 0 });
+    m_gui.mode.set_color(gui::GameUI::EDIT_MODE_TEXT_COLOR);
+    m_gui.paused = font::Text2D(font, font_shader, "PAUSED");
+    m_gui.paused.set_color({ 1.0, .0, .0 });
+    m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
 }
 void Game::run()
 {
@@ -223,7 +224,10 @@ void Game::render()
     for (auto& c_obj : m_bodies) {
         c_obj->render();
     }
-    m_test_text.draw();
+    m_gui.mode.draw();
+    if(m_paused){
+        m_gui.paused.draw();
+    }
 }
 void Game::draw_gui()
 {
@@ -318,6 +322,7 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     glBufferSubData(GL_UNIFORM_BUFFER,
         2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_text_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
 
 }
 void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos)
@@ -402,10 +407,15 @@ void Game::initialize_key_bindings() {
     // // toggle the gui with [E]dit
     m_keybinds.add_binding(GLFW_KEY_E, GLFW_PRESS, BindMode::Any, [this](){
         this->m_gui_enabled = !this->m_gui_enabled;
-        if (this->m_gui_enabled)
+        if (this->m_gui_enabled){
             glfwSetInputMode(this->m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        else
+            m_gui.mode.set_text("Edit");
+            m_gui.mode.set_color(gui::GameUI::EDIT_MODE_TEXT_COLOR);
+        } else {
             glfwSetInputMode(this->m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            m_gui.mode.set_text("Normal");
+            m_gui.mode.set_color(gui::GameUI::NORMAL_MODE_TEXT_COLOR);
+        }
     }, "Toggle edit mode");
     // // [P]ause the game
     m_keybinds.add_binding(GLFW_KEY_P, GLFW_PRESS, BindMode::Any, [this](){

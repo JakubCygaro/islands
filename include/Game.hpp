@@ -87,8 +87,6 @@ private:
     gui::GameUI m_gui {};
     KeybindHandler m_keybinds {};
 
-    font::Text2D m_test_text;
-
 private:
     void initialize();
     void initialize_key_bindings();

@@ -67,7 +67,7 @@ namespace font{
         glm::vec3 m_color{1.0};
 
         uint32_t m_vao{}, m_vbo{};
-
+        float m_height{}, m_width{};
     public:
         ~Text2D();
         Text2D();
@@ -82,12 +82,14 @@ namespace font{
         void set_pos(glm::vec2&& new_pos);
         void set_text(std::string&& new_text);
         const std::string& get_text() const;
-        void set_color(glm::vec3&& new_col);
+        void set_color(glm::vec3 new_col);
         const glm::vec3& get_color() const;
         void set_rotation(float r);
         const float& get_rotation() const;
         void set_scale(float s);
         const float& get_scale() const;
+        float get_text_height() const;
+        float get_text_width() const;
     private:
         void update();
         void update_position();

@@ -23,6 +23,9 @@ struct SelectedBodyMenu {
     float mass;
 };
 struct GameUI {
+    inline static const glm::vec3 EDIT_MODE_TEXT_COLOR = { .0, .7, .0 };
+    inline static const glm::vec3 NORMAL_MODE_TEXT_COLOR = { .0, .5, .8 };
+
     std::weak_ptr<obj::CelestialBody> selected_body {};
     SelectedBodyMenu selected_body_menu{};
     bool spawn_menu_enabled { false };
@@ -32,6 +35,7 @@ struct GameUI {
     bool help_menu_enabled { false };
     HelpMenu help_menu {};
     font::Text2D mode{};
+    font::Text2D paused{};
     GameUI();
 };
 }
