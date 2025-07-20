@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
@@ -14,14 +16,14 @@ namespace {
     /// This is the actual implementation of the load_font function.
     /// It iterates through all the characters and renders them onto a texture in a separate framebuffer object.
     /// It then returns a font::FontBitmap object that contains a pointer to that texture and handles access to it.
-    font::FontBitmap gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& glyph_width, const uint32_t& glyph_height, char first, char last){
+    font::FontBitmap gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& max_glyph_width, const uint32_t& max_glyph_height, char first, char last){
         auto glyphs_x = static_cast<uint32_t>(std::sqrt(chars.size()));
         uint32_t glyphs_y = glyphs_x + 1;
         uint32_t font_bitmap;
         uint32_t bitmap_width{}, bitmap_height{};
 
-        bitmap_width = glyphs_x * glyph_width;
-        bitmap_height = glyphs_y * glyph_height;
+        bitmap_width = glyphs_x * max_glyph_width;
+        bitmap_height = glyphs_y * max_glyph_height;
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glGenTextures(1, &font_bitmap);
@@ -111,11 +113,19 @@ namespace {
             size_t y = static_cast<size_t>(i / glyphs_x);
 
             auto& glyph = chars[i];
+
+            auto glyph_w_off = (max_glyph_width - glyph.size.x) / 2.;
+            auto glyph_h_off = (max_glyph_height - glyph.size.y) / 2.;
+
+            // glyph_h_off = 0;
+            // glyph_w_off = 0;
+
+
             //fill in the position data of the glyph in the buffer
-            glyph_data[0] = { x * glyph_width, y * glyph_height };
-            glyph_data[2] = { x * glyph_width, (y + 1) * glyph_height };
-            glyph_data[4] = { (x + 1) * glyph_width, y * glyph_height };
-            glyph_data[6] = { (x + 1) * glyph_width, (y + 1) * glyph_height };
+            glyph_data[0] = { x * max_glyph_width + glyph_w_off, y * max_glyph_height + glyph_h_off };
+            glyph_data[2] = { x * max_glyph_width + glyph_w_off, (y + 1) * max_glyph_height - glyph_h_off };
+            glyph_data[4] = { ((x + 1) * max_glyph_width) - glyph_w_off , y * max_glyph_height + glyph_h_off };
+            glyph_data[6] = { ((x + 1) * max_glyph_width) - glyph_w_off , (y + 1) * max_glyph_height - glyph_h_off };
 
             glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glyph_data), glyph_data);
@@ -145,8 +155,7 @@ namespace {
         glEnable(GL_BLEND);
         glPixelStorei(GL_PACK_ALIGNMENT, 4);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-        std::printf("glyphs_x: %d, glyphs_y: %d\n", glyphs_x, glyphs_y);
-        return font::FontBitmap(font_bitmap, glyphs_x, glyphs_y, glyph_width, glyph_height, first, last);
+        return font::FontBitmap(font_bitmap, glyphs_x, glyphs_y, max_glyph_width, max_glyph_height, first, last);
     }
 }
 namespace font{
@@ -212,6 +221,9 @@ namespace font{
             characters.emplace_back(std::move(ch));
         }
         glBindTexture(GL_TEXTURE_2D, 0);
+        auto const margin = 1.1;
+        max_glyph_height *= margin;
+        max_glyph_width *= margin;
         auto bitmap = gen_font_bitmap(characters, max_glyph_width, max_glyph_height, start_char, last_char);
         FT_Done_Face(face);
         FT_Done_FreeType(ft);
@@ -308,6 +320,8 @@ namespace font{
             throw std::runtime_error("tried to access a character that is outside the texture bitmap");
         auto x = idx % glyphs_x;
         auto y = idx / glyphs_y;
+        // this is a shitty hack becuase the bitmap is flipped or whatever and im too sick of this bullshit to fix it at the source
+        y = glyphs_y - y - 1;
 
         auto w_prc = (float)glyph_width / (float)total_x;
         auto h_prc = (float)glyph_height / (float)total_y;
@@ -326,65 +340,197 @@ namespace font{
     void FontBitmap::unbind_bitmap() const{
         glBindTexture(GL_TEXTURE_2D, 0);
     }
+    uint32_t FontBitmap::get_glyph_width() const {
+        return glyph_width;
+    }
+    uint32_t FontBitmap::get_glyph_height() const {
+        return glyph_height;
+    }
     Text2D::Text2D(){}
-    Text2D::Text2D(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader):
+    Text2D::Text2D(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text):
+        m_str{text},
         m_text_shader{text_shader},
         m_font_bitmap{font_bitmap}
     {
-        // m_str = "";
+        ::glGenVertexArrays(1, &m_vao);
+        ::glGenBuffers(1, &m_vbo);
+        ::glBindVertexArray(m_vao);
+        ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+        ::glBufferData(GL_ARRAY_BUFFER, m_str.length() * 6 * sizeof(GlyphVertex), NULL, GL_STATIC_DRAW);
+
+        // ::glEnableVertexAttribArray(0);
+        // ::glVertexAttribPointer(0, 1, sizeof(GlyphVertex::pos), GL_FALSE, sizeof(GlyphVertex), (void*)0);
+        //
+        // ::glEnableVertexAttribArray(1);
+        // ::glVertexAttribPointer(1, 1, sizeof(GlyphVertex::tex), GL_FALSE, sizeof(GlyphVertex), (void*)sizeof(GlyphVertex::pos));
+
+        ::glEnableVertexAttribArray(0);
+        ::glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+        ::glEnableVertexAttribArray(1);
+        ::glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+        // //position
+        // glEnableVertexAttribArray(0);
+        // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
+        //     (void*)0);
+        // //texture coords
+        // glEnableVertexAttribArray(1);
+        // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+        ::glBindBuffer(GL_ARRAY_BUFFER, 0);
+        ::glBindVertexArray(0);
+
+        update();
+        update_position();
     }
     Text2D::Text2D(const Text2D& other):
-        // m_str{other.m_str},
+        m_str{other.m_str},
         m_text_shader{other.m_text_shader},
         m_font_bitmap{other.m_font_bitmap},
         m_letter_data{other.m_letter_data},
-        m_pos{other.m_pos}
+        m_pos{other.m_pos},
+        m_model{other.m_model},
+        m_vao{other.m_vao},
+        m_vbo{other.m_vbo}
     {
 
     }
     Text2D& Text2D::operator=(const Text2D& other){
-        // m_str = other.m_str;
+        m_str = other.m_str;
         m_text_shader = other.m_text_shader;
         m_font_bitmap = other.m_font_bitmap;
         m_letter_data = other.m_letter_data;
         m_pos = other.m_pos;
+        m_vao = other.m_vao;
+        m_vbo = other.m_vbo;
+        m_model = other.m_model;
         return *this;
     }
     Text2D::Text2D(Text2D&& other):
-        // m_str{other.m_str},
+        m_str{std::move(other.m_str)},
         m_text_shader{other.m_text_shader},
         m_font_bitmap{other.m_font_bitmap},
         m_letter_data{other.m_letter_data},
-        m_pos{other.m_pos}
+        m_pos{other.m_pos},
+        m_model{other.m_model},
+        m_vao{other.m_vao},
+        m_vbo{other.m_vbo}
     {
         // other.m_str = nullptr;
         other.m_text_shader = nullptr;
         other.m_font_bitmap = nullptr;
+        other.m_vao = 0;
+        other.m_vbo = 0;
         m_letter_data.clear();
     }
     Text2D& Text2D::operator=(Text2D&& other){
-        // m_str = other.m_str;
+        m_str = std::move(other.m_str);
         m_text_shader = other.m_text_shader;
         m_font_bitmap = other.m_font_bitmap;
         m_letter_data = other.m_letter_data;
         m_pos = other.m_pos;
+        m_model = other.m_model;
+        m_vao = other.m_vao;
+        m_vbo = other.m_vbo;
 
         // other.m_str = nullptr;
         other.m_text_shader = nullptr;
         other.m_font_bitmap = nullptr;
+        other.m_vao = 0;
+        other.m_vbo = 0;
         other.m_letter_data.clear();
 
         return *this;
     }
+    Text2D::~Text2D() {
+        if(m_vbo) ::glDeleteBuffers(1, &m_vbo);
+        if(m_vao) ::glDeleteVertexArrays(1, &m_vao);
+    }
+    const glm::vec2& Text2D::get_pos() const {
+        return this->m_pos;
+    }
+    void Text2D::set_pos(glm::vec2&& new_pos) {
+        this->m_pos = new_pos;
+        update_position();
+    }
+    void Text2D::set_text(std::string&& new_text) {
+        this->m_str = new_text;
+        update();
+    }
+    const std::string& Text2D::get_text() const {
+        return this->m_str;
+    }
+    void Text2D::update_position() {
+        auto m = glm::mat4(1.0f);
+        m = glm::translate(m, glm::vec3(m_pos, 0.0));
+        m_model = m;
+    }
     void Text2D::update() {
-        // std::string::const_iterator str_iter = m_str.begin();
-        // auto pos = m_pos;
-        //
-        // for(char c = *str_iter; str_iter != m_str.end(); str_iter++){
-        //     auto glypth_coord = m_font_bitmap->texture_coords_for(c);
-        // }
+        if (m_str.length() == 0) return;
+
+        std::vector<GlyphVertex> vertices = {
+            { { 0, 0 }, { 0, 0 } }, // top-left
+            { { 0, 0 }, { 0, 0 } }, // bottom-left
+            { { 0, 0 }, { 0, 0 } }, // bottom-right
+            { { 0, 0 }, { 0, 0 } }, // bottom-right
+            { { 0, 0 }, { 0, 0 } }, // top-right
+            { { 0, 0 }, { 0, 0 } }, // top-left
+        };
+        auto gw = m_font_bitmap->get_glyph_width();
+        auto gh = m_font_bitmap->get_glyph_height();
+
+        ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        ::glBufferData(GL_ARRAY_BUFFER, m_str.length() * vertices.size() * sizeof(GlyphVertex), NULL, GL_STATIC_DRAW);
+
+        size_t i{};
+        for(auto str_iter = m_str.begin(); str_iter != m_str.end(); ++str_iter){
+            char c = *str_iter;
+            auto tex = m_font_bitmap->texture_coords_for(c);
+
+            vertices[0] = {{ i * gw, 0 }, { tex.top_left }};
+            vertices[1] = {{ i * gw, gh }, { tex.bottom_left }};
+            vertices[2] = {{ (i + 1) * gw, gh }, { tex.bottom_right }};
+            vertices[3] = {{ (i + 1) * gw, gh }, { tex.bottom_right }};
+            vertices[4] = {{ (i + 1) * gw, 0 }, { tex.top_right }};
+            vertices[5] = {{ i * gw, 0 }, { tex.top_left }};
+            // std::cout << c << std::endl;
+            // for (auto& v : vertices) {
+            //     std::cout << glm::to_string(v.pos)<< " " << glm::to_string(v.tex) << std::endl;
+            // }
+            ::glBufferSubData(GL_ARRAY_BUFFER,
+                    i * sizeof(GlyphVertex) * vertices.size(), sizeof(GlyphVertex) * vertices.size(), vertices.data());
+            i++;
+        }
+        ::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     }
     void Text2D::draw() const {
+        if (m_str.length() == 0) return;
+
+        ::glDisable(GL_DEPTH_TEST);
+        ::glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        ::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        ::glBindVertexArray(m_vao);
+
+        m_font_bitmap->bind_bitmap();
+        m_text_shader->use_shader();
+
+        m_text_shader->set_mat4("model", m_model);
+
+        ::glEnable(GL_BLEND);
+        ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        ::glDrawArrays(GL_TRIANGLES, 0, 6 * m_str.length());
+
+        m_font_bitmap->unbind_bitmap();
+        ::glBindVertexArray(0);
+        ::glEnable(GL_DEPTH_TEST);
+        ::glPixelStorei(GL_PACK_ALIGNMENT, 4);
+        ::glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    }
+    void Text2D::debug_draw() const {
 
         glDisable(GL_DEPTH_TEST);
         float data[] = {
@@ -417,6 +563,8 @@ namespace font{
         glBindVertexArray(vao);
         m_font_bitmap->bind_bitmap();
         m_text_shader->use_shader();
+
+        m_text_shader->set_mat4("model", glm::mat4(1.0f));
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

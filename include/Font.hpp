@@ -44,29 +44,45 @@ namespace font{
         GlyphTextureCoordinates texture_coords_for(char ch) const;
         void bind_bitmap() const;
         void unbind_bitmap() const;
+        uint32_t get_glyph_width() const;
+        uint32_t get_glyph_height() const;
         ~FontBitmap();
     };
     font::FontBitmap load_font(const std::string& file_path, int font_size);
 
+    struct GlyphVertex {
+        glm::vec2 pos;
+        glm::vec2 tex;
+    };
     class Text2D {
     private:
-        // std::string m_str{};
+        std::string m_str{};
         std::shared_ptr<Shader> m_text_shader{};
         std::shared_ptr<FontBitmap> m_font_bitmap{};
         std::vector<glm::vec4> m_letter_data{};
 
         glm::vec2 m_pos{};
+        glm::mat4 m_model{};
+
+        uint32_t m_vao{}, m_vbo{};
 
     public:
+        ~Text2D();
         Text2D();
-        Text2D(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader);
+        Text2D(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text = "");
         Text2D(const Text2D& other);
         Text2D& operator=(const Text2D& other);
         Text2D(Text2D&& other);
         Text2D& operator=(Text2D&& other);
-        void update();
         void draw() const;
-
+        void debug_draw() const;
+        const glm::vec2& get_pos() const;
+        void set_pos(glm::vec2&& new_pos);
+        void set_text(std::string&& new_text);
+        const std::string& get_text() const;
+    private:
+        void update();
+        void update_position();
     };
 }
 #endif

@@ -10,8 +10,11 @@ layout(std140, binding = 0) uniform Matrices {
 };
 
 out vec2 glyph_coord;
+
+uniform mat4 model;
+
 // out vec3 VertColor;
 void main() {
     glyph_coord = coord;
-    gl_Position = text_projection * vec4(vert_pos, 0.0, 1.0);
+    gl_Position = text_projection * model *vec4(vert_pos, 0.0, 1.0);
 }

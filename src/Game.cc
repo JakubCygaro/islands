@@ -150,7 +150,8 @@ void Game::initialize()
 
     auto font = std::make_shared<font::FontBitmap>(font::load_font("game_data/fonts/ARCADE.TTF", 48));
     auto font_shader = std::make_shared<Shader>(Shader::from_shader_dir("text"));
-    m_test_text = font::Text2D(font, font_shader);
+    m_test_text = font::Text2D(font, font_shader, " !\"#$%&'()*+,-./0123456789:;'");
+    m_test_text.set_pos({ 0, 500 });
 
 }
 void Game::run()
@@ -220,6 +221,7 @@ void Game::render()
     for (auto& c_obj : m_bodies) {
         c_obj->render();
     }
+    m_test_text.debug_draw();
     m_test_text.draw();
 }
 void Game::draw_gui()
