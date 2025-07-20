@@ -311,17 +311,19 @@ namespace font{
     }
 
     FontBitmap::GlyphTextureCoordinates FontBitmap::texture_coords_for(char ch) const{
-        if (ch > last_char)
+        if ((int)ch > (int)last_char)
             throw std::runtime_error("tried to access a character that is outside the texture bitmap");
 
         auto idx = static_cast<int>(ch - first_char);
 
         if(idx < 0)
             throw std::runtime_error("tried to access a character that is outside the texture bitmap");
+
         auto x = idx % glyphs_x;
-        auto y = idx / glyphs_y;
+        auto y = idx / (glyphs_y - 1);
         // this is a shitty hack becuase the bitmap is flipped or whatever and im too sick of this bullshit to fix it at the source
         y = glyphs_y - y - 1;
+
 
         auto w_prc = (float)glyph_width / (float)total_x;
         auto h_prc = (float)glyph_height / (float)total_y;
