@@ -1,5 +1,6 @@
 #include "Font.hpp"
 #include <cstdio>
+#include <glm/ext/matrix_transform.hpp>
 #include <stb_image/stb_image.h>
 #include "shader/Shader.hpp"
 #include <algorithm>
@@ -391,9 +392,11 @@ namespace font{
         m_str{other.m_str},
         m_text_shader{other.m_text_shader},
         m_font_bitmap{other.m_font_bitmap},
-        m_letter_data{other.m_letter_data},
         m_pos{other.m_pos},
         m_model{other.m_model},
+        m_rotation{other.m_rotation},
+        m_scale{other.m_scale},
+        m_color{other.m_color},
         m_vao{other.m_vao},
         m_vbo{other.m_vbo}
     {
@@ -403,46 +406,48 @@ namespace font{
         m_str = other.m_str;
         m_text_shader = other.m_text_shader;
         m_font_bitmap = other.m_font_bitmap;
-        m_letter_data = other.m_letter_data;
         m_pos = other.m_pos;
         m_vao = other.m_vao;
         m_vbo = other.m_vbo;
         m_model = other.m_model;
+        m_rotation = other.m_rotation;
+        m_scale = other.m_scale;
+        m_color = other.m_color;
         return *this;
     }
     Text2D::Text2D(Text2D&& other):
         m_str{std::move(other.m_str)},
         m_text_shader{other.m_text_shader},
         m_font_bitmap{other.m_font_bitmap},
-        m_letter_data{other.m_letter_data},
         m_pos{other.m_pos},
         m_model{other.m_model},
+        m_rotation{other.m_rotation},
+        m_scale{other.m_scale},
+        m_color{other.m_color},
         m_vao{other.m_vao},
         m_vbo{other.m_vbo}
     {
-        // other.m_str = nullptr;
         other.m_text_shader = nullptr;
         other.m_font_bitmap = nullptr;
         other.m_vao = 0;
         other.m_vbo = 0;
-        m_letter_data.clear();
     }
     Text2D& Text2D::operator=(Text2D&& other){
         m_str = std::move(other.m_str);
         m_text_shader = other.m_text_shader;
         m_font_bitmap = other.m_font_bitmap;
-        m_letter_data = other.m_letter_data;
         m_pos = other.m_pos;
         m_model = other.m_model;
         m_vao = other.m_vao;
         m_vbo = other.m_vbo;
+        m_rotation = other.m_rotation;
+        m_scale = other.m_scale;
+        m_color = other.m_color;
 
-        // other.m_str = nullptr;
         other.m_text_shader = nullptr;
         other.m_font_bitmap = nullptr;
         other.m_vao = 0;
         other.m_vbo = 0;
-        other.m_letter_data.clear();
 
         return *this;
     }
@@ -464,9 +469,31 @@ namespace font{
     const std::string& Text2D::get_text() const {
         return this->m_str;
     }
+    void Text2D::set_color(glm::vec3&& new_col) {
+        m_color = new_col;
+    }
+    const glm::vec3& Text2D::get_color() const {
+        return m_color;
+    }
+    void Text2D::set_rotation(float r) {
+        m_rotation = r;
+        update_position();
+    }
+    const float& Text2D::get_rotation() const {
+        return m_rotation;
+    }
+    void Text2D::set_scale(float s) {
+        m_scale = s;
+        update_position();
+    }
+    const float& Text2D::get_scale() const {
+        return m_scale;
+    }
     void Text2D::update_position() {
         auto m = glm::mat4(1.0f);
         m = glm::translate(m, glm::vec3(m_pos, 0.0));
+        m = glm::scale(m, { m_scale, m_scale, 1.0 });
+        m = glm::rotate(m, glm::radians(m_rotation), { 0.0f, 0.0f, 1.0f });
         m_model = m;
     }
     void Text2D::update() {
@@ -520,6 +547,7 @@ namespace font{
         m_text_shader->use_shader();
 
         m_text_shader->set_mat4("model", m_model);
+        m_text_shader->set_vec3("color", m_color);
 
         ::glEnable(GL_BLEND);
         ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

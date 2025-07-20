@@ -152,6 +152,8 @@ void Game::initialize()
     auto font_shader = std::make_shared<Shader>(Shader::from_shader_dir("text"));
     m_test_text = font::Text2D(font, font_shader, "JA PIERDOLE");
     m_test_text.set_pos({ 0, 500 });
+    m_test_text.set_color({ 1.0, .0, .0 });
+    m_test_text.set_scale(2.0);
 
 }
 void Game::run()

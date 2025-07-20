@@ -59,10 +59,12 @@ namespace font{
         std::string m_str{};
         std::shared_ptr<Shader> m_text_shader{};
         std::shared_ptr<FontBitmap> m_font_bitmap{};
-        std::vector<glm::vec4> m_letter_data{};
 
         glm::vec2 m_pos{};
         glm::mat4 m_model{};
+        float m_rotation{0.0f};
+        float m_scale{1.0f};
+        glm::vec3 m_color{1.0};
 
         uint32_t m_vao{}, m_vbo{};
 
@@ -80,6 +82,12 @@ namespace font{
         void set_pos(glm::vec2&& new_pos);
         void set_text(std::string&& new_text);
         const std::string& get_text() const;
+        void set_color(glm::vec3&& new_col);
+        const glm::vec3& get_color() const;
+        void set_rotation(float r);
+        const float& get_rotation() const;
+        void set_scale(float s);
+        const float& get_scale() const;
     private:
         void update();
         void update_position();
