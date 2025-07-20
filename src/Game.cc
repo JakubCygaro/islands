@@ -150,10 +150,10 @@ void Game::initialize()
 
     auto font = std::make_shared<font::FontBitmap>(font::load_font("game_data/fonts/ARCADE.TTF", 48));
     auto font_shader = std::make_shared<Shader>(Shader::from_shader_dir("text"));
-    m_test_text = font::Text2D(font, font_shader, "JA PIERDOLE");
-    m_test_text.set_pos({ 0, 500 });
-    m_test_text.set_color({ 1.0, .0, .0 });
-    m_test_text.set_scale(2.0);
+    // m_test_text = font::Text2D(font, font_shader, "JA PIERDOLE");
+    // m_test_text.set_pos({ 0, 500 });
+    // m_test_text.set_color({ 1.0, .0, .0 });
+    // m_test_text.set_scale(2.0);
 
 }
 void Game::run()
@@ -303,6 +303,22 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
     m_width = width;
     m_height = height;
+
+    m_text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
+
+    m_projection = glm::perspective(glm::radians(m_fov),
+        (float)m_width / (float)m_height, 0.1f, 1000.0f);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
+    //projection
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
+
+    //text_projection
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_text_projection));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 }
 void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos)
 {

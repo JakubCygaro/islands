@@ -1,3 +1,4 @@
+#include "Font.hpp"
 #include "Object.hpp"
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
@@ -30,6 +31,7 @@ struct GameUI {
     GameOptionsMenu game_options_menu {};
     bool help_menu_enabled { false };
     HelpMenu help_menu {};
+    font::Text2D mode{};
     GameUI();
 };
 }
