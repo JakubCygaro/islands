@@ -49,7 +49,7 @@ namespace font{
 
     class Text2D {
     private:
-        std::string m_str{};
+        // std::string m_str{};
         std::shared_ptr<Shader> m_text_shader{};
         std::shared_ptr<FontBitmap> m_font_bitmap{};
         std::vector<glm::vec4> m_letter_data{};

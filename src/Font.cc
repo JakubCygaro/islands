@@ -1,13 +1,19 @@
 #include "Font.hpp"
+#include <cstdio>
+#include <stb_image/stb_image.h>
 #include "shader/Shader.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <string>
 
 namespace {
-    font::FontBitmap gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& glyph_width, const uint32_t& glyph_height){
+    /// This is the actual implementation of the load_font function.
+    /// It iterates through all the characters and renders them onto a texture in a separate framebuffer object.
+    /// It then returns a font::FontBitmap object that contains a pointer to that texture and handles access to it.
+    font::FontBitmap gen_font_bitmap(const std::vector<font::Character>& chars, const uint32_t& glyph_width, const uint32_t& glyph_height, char first, char last){
         auto glyphs_x = static_cast<uint32_t>(std::sqrt(chars.size()));
         uint32_t glyphs_y = glyphs_x + 1;
         uint32_t font_bitmap;
@@ -16,16 +22,17 @@ namespace {
         bitmap_width = glyphs_x * glyph_width;
         bitmap_height = glyphs_y * glyph_height;
 
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glGenTextures(1, &font_bitmap);
         glBindTexture(GL_TEXTURE_2D, font_bitmap);
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
-            GL_RED,
+            GL_R8,
             bitmap_width,
             bitmap_height,
             0,
-            GL_RGBA,
+            GL_RED,
             GL_UNSIGNED_BYTE,
             NULL
         );
@@ -34,64 +41,27 @@ namespace {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glBindTexture(GL_TEXTURE_2D, 0);
 
         uint32_t fbo;
         glGenFramebuffers(1, &fbo);
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, font_bitmap, 0);
 
-        // unsigned int rbo;
-        // glGenRenderbuffers(1, &rbo);
-        // glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        // glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, bitmap_width, bitmap_height);
-        // glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        //
-        // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-        // glBindRenderbuffer(GL_FRAMEBUFFER, 0);
-
-        if(glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
             throw std::runtime_error("Failed to complete the framebuffer");
         }
-        auto glyph_shader = Shader::from_shader_dir("font_bitmap");
+
+        GLint gl_viewport[4];
+        glGetIntegerv(GL_VIEWPORT, gl_viewport);
+        glViewport(0, 0, bitmap_width, bitmap_height);
 
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT);
-        glDisable(GL_DEPTH_TEST);
-
-///////
-        // float vertices[] = {
-        //      0.5f,  0.5f, 0.0f,  // top right
-        //      0.5f, -0.5f, 0.0f,  // bottom right
-        //     -0.5f, -0.5f, 0.0f,  // bottom left
-        //     -0.5f,  0.5f, 0.0f   // top left
-        // };
-        // unsigned int indices[] = {  // note that we start from 0!
-        //     0, 1, 3,  // first Triangle
-        //     1, 2, 3   // second Triangle
-        // };
-        // unsigned int VBO, VAO, EBO;
-        // glGenVertexArrays(1, &VAO);
-        // glGenBuffers(1, &VBO);
-        // glGenBuffers(1, &EBO);
-        // // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-        // glBindVertexArray(VAO);
-        //
-        // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        //
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-        //
-        // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-        // glEnableVertexAttribArray(0);
-        //
-        // auto test_sh = Shader::from_shader_dir("test");
-        // test_sh.use_shader();
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-///////
-
-
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         uint32_t glyph_vbo = 0;
         uint32_t glyph_vao = 0;
@@ -105,12 +75,12 @@ namespace {
         glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(glm::vec2), NULL, GL_DYNAMIC_DRAW);
 
         //position
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
-            (void*)0);
         glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
+            (void*)0);
         //texture coords
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(2 * sizeof(float)));
         glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
         glGenBuffers(1, &glyph_ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glyph_ebo);
@@ -126,11 +96,14 @@ namespace {
             {0, 0}, {1, 1}, // top-right
             {0, 0}, {1, 0}, // bottom-right
         };
-        auto projection = glm::ortho(0.0f, static_cast<float>(bitmap_width),
-                0.0f, static_cast<float>(bitmap_height), 0.0f, 1.0f);
+        auto projection = glm::ortho(0.0f, static_cast<float>(bitmap_width), static_cast<float>(bitmap_height),
+                0.0f);
 
+        glBindVertexArray(glyph_vao);
+        auto glyph_shader = Shader::from_shader_dir("font_bitmap");
         glyph_shader.use_shader();
         glyph_shader.set_mat4("projection", projection);
+
 
         for(size_t i = 0; i < chars.size(); i++){
             size_t x = i % glyphs_x;
@@ -145,25 +118,38 @@ namespace {
 
             glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glyph_data), glyph_data);
-            // segfaults on this call
-            // glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            glBindVertexArray(glyph_vao);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, glyph.texture_id);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             glDeleteTextures(1, &glyph.texture_id);
         }
-        glEnable(GL_DEPTH_TEST);
-        // glDeleteRenderbuffers(1, &rbo);
+        // glReadBuffer(GL_COLOR_ATTACHMENT0);
+        // std::vector<unsigned char> pixels(3 * bitmap_width * bitmap_height);
+        // glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        // glReadPixels(0, 0, bitmap_width, bitmap_height, GL_RED, GL_UNSIGNED_BYTE, pixels.data());
+        //
+        // bool any_data = std::any_of(pixels.begin(), pixels.end(), [](unsigned char v){return v != 0;});
+        // if(!any_data) throw std::runtime_error("framebuffer empty");
+
+        // post rendering cleanup
         glDeleteFramebuffers(1, &fbo);
         glDeleteVertexArrays(1, &glyph_vao);
         glDeleteBuffers(1, &glyph_vbo);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // set the viewport to the previous value
+        glViewport(0, 0, gl_viewport[2], gl_viewport[3]);
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        std::printf("glyphs_x: %d, glyphs_y: %d\n", glyphs_x, glyphs_y);
         return font::FontBitmap(font_bitmap, glyphs_x, glyphs_y, glyph_width, glyph_height);
     }
 }
 namespace font{
+    /// This function loads a .ttf font file under the file_path and returns a FontBitmap wrapper object.
     font::FontBitmap load_font(const std::string& file_path, int font_size){
         FT_Library ft;
         if(FT_Init_FreeType(&ft)){
@@ -183,7 +169,8 @@ namespace font{
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         uint32_t max_glyph_width{}, max_glyph_height{};
         std::vector<Character> characters{};
-        for(int ascii_code = 32; ascii_code < 128; ascii_code++){
+        auto start_char = '!', last_char = 'z';
+        for(int ascii_code = start_char; ascii_code <= (int)last_char; ascii_code++){
             if(FT_Load_Char(face, (char)ascii_code, FT_LOAD_RENDER)){
                 std::stringstream ss;
                 ss << "Failed to load font glyph: '";
@@ -193,8 +180,7 @@ namespace font{
             }
             max_glyph_width = std::max(face->glyph->bitmap.width, max_glyph_width);
             max_glyph_height = std::max(face->glyph->bitmap.rows, max_glyph_height);
-            // if(face->glyph->bitmap.width > width) width = face->glyph->bitmap.width;
-            // if(face->glyph->bitmap.rows > height) height = face->glyph->bitmap.rows;
+
             // generate texture
             uint32_t texture;
             glGenTextures(1, &texture);
@@ -202,7 +188,7 @@ namespace font{
             glTexImage2D(
                 GL_TEXTURE_2D,
                 0,
-                GL_RED,
+                GL_R8,
                 face->glyph->bitmap.width,
                 face->glyph->bitmap.rows,
                 0,
@@ -228,6 +214,7 @@ namespace font{
         auto bitmap = gen_font_bitmap(characters, max_glyph_width, max_glyph_height);
         FT_Done_Face(face);
         FT_Done_FreeType(ft);
+
         return bitmap;
     }
     FontBitmap::FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y,
@@ -316,6 +303,7 @@ namespace font{
 
     }
     void FontBitmap::bind_bitmap() const {
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, bitmap_id);
     }
     void FontBitmap::unbind_bitmap() const{
@@ -326,10 +314,10 @@ namespace font{
         m_text_shader{text_shader},
         m_font_bitmap{font_bitmap}
     {
-
+        // m_str = "";
     }
     Text2D::Text2D(const Text2D& other):
-        m_str{other.m_str},
+        // m_str{other.m_str},
         m_text_shader{other.m_text_shader},
         m_font_bitmap{other.m_font_bitmap},
         m_letter_data{other.m_letter_data},
@@ -338,7 +326,7 @@ namespace font{
 
     }
     Text2D& Text2D::operator=(const Text2D& other){
-        m_str = other.m_str;
+        // m_str = other.m_str;
         m_text_shader = other.m_text_shader;
         m_font_bitmap = other.m_font_bitmap;
         m_letter_data = other.m_letter_data;
@@ -346,25 +334,25 @@ namespace font{
         return *this;
     }
     Text2D::Text2D(Text2D&& other):
-        m_str{other.m_str},
+        // m_str{other.m_str},
         m_text_shader{other.m_text_shader},
         m_font_bitmap{other.m_font_bitmap},
         m_letter_data{other.m_letter_data},
         m_pos{other.m_pos}
     {
-        other.m_str = nullptr;
+        // other.m_str = nullptr;
         other.m_text_shader = nullptr;
         other.m_font_bitmap = nullptr;
         m_letter_data.clear();
     }
     Text2D& Text2D::operator=(Text2D&& other){
-        m_str = other.m_str;
+        // m_str = other.m_str;
         m_text_shader = other.m_text_shader;
         m_font_bitmap = other.m_font_bitmap;
         m_letter_data = other.m_letter_data;
         m_pos = other.m_pos;
 
-        other.m_str = nullptr;
+        // other.m_str = nullptr;
         other.m_text_shader = nullptr;
         other.m_font_bitmap = nullptr;
         other.m_letter_data.clear();
@@ -372,47 +360,57 @@ namespace font{
         return *this;
     }
     void Text2D::update() {
-        std::string::const_iterator str_iter = m_str.begin();
-        auto pos = m_pos;
-
-        for(char c = *str_iter; str_iter != m_str.end(); str_iter++){
-            auto glypth_coord = m_font_bitmap->texture_coords_for(c);
-        }
+        // std::string::const_iterator str_iter = m_str.begin();
+        // auto pos = m_pos;
+        //
+        // for(char c = *str_iter; str_iter != m_str.end(); str_iter++){
+        //     auto glypth_coord = m_font_bitmap->texture_coords_for(c);
+        // }
     }
     void Text2D::draw() const {
 
+        glDisable(GL_DEPTH_TEST);
         float data[] = {
-            0.0, 0.0, 0.0, 1.0,
-            0.0, 300.0, 0.0, 0.0,
-            300.0, 300.0, 1.0, 0.0,
-            300.0, 300.0, 1.0, 0.0,
-            300.0, 0.0, 1.0, 1.0,
-            0.0, 0.0, 0.0, 1.0,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 300.0, 0.0, 1.0,
+            600.0, 300.0, 1.0, 1.0,
+            600.0, 300.0, 1.0, 1.0,
+            600.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
         };
 
-        uint32_t vbo{}, vao{};
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+        uint32_t vbo{}, vao{};
         glGenBuffers(1, &vbo);
         glGenVertexArrays(1, &vao);
         glBindVertexArray(vao);
+
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
-            (void*)0);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)(2 * sizeof(float)));
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
+            (void*)0);
         glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+        glBindVertexArray(vao);
         m_font_bitmap->bind_bitmap();
         m_text_shader->use_shader();
 
-        glBindVertexArray(vao);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glDrawArrays(GL_TRIANGLES, 0, 1);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        m_font_bitmap->unbind_bitmap();
         glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &vbo);
+        glEnable(GL_DEPTH_TEST);
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
     }
 }
