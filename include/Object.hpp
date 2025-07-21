@@ -84,6 +84,14 @@ public:
 private:
     void update_radius();
 };
+
+class Planet : public CelestialBody {
+private:
+    inline static std::shared_ptr<Shader> shader_instance();
+    inline static std::shared_ptr<Shader> s_planet_shader = nullptr;
+    inline static const char* PLANET_SHADER_FILE = "planet";
+
+};
 }
 
 #endif
