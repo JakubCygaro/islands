@@ -23,6 +23,8 @@ add_executable(islands
     src/Game_ctors.cc
     src/Object.cc
     src/Object_ctors.cc
+    src/Planet.cc
+    src/Planet_ctors.cc
     src/Gui.cc
     src/KeyBind.cc
     src/Font.cc

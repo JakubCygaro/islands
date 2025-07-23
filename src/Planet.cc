@@ -1,13 +1,18 @@
 #include <Object.hpp>
 
 namespace obj {
-
-    std::shared_ptr<Shader> Planet::shader_instance() {
-        if(s_planet_shader){
-            return s_planet_shader;
-        } else {
-            s_planet_shader = std::make_shared<Shader>(Shader::from_shader_dir(Planet::PLANET_SHADER_FILE));
-            return s_planet_shader;
-        }
+    void Planet::render(){
+        auto model = glm::mat4(1);
+        model = glm::translate(model, m_pos);
+        model = glm::scale(model, glm::vec3(1) * m_radius);
+        m_shader->use_shader();
+        m_shader->set_mat4(name_of(model), model);
+        m_shader->set_vec3(name_of(color), m_color);
+        m_sphere->draw();
+    }
+    void Planet::update_radius() {
+        //get radius of a sphere form density equation,
+        //assuming the density of a planet to be equal to the density of earth
+        m_radius = std::pow(m_mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
     }
 }

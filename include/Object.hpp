@@ -41,29 +41,21 @@ public:
 };
 
 class CelestialBody {
-private:
-    inline static const char* C_BODY_SHADER_FILE = "c_body";
-    inline static std::shared_ptr<Shader> s_c_body_shader = nullptr;
-
 protected:
-    std::shared_ptr<Shader> m_shader;
-    std::shared_ptr<UnitSphere> m_sphere;
     PROTECTED_PROPERTY(glm::vec3, pos)
     PROTECTED_PROPERTY(glm::vec3, speed)
     PROTECTED_PROPERTY(glm::vec3, acceleration)
     PROTECTED_PROPERTY(glm::vec3, color)
     /*PROTECTED_PROPERTY(float, mass)*/
+    void update_radius();
+protected:
+    std::shared_ptr<UnitSphere> m_sphere = nullptr;
     float m_mass {};
     float m_radius {};
 
 public:
-    inline static const float MASS_TO_RADIUS_RATIO = 0.05f;
-    // one unit of mass in the simulation is equal to 1 kg
-    inline static const float MASS_BOOST_FACTOR = 1e3;
-
-public:
     CelestialBody();
-    CelestialBody(std::shared_ptr<Shader> shader = nullptr,
+    CelestialBody(std::shared_ptr<UnitSphere> sphere = nullptr,
         glm::vec3 pos = glm::vec3(0),
         glm::vec3 speed = glm::vec3(0),
         glm::vec3 acc = glm::vec3(0),
@@ -74,23 +66,43 @@ public:
     CelestialBody& operator=(CelestialBody&&);
     virtual ~CelestialBody();
     virtual void update(double& delta_t);
-    virtual void render();
-    float get_mass() const;
-    void set_mass(float m);
-    float get_radius() const;
-
-    static std::shared_ptr<Shader> shader_instance();
-
-private:
-    void update_radius();
+    virtual void render() = 0;
+    virtual float get_mass() const;
+    virtual void set_mass(float m);
+    virtual float get_radius() const;
 };
 
 class Planet : public CelestialBody {
 private:
-    inline static std::shared_ptr<Shader> shader_instance();
+    inline static std::shared_ptr<Shader> shader_instance() {
+        if(s_planet_shader){
+            return s_planet_shader;
+        } else {
+            s_planet_shader = std::make_shared<Shader>(Shader::from_shader_dir(Planet::PLANET_SHADER_FILE));
+            return s_planet_shader;
+        }
+    }
     inline static std::shared_ptr<Shader> s_planet_shader = nullptr;
     inline static const char* PLANET_SHADER_FILE = "planet";
+    inline static const float MASS_TO_RADIUS_RATIO = 0.05f;
+    // one unit of mass in the simulation is equal to 1 kg
 
+    std::shared_ptr<Shader> m_shader = nullptr;
+    void update_radius();
+public:
+    inline static const float MASS_BOOST_FACTOR = 1e3;
+    Planet(std::shared_ptr<Shader> shader = nullptr,
+        glm::vec3 pos = glm::vec3(0),
+        glm::vec3 speed = glm::vec3(0),
+        glm::vec3 acc = glm::vec3(0),
+        float mass = 1.0);
+    Planet(const Planet&);
+    Planet& operator=(const Planet&);
+    Planet(Planet&&);
+    Planet& operator=(Planet&&);
+    virtual ~Planet();
+public:
+    virtual void render() override;
 };
 }
 

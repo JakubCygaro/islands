@@ -13,32 +13,29 @@
 #include <memory>
 namespace obj{
 
-    CelestialBody::CelestialBody() : m_shader{nullptr}, m_sphere{nullptr} {
-        update_radius();
+    CelestialBody::CelestialBody() : m_sphere{nullptr} {}
+    CelestialBody::CelestialBody(std::shared_ptr<UnitSphere> sphere,
+        glm::vec3 pos,
+        glm::vec3 speed,
+        glm::vec3 acc,
+        float mass):
+        m_sphere(sphere),
+        m_pos(pos),
+        m_speed(speed),
+        m_acceleration(acc),
+        m_mass(mass)
+    {
+
     }
 
-    CelestialBody::CelestialBody(std::shared_ptr<Shader> shader,
-                glm::vec3 pos,
-                glm::vec3 speed,
-                glm::vec3 acc,
-                float mass)
-        : m_shader{shader}, m_pos{pos}, m_speed{speed}, m_acceleration{acc}, m_mass{mass}
-    {
-        m_sphere = UnitSphere::instance();
-        if (!m_shader){
-            m_shader = CelestialBody::shader_instance();
-        }
-        update_radius();
-    }
     // copy constructor
     CelestialBody::CelestialBody(const CelestialBody &other)
-        : m_pos{other.m_pos}, m_shader{other.m_shader}, m_sphere{other.m_sphere},
+        : m_pos{other.m_pos}, m_sphere{other.m_sphere},
           m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}
     {}
     // copy assign
     CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
       m_pos = other.m_pos;
-      m_shader = other.m_shader;
       m_sphere = other.m_sphere;
       m_acceleration = other.m_acceleration;
       m_speed = other.m_speed;
@@ -48,23 +45,20 @@ namespace obj{
     }
     //move constructor
     CelestialBody::CelestialBody(CelestialBody &&other)
-        : m_pos{other.m_pos}, m_shader{std::move(other.m_shader)}, m_sphere{std::move(other.m_sphere)},
+        : m_pos{other.m_pos}, m_sphere{std::move(other.m_sphere)},
           m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}
     {
-      other.m_shader = nullptr;
       other.m_sphere = nullptr;
     }
     // move assign
     CelestialBody &CelestialBody::operator=(CelestialBody &&other) {
       m_pos = other.m_pos;
-      m_shader = std::move(other.m_shader);
       m_sphere = std::move(other.m_sphere);
       m_acceleration = other.m_acceleration;
       m_speed = other.m_speed;
       m_mass = other.m_mass;
       m_radius = other.m_radius;
       other.m_sphere = nullptr;
-      other.m_shader = nullptr;
       return *this;
     }
     CelestialBody::~CelestialBody() {}

@@ -101,18 +101,18 @@ void Game::initialize()
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);
 
-    auto c_body = std::make_shared<obj::CelestialBody>(
-        obj::CelestialBody(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 100));
+    auto c_body = std::make_shared<obj::Planet>(
+        obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 100));
     c_body->set_color({ 1.0, .1, .1 });
     m_bodies.push_back(c_body);
 
-    c_body = std::make_shared<obj::CelestialBody>(
-        obj::CelestialBody(nullptr, { -10.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 0.0f }, 10));
+    c_body = std::make_shared<obj::Planet>(
+        obj::Planet(nullptr, { -10.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 0.0f }, 10));
     c_body->set_color({ 0.0, 1.0, .1 });
     m_bodies.push_back(c_body);
 
-    c_body = std::make_shared<obj::CelestialBody>(
-        obj::CelestialBody(nullptr, { 0.0f, 0.0f, 10.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 25));
+    c_body = std::make_shared<obj::Planet>(
+        obj::Planet(nullptr, { 0.0f, 0.0f, 10.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 25));
     c_body->set_color({ 0.0, 0.0, 1.0 });
     m_bodies.push_back(c_body);
     IMGUI_CHECKVERSION();
@@ -178,8 +178,8 @@ void Game::update_bodies_pos()
             auto b_1 = m_bodies[body];
             auto b_2 = m_bodies[next_body];
 
-            auto m_1 = b_1->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;
-            auto m_2 = b_2->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;
+            auto m_1 = b_1->get_mass() * obj::Planet::MASS_BOOST_FACTOR;
+            auto m_2 = b_2->get_mass() * obj::Planet::MASS_BOOST_FACTOR;
 
             auto r_21 = b_2->get_pos() - b_1->get_pos();
             auto r_21_hat = glm::normalize(r_21);
@@ -405,7 +405,7 @@ void Game::initialize_key_bindings() {
         auto front = this->m_camera.get_front();
         auto pos = this->m_camera.get_pos() + front;
         auto vel = glm::normalize(front) * this->m_gui.spawn_menu.initial_velocity;
-        auto obj = std::make_shared<obj::CelestialBody>(obj::CelestialBody(nullptr, pos, vel, glm::vec3(0), this->m_gui.spawn_menu.mass));
+        auto obj = std::make_shared<obj::Planet>(obj::Planet(nullptr, pos, vel, glm::vec3(0), this->m_gui.spawn_menu.mass));
         obj->set_color(this->m_gui.spawn_menu.color);
         this->m_bodies.emplace_back(std::move(obj));
     }, "Spawn a new celestial body in front of the camera", GLFW_MOD_SHIFT);

@@ -25,15 +25,6 @@ namespace obj {
         tmp_speed *= delta_t;
         m_pos += tmp_speed;
     }
-    void CelestialBody::render(){
-        auto model = glm::mat4(1);
-        model = glm::translate(model, m_pos);
-        model = glm::scale(model, glm::vec3(1) * m_radius);
-        m_shader->use_shader();
-        m_shader->set_mat4(name_of(model), model);
-        m_shader->set_vec3(name_of(color), m_color);
-        m_sphere->draw();
-    }
     float CelestialBody::get_mass() const {
         return m_mass;
     }
@@ -44,20 +35,6 @@ namespace obj {
     float CelestialBody::get_radius() const {
         return m_radius;
     }
-    void CelestialBody::update_radius() {
-        //get radius of a sphere form density equation,
-        //assuming the density of a planet to be equal to the density of earth
-        m_radius = std::pow(m_mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
-    }
-    std::shared_ptr<Shader> CelestialBody::shader_instance(){
-        if(s_c_body_shader){
-            return s_c_body_shader;
-        } else {
-            s_c_body_shader = std::make_shared<Shader>(Shader::from_shader_dir(CelestialBody::C_BODY_SHADER_FILE));
-            return s_c_body_shader;
-        }
-    }
-
     void UnitSphere::draw() const {
         glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);
@@ -172,6 +149,9 @@ namespace obj {
             s_instance = std::make_shared<UnitSphere>(UnitSphere());
             return s_instance;
         }
+    }
+    void CelestialBody::update_radius(){
+
     }
 
 } // namespace obj
