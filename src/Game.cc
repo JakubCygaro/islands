@@ -18,6 +18,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
+#include "global_declarations.hpp"
 const float GRAV_CONST = 6.674e-11;
 
 namespace {
@@ -132,9 +133,15 @@ void Game::initialize()
     m_gui.mode = font::Text2D(font, font_shader, "Edit");
     m_gui.mode.set_pos({ 0, 0 });
     m_gui.mode.set_color(gui::GameUI::EDIT_MODE_TEXT_COLOR);
+
     m_gui.paused = font::Text2D(font, font_shader, "PAUSED");
     m_gui.paused.set_color({ 1.0, .0, .0 });
     m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
+
+    m_gui.game_version = font::Text2D(font, font_shader, global_decl::GAME_VERSION);
+    m_gui.game_version.set_color({ 1.0, 1.0, 1.0 });
+    m_gui.game_version.set_scale(.5f);
+    m_gui.game_version.set_pos({ m_width - m_gui.game_version.get_text_width(), m_height - m_gui.game_version.get_text_height() });
 }
 void Game::run()
 {
@@ -207,6 +214,7 @@ void Game::render()
     if(m_paused){
         m_gui.paused.draw();
     }
+    m_gui.game_version.draw();
 }
 void Game::draw_gui()
 {
@@ -303,6 +311,7 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
 
+    m_gui.game_version.set_pos({ m_width - m_gui.game_version.get_text_width(), m_height - m_gui.game_version.get_text_height() });
 }
 void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos)
 {

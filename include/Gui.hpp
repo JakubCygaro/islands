@@ -36,6 +36,7 @@ struct GameUI {
     HelpMenu help_menu {};
     font::Text2D mode{};
     font::Text2D paused{};
+    font::Text2D game_version{};
     GameUI();
 };
 }

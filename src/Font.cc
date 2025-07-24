@@ -123,9 +123,9 @@ namespace {
 
 
             //fill in the position data of the glyph in the buffer
-            glyph_data[0] = { x * max_glyph_width + glyph_w_off, y * max_glyph_height };
+            glyph_data[0] = { x * max_glyph_width + glyph_w_off, y * max_glyph_height  + glyph_h_off};
             glyph_data[2] = { x * max_glyph_width + glyph_w_off, (y + 1) * max_glyph_height - glyph_h_off * 1 };
-            glyph_data[4] = { ((x + 1) * max_glyph_width) - glyph_w_off , y * max_glyph_height };
+            glyph_data[4] = { ((x + 1) * max_glyph_width) - glyph_w_off , y * max_glyph_height  + glyph_h_off};
             glyph_data[6] = { ((x + 1) * max_glyph_width) - glyph_w_off , (y + 1) * max_glyph_height - glyph_h_off * 1};
 
             glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
@@ -305,10 +305,10 @@ namespace font{
         return m_scale;
     }
     float Text2D::get_text_height() const {
-        return m_height;
+        return m_height * m_scale;
     }
     float Text2D::get_text_width() const {
-        return m_width;
+        return m_width * m_scale;
     }
     void Text2D::update_position() {
         auto m = glm::mat4(1.0f);

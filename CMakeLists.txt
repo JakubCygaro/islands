@@ -39,6 +39,8 @@ add_executable(islands
     src/imgui/backend/imgui_impl_opengl3.cpp
 )
 
+configure_file(global_declarations.hpp.in global_declarations.hpp @ONLY)
+
 add_library(features INTERFACE)
 
 target_compile_features(features INTERFACE cxx_std_20)
@@ -50,7 +52,8 @@ target_compile_options(islands
 target_link_libraries(islands PRIVATE features)
 
 target_include_directories(islands
-    PRIVATE include/
+    PUBLIC include/
+    PUBLIC ${CMAKE_BINARY_DIR}
 )
 
 target_link_libraries(islands
