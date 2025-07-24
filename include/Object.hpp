@@ -47,7 +47,6 @@ protected:
     PROTECTED_PROPERTY(glm::vec3, acceleration)
     PROTECTED_PROPERTY(glm::vec3, color)
     /*PROTECTED_PROPERTY(float, mass)*/
-    void update_radius();
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
     float m_mass {};
@@ -85,11 +84,15 @@ private:
     inline static std::shared_ptr<Shader> s_planet_shader = nullptr;
     inline static const char* PLANET_SHADER_FILE = "planet";
     inline static const float MASS_TO_RADIUS_RATIO = 0.05f;
-    // one unit of mass in the simulation is equal to 1 kg
+    inline static float calculate_radius(float mass) {
+        //get radius of a sphere from density equation,
+        //assuming the density of a planet to be equal to the density of the earth
+        return std::pow(mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
+    }
 
     std::shared_ptr<Shader> m_shader = nullptr;
-    void update_radius();
 public:
+    // one unit of mass in the simulation is equal to 1 kg
     inline static const float MASS_BOOST_FACTOR = 1e3;
     Planet(std::shared_ptr<Shader> shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
@@ -103,6 +106,7 @@ public:
     virtual ~Planet();
 public:
     virtual void render() override;
+    virtual void set_mass(float) override;
 };
 }
 

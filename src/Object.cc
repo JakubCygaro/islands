@@ -30,7 +30,6 @@ namespace obj {
     }
     void CelestialBody::set_mass(float m){
         m_mass = m;
-        update_radius();
     }
     float CelestialBody::get_radius() const {
         return m_radius;
@@ -150,8 +149,4 @@ namespace obj {
             return s_instance;
         }
     }
-    void CelestialBody::update_radius(){
-
-    }
-
 } // namespace obj

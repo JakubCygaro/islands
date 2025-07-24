@@ -12,14 +12,14 @@ namespace obj {
         if (!m_shader){
             m_shader = Planet::shader_instance();
         }
-        this->update_radius();
+        m_radius = std::remove_reference<decltype(*this)>::type::calculate_radius(m_mass);
     }
-    Planet::Planet(const Planet& other) : CelestialBody(*this), m_shader(other.m_shader) {}
+    Planet::Planet(const Planet& other) : CelestialBody(other), m_shader(other.m_shader) {}
     Planet& Planet::operator=(const Planet& other) {
         m_shader = other.m_shader;
         return *this;
     }
-    Planet::Planet(Planet&& other) : CelestialBody(*this), m_shader(other.m_shader) {
+    Planet::Planet(Planet&& other) : CelestialBody(other), m_shader(other.m_shader) {
         other.m_shader = nullptr;
     }
     Planet& Planet::operator=(Planet&& other) {

@@ -10,9 +10,13 @@ namespace obj {
         m_shader->set_vec3(name_of(color), m_color);
         m_sphere->draw();
     }
-    void Planet::update_radius() {
-        //get radius of a sphere form density equation,
-        //assuming the density of a planet to be equal to the density of earth
-        m_radius = std::pow(m_mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
+    void Planet::set_mass(float new_mass) {
+        CelestialBody::set_mass(new_mass);
+        m_radius = Planet::calculate_radius(m_mass);
     }
+    // void Planet::update_radius() {
+    //     //get radius of a sphere form density equation,
+    //     //assuming the density of a planet to be equal to the density of earth
+    //     m_radius = std::pow(m_mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
+    // }
 }
