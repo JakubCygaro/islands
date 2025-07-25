@@ -125,8 +125,8 @@ namespace {
             //fill in the position data of the glyph in the buffer
             glyph_data[0] = { x * max_glyph_width + glyph_w_off, y * max_glyph_height };
             glyph_data[2] = { x * max_glyph_width + glyph_w_off, (y + 1) * max_glyph_height - glyph_h_off * 2 };
-            glyph_data[4] = { ((x + 1) * max_glyph_width) - glyph_w_off , y * max_glyph_height };
-            glyph_data[6] = { ((x + 1) * max_glyph_width) - glyph_w_off , (y + 1) * max_glyph_height - glyph_h_off * 2};
+            glyph_data[4] = { ((x + 1) * max_glyph_width) - glyph_w_off, y * max_glyph_height };
+            glyph_data[6] = { ((x + 1) * max_glyph_width) - glyph_w_off, (y + 1) * max_glyph_height - glyph_h_off * 2};
 
             glBindBuffer(GL_ARRAY_BUFFER, glyph_vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glyph_data), glyph_data);

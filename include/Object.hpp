@@ -53,6 +53,8 @@ protected:
     float m_radius {};
 
 public:
+    // one unit of mass in the simulation is equal to 1 kg
+    inline static const float MASS_BOOST_FACTOR = 1e3;
     CelestialBody();
     CelestialBody(std::shared_ptr<UnitSphere> sphere = nullptr,
         glm::vec3 pos = glm::vec3(0),
@@ -92,8 +94,6 @@ private:
 
     std::shared_ptr<Shader> m_shader = nullptr;
 public:
-    // one unit of mass in the simulation is equal to 1 kg
-    inline static const float MASS_BOOST_FACTOR = 1e3;
     Planet(std::shared_ptr<Shader> shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
         glm::vec3 speed = glm::vec3(0),
@@ -104,6 +104,43 @@ public:
     Planet(Planet&&);
     Planet& operator=(Planet&&);
     virtual ~Planet();
+public:
+    virtual void render() override;
+    virtual void set_mass(float) override;
+};
+class Star : public CelestialBody {
+private:
+    inline static std::shared_ptr<Shader> shader_instance() {
+        if(s_star_shader){
+            return s_star_shader;
+        } else {
+            s_star_shader = std::make_shared<Shader>(Shader::from_shader_dir(Star::STAR_SHADER_FILE));
+            return s_star_shader;
+        }
+    }
+    inline static std::shared_ptr<Shader> s_star_shader = nullptr;
+    inline static const char* STAR_SHADER_FILE = "star";
+    inline static const float MASS_TO_RADIUS_RATIO = 0.05f;
+    inline static float calculate_radius(float mass) {
+        //get radius of a sphere from density equation,
+        //assuming the density of a planet to be equal to the density of the earth
+        return std::pow(mass/(((4./3.) * std::numbers::pi * 1.622)), 1./3.);
+    }
+
+    std::shared_ptr<Shader> m_shader = nullptr;
+public:
+    // one unit of mass in the simulation is equal to 1 kg
+    inline static const float MASS_BOOST_FACTOR = 1e3;
+    Star(std::shared_ptr<Shader> shader = nullptr,
+        glm::vec3 pos = glm::vec3(0),
+        glm::vec3 speed = glm::vec3(0),
+        glm::vec3 acc = glm::vec3(0),
+        float mass = 1.0);
+    Star(const Star&);
+    Star& operator=(const Star&);
+    Star(Star&&);
+    Star& operator=(Star&&);
+    virtual ~Star();
 public:
     virtual void render() override;
     virtual void set_mass(float) override;
