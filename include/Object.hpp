@@ -17,11 +17,13 @@ private:
     struct UnitSphereCreationData {
         using vec = std::vector<UnitSphereCreationData>;
         using vertex_t = glm::vec3;
+        using normal_t = glm::vec3;
         std::vector<vertex_t> vertices;
+        std::vector<vertex_t> normals;
         std::vector<int32_t> indices;
     };
     uint32_t m_vao {}, m_vbo {}, m_ebo {};
-    size_t m_num_indices {}, m_num_verticies {};
+    size_t m_num_indices {}, m_num_verticies {}, m_num_normals{};
     uint32_t make_unit_sphere_vbo(const UnitSphereCreationData& data);
     uint32_t make_unit_sphere_ebo(const UnitSphereCreationData& data);
     UnitSphereCreationData make_unit_sphere();
@@ -123,7 +125,7 @@ private:
     inline static const float MASS_TO_RADIUS_RATIO = 0.05f;
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
-        //assuming the density of a planet to be equal to the density of the earth
+        //assuming the density of a star to be equal to the density of the sun
         return std::pow(mass/(((4./3.) * std::numbers::pi * 1.622)), 1./3.);
     }
 

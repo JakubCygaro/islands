@@ -42,11 +42,18 @@ namespace obj {
 
     uint32_t UnitSphere::make_unit_sphere_vbo(const UnitSphere::UnitSphereCreationData& data) {
         uint32_t vbo = 0;
+        static_assert(sizeof(UnitSphereCreationData::vertex_t) == sizeof(UnitSphereCreationData::normal_t),
+                "vertex and normal data are of different sizes O_o");
+        std::vector<glm::vec3> buffer(data.vertices.size() + data.normals.size());
+        for (size_t i = 0; i < data.vertices.size(); i++){
+            buffer[i] = data.vertices[i];
+            buffer[i + 1] = data.normals[i + 1];
+        }
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER,
-                data.vertices.size() * sizeof(obj::UnitSphere::UnitSphereCreationData::vertex_t),
-                data.vertices.data(),
+                buffer.size() * sizeof(obj::UnitSphere::UnitSphereCreationData::vertex_t),
+                buffer.data(),
                 GL_STATIC_DRAW);
         return vbo;
     }
@@ -62,6 +69,7 @@ namespace obj {
     }
     UnitSphere::UnitSphereCreationData UnitSphere::make_unit_sphere() {
         std::vector<glm::vec3> vertices{};
+        std::vector<glm::vec3> normals{};
         std::vector<int32_t> indices{};
 
         float pitch = -90, yaw = 0;
@@ -70,6 +78,8 @@ namespace obj {
         const int yaw_step = 360 / step;
         glm::vec3 bottom_pole = glm::vec3(0, -1.0f, 0);
         vertices.push_back({bottom_pole});
+        normals.push_back({bottom_pole});
+
         auto ring_base = glm::vec3(0);
         for(int i = 0; i < step; i++){
             pitch += pitch_step;
@@ -81,10 +91,12 @@ namespace obj {
                 current_vert.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 yaw += yaw_step;
                 vertices.push_back({current_vert});
+                normals.push_back({glm::normalize(current_vert)});
             }
         }
         glm::vec3 top_pole = glm::vec3(0, 1.0f, 0);
         vertices.push_back({top_pole});
+        normals.push_back({glm::normalize(top_pole)});
 
         //indices for the bottom pole cap (triangles with the bottom pole)
         const auto bottom_idx = 0;
@@ -136,6 +148,7 @@ namespace obj {
         /*}*/
         return UnitSphereCreationData{
             .vertices = std::move(vertices),
+            .normals = std::move(normals),
             .indices = std::move(indices)
         };
 

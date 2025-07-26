@@ -67,6 +67,7 @@ namespace obj{
         auto sphere = make_unit_sphere();
         m_num_verticies = sphere.vertices.size();
         m_num_indices = sphere.indices.size();
+        m_num_normals = sphere.normals.size();
         m_vbo = make_unit_sphere_vbo(sphere);
         m_ebo = make_unit_sphere_ebo(sphere);
         glGenVertexArrays(1, &m_vao);
@@ -74,9 +75,12 @@ namespace obj{
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(UnitSphereCreationData),
             (void*)0);
         glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(UnitSphereCreationData),
+            (void*)(sizeof(UnitSphereCreationData::vertex_t)));
+        glEnableVertexAttribArray(1);
     }
     //move constructor
     UnitSphere::UnitSphere(UnitSphere&& other):
