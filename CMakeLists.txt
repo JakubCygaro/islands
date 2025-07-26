@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.30)
 project(islands VERSION 0.1.0.0)
 
-set(FREETYPE_ROOT_PATHS "C:/Program Files (x86)/freetype" CACHE FILEPATH "Where to search for the freetype library install directory")
+set(FREETYPE_ROOT_PATHS "" CACHE FILEPATH "Where to search for the freetype library install directory")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     if(CMAKE_BUILD_TYPE STREQUAL "")
