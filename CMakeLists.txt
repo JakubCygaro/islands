@@ -14,6 +14,11 @@ find_package(Freetype REQUIRED
     PATHS ${FREETYPE_ROOT_PATHS}
 )
 
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/files.hpp
+    COMMAND python ${CMAKE_SOURCE_DIR}/scripts/gen_paths.py game_data/ ${CMAKE_BINARY_DIR}/files.hpp #--deps files.d
+    DEPFILE ${CMAKE_BINARY_DIR}/files.d
+)
+
 add_executable(islands
     src/main.cc
     src/glad/glad.c
@@ -39,6 +44,7 @@ add_executable(islands
     src/imgui/imgui_stdlib.cpp
     src/imgui/backend/imgui_impl_glfw.cpp
     src/imgui/backend/imgui_impl_opengl3.cpp
+    ${CMAKE_BINARY_DIR}/files.hpp
 )
 
 configure_file(global_declarations.hpp.in global_declarations.hpp @ONLY)
