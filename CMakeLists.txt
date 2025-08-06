@@ -19,6 +19,24 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/files.hpp
     DEPFILE ${CMAKE_BINARY_DIR}/files.d
 )
 
+set(SHADERS_DIR ${CMAKE_SOURCE_DIR}/src/shaders)
+set(SHADERS 
+    ${SHADERS_DIR}/c_body.frag
+    ${SHADERS_DIR}/c_body.vert
+    ${SHADERS_DIR}/font_bitmap.frag
+    ${SHADERS_DIR}/font_bitmap.vert
+    ${SHADERS_DIR}/planet.frag
+    ${SHADERS_DIR}/planet.vert
+    ${SHADERS_DIR}/test.frag
+    ${SHADERS_DIR}/test.vert
+    ${SHADERS_DIR}/text.frag
+    ${SHADERS_DIR}/text.vert
+)
+
+add_custom_target(pack_shaders 
+    python 
+)
+
 add_executable(islands
     src/main.cc
     src/glad/glad.c
@@ -73,14 +91,15 @@ target_link_libraries(islands
     PRIVATE glm::glm
     PRIVATE Freetype::Freetype
 )
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_custom_target(copyGameData ALL)
+    add_custom_command(TARGET copyGameData
+        POST_BUILD
 
-add_custom_target(copyGameData ALL)
-add_custom_command(TARGET copyGameData
-    POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+        ARGS -E echo "Copying game_data"
 
-    COMMAND ${CMAKE_COMMAND}
-    ARGS -E echo "Copying game_data"
-
-    COMMAND ${CMAKE_COMMAND}
-    ARGS -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/game_data $<TARGET_FILE_DIR:${PROJECT_NAME}>/game_data
-)
+        COMMAND ${CMAKE_COMMAND}
+        ARGS -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/game_data $<TARGET_FILE_DIR:${PROJECT_NAME}>/game_data
+    )
+endif()
