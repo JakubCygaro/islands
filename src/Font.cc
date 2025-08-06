@@ -1,4 +1,5 @@
 #include "Font.hpp"
+#include <shaders.hpp>
 #include <cstdio>
 #include <glm/ext/matrix_transform.hpp>
 #include <stb_image/stb_image.h>
@@ -104,7 +105,7 @@ namespace {
                 0.0f);
 
         glBindVertexArray(glyph_vao);
-        auto glyph_shader = Shader::from_shader_dir("font_bitmap");
+        auto glyph_shader = Shader(shaders::FONT_BITMAP_VERT, shaders::FONT_BITMAP_FRAG);
         glyph_shader.use_shader();
         glyph_shader.set_mat4("projection", projection);
 

@@ -54,8 +54,8 @@ for key, value in files.items():
                 shader_contents += line
 
         variable_def = """
-            inline constexpr const char* {var_name} = R"$(
-                    {var_value})$";
+            inline constexpr const char* {var_name} = R";;(
+                    {var_value});;";
         """.format(var_name=name, var_value=shader_contents)
         vars = vars + variable_def
         # print(vars)

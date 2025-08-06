@@ -14,9 +14,18 @@ find_package(Freetype REQUIRED
     PATHS ${FREETYPE_ROOT_PATHS}
 )
 
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/files.hpp
-    COMMAND python ${CMAKE_SOURCE_DIR}/scripts/gen_paths.py game_data/ ${CMAKE_BINARY_DIR}/files.hpp #--deps files.d
-    DEPFILE ${CMAKE_BINARY_DIR}/files.d
+set(SCRIPTS_DIR ${CMAKE_SOURCE_DIR}/scripts)
+
+file(GLOB_RECURSE GAME_DATA LIST_DIRECTORIES YES ${CMAKE_SOURCE_DIR}/game_data/*)
+
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/files.hpp
+    COMMAND python ${SCRIPTS_DIR}/gen_paths.py game_data/ ${CMAKE_BINARY_DIR}/files.hpp #--deps files.d
+    DEPENDS ${GAME_DATA}
+)
+
+add_custom_target(gen_paths 
+    DEPENDS ${CMAKE_BINARY_DIR}/files.hpp
 )
 
 set(SHADERS_DIR ${CMAKE_SOURCE_DIR}/src/shaders)
@@ -27,15 +36,27 @@ set(SHADERS
     ${SHADERS_DIR}/font_bitmap.vert
     ${SHADERS_DIR}/planet.frag
     ${SHADERS_DIR}/planet.vert
+    ${SHADERS_DIR}/star.frag
+    ${SHADERS_DIR}/star.vert
     ${SHADERS_DIR}/test.frag
     ${SHADERS_DIR}/test.vert
     ${SHADERS_DIR}/text.frag
     ${SHADERS_DIR}/text.vert
 )
 
-add_custom_target(pack_shaders 
-    python 
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/shaders.hpp
+    COMMAND python ${SCRIPTS_DIR}/pack_shaders.py ${CMAKE_SOURCE_DIR}/src/shaders ${CMAKE_BINARY_DIR}/shaders.hpp
+    DEPENDS ${SHADERS}
 )
+add_custom_target(pack_shaders 
+    DEPENDS ${CMAKE_BINARY_DIR}/shaders.hpp
+)
+add_custom_command(TARGET pack_shaders
+    POST_BUILD
+
+    COMMAND cmake
+    ARGS -E echo "Shaders packed")
 
 add_executable(islands
     src/main.cc
@@ -63,6 +84,7 @@ add_executable(islands
     src/imgui/backend/imgui_impl_glfw.cpp
     src/imgui/backend/imgui_impl_opengl3.cpp
     ${CMAKE_BINARY_DIR}/files.hpp
+    ${CMAKE_BINARY_DIR}/shaders.hpp
 )
 
 configure_file(global_declarations.hpp.in global_declarations.hpp @ONLY)

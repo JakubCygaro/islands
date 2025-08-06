@@ -2,6 +2,7 @@
 #define OBJECT_HPP
 #include "shader/Shader.hpp"
 #include "Util.hpp"
+#include <shaders.hpp>
 #include <algorithm>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -94,7 +95,7 @@ private:
         if(s_planet_shader){
             return s_planet_shader;
         } else {
-            s_planet_shader = std::make_shared<Shader>(Shader::from_shader_dir(Planet::PLANET_SHADER_FILE));
+            s_planet_shader = std::make_shared<Shader>(Shader(shaders::PLANET_VERT, shaders::PLANET_FRAG));
             return s_planet_shader;
         }
     }
@@ -129,7 +130,7 @@ private:
         if(s_star_shader){
             return s_star_shader;
         } else {
-            s_star_shader = std::make_shared<Shader>(Shader::from_shader_dir(Star::STAR_SHADER_FILE));
+            s_star_shader = std::make_shared<Shader>(Shader(shaders::STAR_VERT, shaders::STAR_FRAG));
             return s_star_shader;
         }
     }

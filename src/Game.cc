@@ -1,4 +1,5 @@
 #include "Font.hpp"
+#include <files.hpp>
 #include "Object.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -127,8 +128,8 @@ void Game::initialize()
     m_gui.game_options_menu.fov = m_fov;
     m_gui.help_menu_enabled = true;
 
-    auto font = std::make_shared<font::FontBitmap>(font::load_font("game_data/fonts/ARCADE.TTF", 48));
-    auto font_shader = std::make_shared<Shader>(Shader::from_shader_dir("text"));
+    auto font = std::make_shared<font::FontBitmap>(font::load_font(files::game_data::fonts::ARCADE_TTF, 48));
+    auto font_shader = std::make_shared<Shader>(Shader(shaders::TEXT_VERT, shaders::TEXT_FRAG));
 
     m_gui.mode = font::Text2D(font, font_shader, "Edit");
     m_gui.mode.set_pos({ 0, 0 });
