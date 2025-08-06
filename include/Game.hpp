@@ -23,7 +23,12 @@ struct UBO {
 struct UniformBuffers {
     UBO matrices { 0, 0 };
     UBO lighting_globals { 0, 1 };
-    UBO light_sources { 0, 2 };
+};
+
+struct SSBO : public UBO {};
+
+struct SSBuffers {
+    SSBO light_sources { 0, 2 };
 };
 
 enum class BindMode {
@@ -89,6 +94,7 @@ private:
     Camera m_camera;
 
     UniformBuffers m_ubos {};
+    SSBuffers m_ssbos{};
     glm::mat4 m_view {};
     glm::mat4 m_projection {};
     glm::mat4 m_text_projection {};

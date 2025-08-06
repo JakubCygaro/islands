@@ -115,14 +115,14 @@ void Game::initialize()
     glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
 
     glm::vec4 ls[2] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 } };
-    glGenBuffers(1, &m_ubos.light_sources.id);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.light_sources.id);
-    glBufferData(GL_UNIFORM_BUFFER,
+    glGenBuffers(1, &m_ssbos.light_sources.id);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
         // one lightsource
         2 * sizeof(glm::vec4),
         ls, GL_STATIC_DRAW);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.light_sources.mount_point, m_ubos.light_sources.id);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
 
     auto c_body = std::make_shared<obj::Planet>(
         obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 100));

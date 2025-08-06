@@ -30,7 +30,7 @@ Game::~Game()
 {
     glDeleteBuffers(1, &m_ubos.matrices.id);
     glDeleteBuffers(1, &m_ubos.lighting_globals.id);
-    glDeleteBuffers(1, &m_ubos.light_sources.id);
+    glDeleteBuffers(1, &m_ssbos.light_sources.id);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
