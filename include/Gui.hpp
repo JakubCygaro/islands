@@ -6,6 +6,10 @@
 #define GUI_HPP
 
 namespace gui {
+struct DebugMenu {
+    bool do_face_culling {true};
+    bool do_wireframe {false};
+};
 struct SpawnMenu {
     float mass {};
     float initial_velocity {};
@@ -34,6 +38,10 @@ struct GameUI {
     GameOptionsMenu game_options_menu {};
     bool help_menu_enabled { false };
     HelpMenu help_menu {};
+#ifdef DEBUG
+    bool debug_menu_enabled { false };
+    DebugMenu debug_menu {};
+#endif
     font::Text2D mode{};
     font::Text2D paused{};
     font::Text2D game_version{};

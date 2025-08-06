@@ -1,16 +1,5 @@
 #include <Object.hpp>
-#include <GL/gl.h>
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <glm/detail/qualifier.hpp>
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/quaternion_transform.hpp>
-#include <glm/ext/vector_float3.hpp>
-#include <glm/geometric.hpp>
-#include <glm/trigonometric.hpp>
-#include <memory>
+
 namespace obj{
 
     CelestialBody::CelestialBody() : m_sphere{nullptr} {}
@@ -67,7 +56,6 @@ namespace obj{
         auto sphere = make_unit_sphere();
         m_num_verticies = sphere.vertices.size();
         m_num_indices = sphere.indices.size();
-        m_num_normals = sphere.normals.size();
         m_vbo = make_unit_sphere_vbo(sphere);
         m_ebo = make_unit_sphere_ebo(sphere);
         glGenVertexArrays(1, &m_vao);
@@ -75,12 +63,12 @@ namespace obj{
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
 
-        constexpr size_t stride = sizeof(UnitSphereCreationData::vertex_t) + sizeof(UnitSphereCreationData::normal_t);
+        constexpr size_t STRIDE = sizeof(UnitSphereCreationData::VertexData);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, STRIDE,
             (void*)0);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, STRIDE,
             (void*)(sizeof(UnitSphereCreationData::vertex_t)));
         glEnableVertexAttribArray(1);
     }
