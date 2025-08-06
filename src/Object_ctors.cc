@@ -19,10 +19,10 @@ namespace obj{
         glm::vec3 speed,
         glm::vec3 acc,
         float mass):
-        m_sphere(sphere),
         m_pos(pos),
         m_speed(speed),
         m_acceleration(acc),
+        m_sphere(sphere),
         m_mass(mass)
     {
 
@@ -75,10 +75,12 @@ namespace obj{
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(UnitSphereCreationData),
+        constexpr size_t stride = sizeof(UnitSphereCreationData::vertex_t) + sizeof(UnitSphereCreationData::normal_t);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride,
             (void*)0);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(UnitSphereCreationData),
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
             (void*)(sizeof(UnitSphereCreationData::vertex_t)));
         glEnableVertexAttribArray(1);
     }

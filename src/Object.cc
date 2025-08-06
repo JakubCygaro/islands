@@ -47,7 +47,7 @@ namespace obj {
         std::vector<glm::vec3> buffer(data.vertices.size() + data.normals.size());
         for (size_t i = 0; i < data.vertices.size(); i++){
             buffer[i] = data.vertices[i];
-            buffer[i + 1] = data.normals[i + 1];
+            buffer[i + 1] = data.normals[i];
         }
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -155,9 +155,9 @@ namespace obj {
     }
     // get shared_ptr to singleton instane of a UnitSphere
     std::shared_ptr<UnitSphere> UnitSphere::instance() {
-        if(s_instance) {
+        if(s_instance) [[likely]] {
             return s_instance;
-        } else [[likely]] {
+        } else {
             s_instance = std::make_shared<UnitSphere>(UnitSphere());
             return s_instance;
         }
