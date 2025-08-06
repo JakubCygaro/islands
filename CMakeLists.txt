@@ -57,6 +57,10 @@ target_compile_options(islands
     PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
     PRIVATE $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>
 )
+target_compile_definitions(islands
+    PUBLIC $<$<CONFIG:Debug>:DEBUG>
+    PUBLIC $<$<CONFIG:Release>:RELEASE>
+)
 target_link_libraries(islands PRIVATE features)
 
 target_include_directories(islands

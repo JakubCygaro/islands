@@ -1,10 +1,10 @@
 #include "Object.hpp"
 
 namespace obj {
-    void Planet::render() {
+    void Star::render() {
 
     }
-    void Planet::set_mass(float) {
+    void Star::set_mass(float) {
 
     }
 }

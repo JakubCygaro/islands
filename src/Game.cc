@@ -210,11 +210,23 @@ void Game::render()
     for (auto& c_obj : m_bodies) {
         c_obj->render();
     }
+    render_2d();
+}
+void Game::render_2d() {
+    glDisable(GL_CULL_FACE);
     m_gui.mode.draw();
     if(m_paused){
         m_gui.paused.draw();
     }
     m_gui.game_version.draw();
+#ifdef DEBUG
+    if(m_gui.debug_menu.do_face_culling){
+#endif
+        glEnable(GL_CULL_FACE);
+
+#ifdef DEBUG
+    }
+#endif
 }
 void Game::draw_gui()
 {
@@ -268,6 +280,26 @@ void Game::draw_gui()
             m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
         }
     }
+#ifdef DEBUG
+    if (m_gui.debug_menu_enabled) {
+        ImGui::Begin("Debug menu", &m_gui.debug_menu_enabled);
+        if(ImGui::Checkbox("Do face culling", &m_gui.debug_menu.do_face_culling)) {
+            if(m_gui.debug_menu.do_face_culling){
+                glEnable(GL_CULL_FACE);
+            } else {
+                glDisable(GL_CULL_FACE);
+            }
+        }
+        if(ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.do_wireframe)) {
+            if(m_gui.debug_menu.do_wireframe){
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            } else {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+        }
+        ImGui::End();
+    }
+#endif
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -418,6 +450,12 @@ void Game::initialize_key_bindings() {
         obj->set_color(this->m_gui.spawn_menu.color);
         this->m_bodies.emplace_back(std::move(obj));
     }, "Spawn a new celestial body in front of the camera", GLFW_MOD_SHIFT);
+    //debug menu
+#ifdef DEBUG
+    m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Any, [this](){
+        this->m_gui.debug_menu_enabled = !this->m_gui.debug_menu_enabled;
+    }, "Open the debug menu", GLFW_MOD_SHIFT);
+#endif
     // Editor mode specifyc keybinds
     m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this](){
         this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled;

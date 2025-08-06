@@ -1,21 +1,5 @@
 #include <Object.hpp>
-#include "Util.hpp"
-#include <GL/gl.h>
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <glm/detail/qualifier.hpp>
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/quaternion_transform.hpp>
-#include <glm/ext/vector_float3.hpp>
-#include <glm/geometric.hpp>
-#include <glm/trigonometric.hpp>
-#include <iostream>
-#include <memory>
+
 
 namespace obj {
 
@@ -42,19 +26,13 @@ namespace obj {
 
     uint32_t UnitSphere::make_unit_sphere_vbo(const UnitSphere::UnitSphereCreationData& data) {
         uint32_t vbo = 0;
-        static_assert(sizeof(UnitSphereCreationData::vertex_t) == sizeof(UnitSphereCreationData::normal_t),
-                "vertex and normal data are of different sizes O_o");
-        std::vector<glm::vec3> buffer(data.vertices.size() + data.normals.size());
-        for (size_t i = 0; i < data.vertices.size(); i++){
-            buffer[i] = data.vertices[i];
-            buffer[i + 1] = data.normals[i + 1];
-        }
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER,
-                buffer.size() * sizeof(obj::UnitSphere::UnitSphereCreationData::vertex_t),
-                buffer.data(),
+                data.vertices.size() * sizeof(UnitSphereCreationData::VertexData),
+                data.vertices.data(),
                 GL_STATIC_DRAW);
+
         return vbo;
     }
     uint32_t UnitSphere::make_unit_sphere_ebo(const UnitSphereCreationData& data){
@@ -68,17 +46,15 @@ namespace obj {
         return ebo;
     }
     UnitSphere::UnitSphereCreationData UnitSphere::make_unit_sphere() {
-        std::vector<glm::vec3> vertices{};
-        std::vector<glm::vec3> normals{};
+        std::vector<UnitSphereCreationData::VertexData> vrt{};
         std::vector<int32_t> indices{};
 
         float pitch = -90, yaw = 0;
         const int step = 30;
-        const int pitch_step = 180 / step;
-        const int yaw_step = 360 / step;
+        const float pitch_step = 180. / step;
+        const float yaw_step = 360. / step;
         glm::vec3 bottom_pole = glm::vec3(0, -1.0f, 0);
-        vertices.push_back({bottom_pole});
-        normals.push_back({bottom_pole});
+        vrt.push_back({bottom_pole, bottom_pole});
 
         auto ring_base = glm::vec3(0);
         for(int i = 0; i < step; i++){
@@ -90,13 +66,11 @@ namespace obj {
                 current_vert.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 current_vert.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 yaw += yaw_step;
-                vertices.push_back({current_vert});
-                normals.push_back({glm::normalize(current_vert)});
+                vrt.push_back({current_vert, glm::normalize(current_vert)});
             }
         }
         glm::vec3 top_pole = glm::vec3(0, 1.0f, 0);
-        vertices.push_back({top_pole});
-        normals.push_back({glm::normalize(top_pole)});
+        vrt.push_back({top_pole, glm::normalize(top_pole)});
 
         //indices for the bottom pole cap (triangles with the bottom pole)
         const auto bottom_idx = 0;
@@ -110,9 +84,9 @@ namespace obj {
             /*    indices.push_back(start);*/
             /*}*/
         }
-        const auto top_idx = vertices.size() - 1;
+        const auto top_idx = vrt.size() - 1;
         //body of the sphere up to the top pole cap, i guess it also does the cap? no idea why tho, but cool that it works i guess
-        for(size_t idx = 0; idx < vertices.size() - (step  + 1); idx++){
+        for(size_t idx = 0; idx < vrt.size() - (step  + 1); idx++){
             indices.push_back(idx + step);
             indices.push_back(idx + 1);
             indices.push_back(idx);
@@ -147,17 +121,18 @@ namespace obj {
         /*    std::printf("{ %d }\n", idx);*/
         /*}*/
         return UnitSphereCreationData{
-            .vertices = std::move(vertices),
-            .normals = std::move(normals),
+            // .vertices = std::move(vertices),
+            // .normals = std::move(normals),
+            .vertices = std::move(vrt),
             .indices = std::move(indices)
         };
 
     }
     // get shared_ptr to singleton instane of a UnitSphere
     std::shared_ptr<UnitSphere> UnitSphere::instance() {
-        if(s_instance) {
+        if(s_instance) [[likely]] {
             return s_instance;
-        } else [[likely]] {
+        } else {
             s_instance = std::make_shared<UnitSphere>(UnitSphere());
             return s_instance;
         }

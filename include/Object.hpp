@@ -1,15 +1,25 @@
 #ifndef OBJECT_HPP
 #define OBJECT_HPP
 #include "shader/Shader.hpp"
-#include <Util.hpp>
-#include <cstdint>
+#include "Util.hpp"
+#include <algorithm>
 #include <glad/glad.h>
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/vector_float3.hpp>
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
-
+#include <cstdio>
+#include <cstdlib>
+#include <glm/detail/qualifier.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/quaternion_transform.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/geometric.hpp>
+#include <glm/trigonometric.hpp>
+#include <GL/gl.h>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 namespace obj {
 // Wrapper around a sphere mesh stored in the GPU
 class UnitSphere {
@@ -18,12 +28,15 @@ private:
         using vec = std::vector<UnitSphereCreationData>;
         using vertex_t = glm::vec3;
         using normal_t = glm::vec3;
-        std::vector<vertex_t> vertices;
-        std::vector<vertex_t> normals;
+        struct VertexData{
+            vertex_t vert{};
+            normal_t normal{};
+        };
+        std::vector<VertexData> vertices;
         std::vector<int32_t> indices;
     };
     uint32_t m_vao {}, m_vbo {}, m_ebo {};
-    size_t m_num_indices {}, m_num_verticies {}, m_num_normals{};
+    size_t m_num_indices {}, m_num_verticies {};
     uint32_t make_unit_sphere_vbo(const UnitSphereCreationData& data);
     uint32_t make_unit_sphere_ebo(const UnitSphereCreationData& data);
     UnitSphereCreationData make_unit_sphere();

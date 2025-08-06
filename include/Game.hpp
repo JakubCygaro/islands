@@ -96,6 +96,7 @@ private:
     void continuos_key_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);
     void draw_gui();
+    void render_2d();
 
     void key_handler(GLFWwindow* window, int key, int scancode, int action,
         int mods);
