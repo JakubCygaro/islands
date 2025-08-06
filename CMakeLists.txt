@@ -58,6 +58,18 @@ add_custom_command(TARGET pack_shaders
     COMMAND cmake
     ARGS -E echo "Shaders packed")
 
+# this is for Debug build purposes, so i dont have to rebuild the whole project when woring with shaders
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/shader_files.hpp
+    COMMAND python ${SCRIPTS_DIR}/gen_paths.py src/shaders ${CMAKE_BINARY_DIR}/shader_files.hpp
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    DEPENDS ${SHADERS}
+)
+
+add_custom_target(gen_shader_paths 
+    DEPENDS ${CMAKE_BINARY_DIR}/shader_files.hpp
+)
+
 add_executable(islands
     src/main.cc
     src/glad/glad.c
@@ -85,6 +97,7 @@ add_executable(islands
     src/imgui/backend/imgui_impl_opengl3.cpp
     ${CMAKE_BINARY_DIR}/files.hpp
     ${CMAKE_BINARY_DIR}/shaders.hpp
+    $<$<CONFIG:Debug>:${CMAKE_BINARY_DIR}/shader_files.hpp>
 )
 
 configure_file(global_declarations.hpp.in global_declarations.hpp @ONLY)

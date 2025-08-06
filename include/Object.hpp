@@ -3,7 +3,6 @@
 #include "shader/Shader.hpp"
 #include "Util.hpp"
 #include <shaders.hpp>
-#include <algorithm>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <memory>
@@ -21,6 +20,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#ifdef DEBUG
+#include <shader_files.hpp>
+#endif
 namespace obj {
 // Wrapper around a sphere mesh stored in the GPU
 class UnitSphere {
@@ -95,7 +97,13 @@ private:
         if(s_planet_shader){
             return s_planet_shader;
         } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            s_planet_shader = std::make_shared<Shader>(Shader(std::string(files::src::shaders::PLANET_VERT),
+                        std::string(files::src::shaders::PLANET_FRAG)));
+#else
             s_planet_shader = std::make_shared<Shader>(Shader(shaders::PLANET_VERT, shaders::PLANET_FRAG));
+#endif
             return s_planet_shader;
         }
     }

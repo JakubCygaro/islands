@@ -20,7 +20,7 @@ Game::Game(int32_t window_width, int32_t window_height)
     , m_height { window_height }
     , m_fov { 70 }
     , m_camera { Camera(glm::vec3(0, 0, 3), glm::vec3(0)) }
-    , m_uniform_buffer { 0 }
+    , m_ubos {}
 {
     initialize();
     initialize_key_bindings();
@@ -28,7 +28,9 @@ Game::Game(int32_t window_width, int32_t window_height)
 }
 Game::~Game()
 {
-    glDeleteBuffers(1, &m_uniform_buffer);
+    glDeleteBuffers(1, &m_ubos.matrices.id);
+    glDeleteBuffers(1, &m_ubos.lighting_globals.id);
+    glDeleteBuffers(1, &m_ubos.light_sources.id);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

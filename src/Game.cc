@@ -85,8 +85,8 @@ void Game::initialize()
 
     m_text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
 
-    glGenBuffers(1, &m_uniform_buffer);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
+    glGenBuffers(1, &m_ubos.matrices.id);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     glBufferData(GL_UNIFORM_BUFFER,
         // view                     projection  text_projection
         sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(glm::mat4),
@@ -101,7 +101,28 @@ void Game::initialize()
         2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_text_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniform_buffer);
+    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.matrices.mount_point, m_ubos.matrices.id);
+
+    // lighting_globals uniform buffer
+    float lg[] = { 0.2, 0.2, 0.2, 0.0, 1.0 };
+    glGenBuffers(1, &m_ubos.lighting_globals.id);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
+    glBufferData(GL_UNIFORM_BUFFER,
+        // ambient color    ambient strength
+        sizeof(glm::vec4) + sizeof(float),
+        lg, GL_STATIC_DRAW);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
+
+    glm::vec4 ls[2] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 } };
+    glGenBuffers(1, &m_ubos.light_sources.id);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.light_sources.id);
+    glBufferData(GL_UNIFORM_BUFFER,
+        // one lightsource
+        2 * sizeof(glm::vec4),
+        ls, GL_STATIC_DRAW);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.light_sources.mount_point, m_ubos.light_sources.id);
 
     auto c_body = std::make_shared<obj::Planet>(
         obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 100));
@@ -161,7 +182,7 @@ void Game::update()
 {
     glfwPollEvents();
     m_view = m_camera.get_look_at();
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(m_view));
 
     glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
@@ -333,7 +354,7 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     m_projection = glm::perspective(glm::radians(m_fov),
         (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uniform_buffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     //projection
     glBufferSubData(GL_UNIFORM_BUFFER,
         sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));

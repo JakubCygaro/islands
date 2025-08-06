@@ -5,17 +5,26 @@
 #include <Camera.hpp>
 #include <GLFW/glfw3.h>
 #include <Font.hpp>
-#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <functional>
 #include <glad/glad.h>
 #include <glm/ext/matrix_float4x4.hpp>
-#include <map>
 #include <memory>
 #include <ostream>
 #include <unordered_map>
 #include <vector>
+
+struct UBO {
+    uint32_t id{};
+    uint32_t mount_point{};
+};
+
+struct UniformBuffers {
+    UBO matrices { 0, 0 };
+    UBO lighting_globals { 0, 1 };
+    UBO light_sources { 0, 2 };
+};
 
 enum class BindMode {
     Any = 1,
@@ -79,7 +88,7 @@ private:
     GLFWwindow* m_window_ptr { nullptr };
     Camera m_camera;
 
-    uint32_t m_uniform_buffer {};
+    UniformBuffers m_ubos {};
     glm::mat4 m_view {};
     glm::mat4 m_projection {};
     glm::mat4 m_text_projection {};
