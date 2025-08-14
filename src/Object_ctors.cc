@@ -20,7 +20,8 @@ namespace obj{
     // copy constructor
     CelestialBody::CelestialBody(const CelestialBody &other)
         : m_pos{other.m_pos}, m_sphere{other.m_sphere},
-          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}, 
+          m_color(other.m_color)
     {}
     // copy assign
     CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
@@ -30,12 +31,14 @@ namespace obj{
       m_speed = other.m_speed;
       m_mass = other.m_mass;
       m_radius = other.m_radius;
+      m_color = other.m_color;
       return *this;
     }
     //move constructor
     CelestialBody::CelestialBody(CelestialBody &&other)
         : m_pos{other.m_pos}, m_sphere{std::move(other.m_sphere)},
-          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius},
+          m_color(other.m_color)
     {
       other.m_sphere = nullptr;
     }
@@ -47,6 +50,7 @@ namespace obj{
       m_speed = other.m_speed;
       m_mass = other.m_mass;
       m_radius = other.m_radius;
+      m_color = other.m_color;
       other.m_sphere = nullptr;
       return *this;
     }

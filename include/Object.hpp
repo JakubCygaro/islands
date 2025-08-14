@@ -64,7 +64,6 @@ protected:
     PROTECTED_PROPERTY(glm::vec3, speed)
     PROTECTED_PROPERTY(glm::vec3, acceleration)
     PROTECTED_PROPERTY(glm::vec3, color)
-    /*PROTECTED_PROPERTY(float, mass)*/
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
     float m_mass {};
@@ -108,8 +107,6 @@ private:
         }
     }
     inline static std::shared_ptr<Shader> s_planet_shader = nullptr;
-    inline static const char* PLANET_SHADER_FILE = "planet";
-    inline static const float MASS_TO_RADIUS_RATIO = 0.05f;
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
         //assuming the density of a planet to be equal to the density of the earth
@@ -138,13 +135,17 @@ private:
         if(s_star_shader){
             return s_star_shader;
         } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            s_star_shader = std::make_shared<Shader>(Shader(std::string(files::src::shaders::STAR_VERT),
+                        std::string(files::src::shaders::STAR_FRAG)));
+#else
             s_star_shader = std::make_shared<Shader>(Shader(shaders::STAR_VERT, shaders::STAR_FRAG));
+#endif
             return s_star_shader;
         }
     }
     inline static std::shared_ptr<Shader> s_star_shader = nullptr;
-    inline static const char* STAR_SHADER_FILE = "star";
-    inline static const float MASS_TO_RADIUS_RATIO = 0.05f;
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
         //assuming the density of a star to be equal to the density of the sun
@@ -153,8 +154,6 @@ private:
 
     std::shared_ptr<Shader> m_shader = nullptr;
 public:
-    // one unit of mass in the simulation is equal to 1 kg
-    inline static const float MASS_BOOST_FACTOR = 1e3;
     Star(std::shared_ptr<Shader> shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
         glm::vec3 speed = glm::vec3(0),

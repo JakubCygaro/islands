@@ -3,15 +3,13 @@
 layout (location = 0) in vec3 vert_pos;
 layout (location = 1) in vec3 normal;
 
-//uniform mat4 view;
-//uniform mat4 projection;
-
 uniform mat4 model;
 uniform vec3 color;
 
 layout(std140, binding = 0) uniform Matrices {
     mat4 view;
     mat4 projection;
+    mat4 text_projection;
 };
 
 out vec3 VertColor;

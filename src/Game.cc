@@ -82,20 +82,22 @@ void Game::initialize()
     glEnable(GL_CULL_FACE);
     initialize_uniforms();
 
-    auto c_body = std::make_shared<obj::Planet>(
-        obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 100));
-    c_body->set_color({ 1.0, .1, .1 });
-    m_bodies.push_back(c_body);
+    auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 100);
+    c_body.set_color({ 1.0, .1, .1 });
+    add_planet(c_body);
 
-    c_body = std::make_shared<obj::Planet>(
-        obj::Planet(nullptr, { -10.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 0.0f }, 10));
-    c_body->set_color({ 0.0, 1.0, .1 });
-    m_bodies.push_back(c_body);
+    c_body = obj::Planet(nullptr, { -10.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 0.0f }, 10);
+    c_body.set_color({ 0.0, 1.0, .1 });
+    add_planet(c_body);
 
-    c_body = std::make_shared<obj::Planet>(
-        obj::Planet(nullptr, { 0.0f, 0.0f, 10.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 25));
-    c_body->set_color({ 0.0, 0.0, 1.0 });
-    m_bodies.push_back(c_body);
+    c_body = obj::Planet(nullptr, { 0.0f, 0.0f, 10.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 25);
+    c_body.set_color({ 0.0, 0.0, 1.0 });
+    add_planet(c_body);
+
+    auto star = obj::Star(nullptr, { 0, 5, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
+    star.set_color({ 0.78, 0.52, 0.06 });
+    add_star(star);
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -153,25 +155,33 @@ void Game::initialize_uniforms(){
     glGenBuffers(1, &m_ubos.lighting_globals.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
     glBufferData(GL_UNIFORM_BUFFER,
-        // ambient color                            ambient strength
-        sizeof(LightingGlobalsUBO::ambient_color) + sizeof(LightingGlobalsUBO::ambient_strength),
+        // ambient color                            ambient strength                               camera pos
+        sizeof(LightingGlobalsUBO::ambient_color) + sizeof(LightingGlobalsUBO::ambient_strength) + sizeof(LightingGlobalsUBO::camera_pos),
         NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_UNIFORM_BUFFER,
-        0, sizeof(LightingGlobalsUBO::ambient_color),
+        0,
+        sizeof(LightingGlobalsUBO::ambient_color),
         glm::value_ptr(m_ubos.lighting_globals.ambient_color));
+
     glBufferSubData(GL_UNIFORM_BUFFER,
-        sizeof(LightingGlobalsUBO::ambient_color), sizeof(LightingGlobalsUBO::ambient_strength),
+        sizeof(LightingGlobalsUBO::ambient_color),
+        sizeof(LightingGlobalsUBO::ambient_strength),
         &m_ubos.lighting_globals.ambient_strength);
+
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        sizeof(LightingGlobalsUBO::ambient_color) + sizeof(LightingGlobalsUBO::ambient_strength),
+        sizeof(LightingGlobalsUBO::camera_pos),
+        m_camera.get_pos_ptr());
 
     glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
 
-    glm::vec4 ls[2] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 } };
+    // glm::vec4 ls[2] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 } };
     glGenBuffers(1, &m_ssbos.light_sources.id);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
     glBufferData(GL_SHADER_STORAGE_BUFFER,
         // one lightsource
         2 * sizeof(glm::vec4),
-        ls, GL_STATIC_DRAW);
+        NULL, GL_STATIC_DRAW);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
 }
@@ -181,6 +191,7 @@ void Game::run()
         m_current_frame_t = glfwGetTime();
         m_delta_t = m_current_frame_t - m_last_frame_t;
         m_last_frame_t = m_current_frame_t;
+        update_buffers();
         update();
         render();
         ImGui::Render();
@@ -191,6 +202,19 @@ void Game::run()
 void Game::update()
 {
     glfwPollEvents();
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    continuos_key_input();
+    if (m_gui_enabled)
+        draw_gui();
+    if (!m_paused) {
+        update_bodies_pos();
+    }
+}
+void Game::update_buffers() {
+
     m_ubos.matrices.view = m_camera.get_look_at();
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     glBufferSubData(GL_UNIFORM_BUFFER,
@@ -199,16 +223,30 @@ void Game::update()
     glBufferSubData(GL_UNIFORM_BUFFER,
             sizeof(MatricesUBO::view), sizeof(MatricesUBO::projection), glm::value_ptr(m_ubos.matrices.projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        sizeof(LightingGlobalsUBO::ambient_color) + sizeof(LightingGlobalsUBO::ambient_strength),
+        sizeof(LightingGlobalsUBO::camera_pos),
+        m_camera.get_pos_ptr());
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    /*ImGui::ShowDemoWindow();*/
-    continuos_key_input();
-    if (m_gui_enabled)
-        draw_gui();
-    if (!m_paused) {
-        update_bodies_pos();
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
+    auto offset = 0;
+    for (auto [star_ptr, source_data] : m_stars){
+        source_data = { 
+            .position = star_ptr->get_pos(),
+            .color = star_ptr->get_color()
+        };
+
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER,
+            0 * offset,
+            sizeof(LightSource::__pos_pad),
+            &source_data.__pos_pad);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER,
+            sizeof(LightSource::__color_pad) * (offset + 1),
+            sizeof(LightSource::__color_pad),
+            &source_data.__color_pad);
+
+        offset++;
     }
 }
 void Game::update_bodies_pos()
@@ -334,6 +372,37 @@ void Game::draw_gui()
         ImGui::End();
     }
 #endif
+}
+void Game::add_planet(obj::Planet new_planet){
+    auto planet = std::make_shared<obj::Planet>(new_planet);
+    m_bodies.push_back(planet);
+}
+void Game::remove_planet(obj::Planet* planet){
+    auto _ = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
+            return ptr.get() == planet;
+    });
+}
+void Game::add_star(obj::Star new_star){
+    auto star = std::make_shared<obj::Star>(new_star);
+    m_stars[star.get()] = LightSource {
+        .position = star->get_pos(),
+        .color = star->get_color(),
+    };
+    m_bodies.push_back(star);
+    if(m_stars.size() > m_lightsources_cap){
+        m_lightsources_cap *= 2;
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, m_lightsources_cap * sizeof(LightSource), NULL, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+}
+void Game::remove_star(obj::Star* star){
+    auto removed = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
+            return ptr.get() == star;
+    });
+    if(removed != m_bodies.end()){
+        m_stars.erase(star);
+    }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)
 {

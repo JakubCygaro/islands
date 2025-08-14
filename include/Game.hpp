@@ -31,6 +31,7 @@ struct MatricesUBO : public UBO {
 struct LightingGlobalsUBO : public UBO {
     glm::vec4 ambient_color;
     float ambient_strength;
+    glm::vec4 camera_pos;
     LightingGlobalsUBO(uint32_t id, uint32_t mp) : UBO(id, mp){}
 };
 
@@ -116,12 +117,14 @@ private:
     bool m_wireframe { false };
     bool m_gui_enabled { true };
     bool m_paused { false };
+    size_t m_lightsources_cap {1};
     GLFWwindow* m_window_ptr { nullptr };
     Camera m_camera;
 
     UniformBuffers m_ubos {};
     SSBuffers m_ssbos{};
     std::vector<std::shared_ptr<obj::CelestialBody>> m_bodies {};
+    std::unordered_map<obj::Star*, LightSource> m_stars{};
     gui::GameUI m_gui {};
     KeybindHandler m_keybinds {};
 
@@ -131,6 +134,7 @@ private:
     void initialize_key_bindings();
     void update();
     void update_bodies_pos();
+    void update_buffers();
     void render();
     void continuos_key_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);
@@ -143,6 +147,11 @@ private:
     void scroll_handler(GLFWwindow* window, double xoffset, double yoffset);
     void mouse_button_handler(GLFWwindow* window, int button, int action,
         int mods);
+
+    void add_planet(obj::Planet new_planet);
+    void remove_planet(obj::Planet* planet);
+    void add_star(obj::Star new_start);
+    void remove_star(obj::Star* star);
 
 public:
     Game() = delete;

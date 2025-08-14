@@ -10,11 +10,13 @@ namespace obj {
         if (!m_shader) {
             m_shader = Star::shader_instance();
         }
+        m_radius = std::remove_reference<decltype(*this)>::type::calculate_radius(m_mass);
     }
     Star::Star(const Star& other) : CelestialBody(other), m_shader(other.m_shader){
 
     }
     Star& Star::operator=(const Star& other) {
+        CelestialBody::operator=(other);
         m_shader = other.m_shader;
         return *this;
     }
@@ -22,6 +24,7 @@ namespace obj {
         other.m_shader = nullptr;
     }
     Star& Star::operator=(Star&& other) {
+        CelestialBody::operator=(other);
         m_shader = other.m_shader;
         other.m_shader = nullptr;
         return *this;

@@ -31,6 +31,7 @@ public:
     void keyboard_input(GLFWwindow* window, double delta_t);
     /*void mouse_input(GLFWwindow *window, double delta_t);*/
     glm::vec3 get_front() const;
+    const glm::vec3* get_pos_ptr() const;
 
 private:
     void update_vectors();

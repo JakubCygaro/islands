@@ -49,6 +49,9 @@ void Camera::update_vectors() {
 glm::vec3 Camera::get_front() const {
     return this->m_front;
 }
+const glm::vec3* Camera::get_pos_ptr() const {
+    return &m_pos;
+}
 /*float& Camera::yaw(){*/
 /*    return m_yaw;*/
 /*}*/

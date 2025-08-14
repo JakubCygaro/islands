@@ -16,6 +16,7 @@ namespace obj {
     }
     Planet::Planet(const Planet& other) : CelestialBody(other), m_shader(other.m_shader) {}
     Planet& Planet::operator=(const Planet& other) {
+        CelestialBody::operator=(other);
         m_shader = other.m_shader;
         return *this;
     }
@@ -23,6 +24,7 @@ namespace obj {
         other.m_shader = nullptr;
     }
     Planet& Planet::operator=(Planet&& other) {
+        CelestialBody::operator=(other);
         m_shader = other.m_shader;
         other.m_shader = nullptr;
         return *this;
