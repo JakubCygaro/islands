@@ -10,6 +10,7 @@
 #include <functional>
 #include <glad/glad.h>
 #include <glm/ext/matrix_float4x4.hpp>
+#include <glm/fwd.hpp>
 #include <memory>
 #include <ostream>
 #include <unordered_map>
@@ -18,15 +19,40 @@
 struct UBO {
     uint32_t id{};
     uint32_t mount_point{};
+    UBO(uint32_t id, uint32_t mp) : id(id), mount_point(mp){}
+};
+
+struct MatricesUBO : public UBO {
+    glm::mat4 view{};
+    glm::mat4 projection{};
+    glm::mat4 text_projection{};
+    MatricesUBO(uint32_t id, uint32_t mp) : UBO(id, mp){}
+};
+struct LightingGlobalsUBO : public UBO {
+    glm::vec4 ambient_color;
+    float ambient_strength;
+    LightingGlobalsUBO(uint32_t id, uint32_t mp) : UBO(id, mp){}
 };
 
 struct UniformBuffers {
-    UBO matrices { 0, 0 };
-    UBO lighting_globals { 0, 1 };
+    MatricesUBO matrices { 0, 0 };
+    LightingGlobalsUBO lighting_globals { 0, 1 };
 };
 
-struct SSBO : public UBO {};
+struct SSBO : public UBO {
+    SSBO(uint32_t id, uint32_t mp) : UBO(id, mp){}
+};
 
+struct LightSource {
+    union{
+        glm::vec3 position;
+        glm::vec4 __pos_pad;
+    };
+    union{
+        glm::vec3 color;
+        glm::vec4 __color_pad;
+    };
+};
 struct SSBuffers {
     SSBO light_sources { 0, 2 };
 };
@@ -95,15 +121,13 @@ private:
 
     UniformBuffers m_ubos {};
     SSBuffers m_ssbos{};
-    glm::mat4 m_view {};
-    glm::mat4 m_projection {};
-    glm::mat4 m_text_projection {};
     std::vector<std::shared_ptr<obj::CelestialBody>> m_bodies {};
     gui::GameUI m_gui {};
     KeybindHandler m_keybinds {};
 
 private:
     void initialize();
+    void initialize_uniforms();
     void initialize_key_bindings();
     void update();
     void update_bodies_pos();

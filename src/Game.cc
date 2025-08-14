@@ -80,49 +80,7 @@ void Game::initialize()
     }
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    m_projection = glm::perspective(glm::radians(m_fov),
-        (float)m_width / (float)m_height, 0.1f, 1000.0f);
-
-    m_text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
-
-    glGenBuffers(1, &m_ubos.matrices.id);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
-    glBufferData(GL_UNIFORM_BUFFER,
-        // view                     projection  text_projection
-        sizeof(glm::mat4) + sizeof(glm::mat4) + sizeof(glm::mat4),
-        NULL, GL_STATIC_DRAW);
-
-    //projection
-    glBufferSubData(GL_UNIFORM_BUFFER,
-        sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
-
-    //text_projection
-    glBufferSubData(GL_UNIFORM_BUFFER,
-        2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_text_projection));
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.matrices.mount_point, m_ubos.matrices.id);
-
-    // lighting_globals uniform buffer
-    float lg[] = { 0.2, 0.2, 0.2, 0.0, 1.0 };
-    glGenBuffers(1, &m_ubos.lighting_globals.id);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
-    glBufferData(GL_UNIFORM_BUFFER,
-        // ambient color    ambient strength
-        sizeof(glm::vec4) + sizeof(float),
-        lg, GL_STATIC_DRAW);
-
-    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
-
-    glm::vec4 ls[2] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 } };
-    glGenBuffers(1, &m_ssbos.light_sources.id);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,
-        // one lightsource
-        2 * sizeof(glm::vec4),
-        ls, GL_STATIC_DRAW);
-
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
+    initialize_uniforms();
 
     auto c_body = std::make_shared<obj::Planet>(
         obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 100));
@@ -165,6 +123,58 @@ void Game::initialize()
     m_gui.game_version.set_scale(.5f);
     m_gui.game_version.set_pos({ m_width - m_gui.game_version.get_text_width(), m_height - m_gui.game_version.get_text_height() });
 }
+void Game::initialize_uniforms(){
+    m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
+        (float)m_width / (float)m_height, 0.1f, 1000.0f);
+
+    m_ubos.matrices.text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
+
+    glGenBuffers(1, &m_ubos.matrices.id);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
+    glBufferData(GL_UNIFORM_BUFFER,
+        // view projection text_projection
+        sizeof(MatricesUBO),
+        NULL, GL_STATIC_DRAW);
+
+    //buffer projection
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        sizeof(MatricesUBO::view), sizeof(MatricesUBO::projection), glm::value_ptr(m_ubos.matrices.projection));
+
+    //buffer text_projection
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        2 * sizeof(MatricesUBO::view), sizeof(MatricesUBO::text_projection), glm::value_ptr(m_ubos.matrices.text_projection));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.matrices.mount_point, m_ubos.matrices.id);
+
+    // lighting_globals uniform buffer
+    m_ubos.lighting_globals.ambient_color = { 1, 1, 1, 1 };
+    m_ubos.lighting_globals.ambient_strength = .2f;
+    glGenBuffers(1, &m_ubos.lighting_globals.id);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
+    glBufferData(GL_UNIFORM_BUFFER,
+        // ambient color                            ambient strength
+        sizeof(LightingGlobalsUBO::ambient_color) + sizeof(LightingGlobalsUBO::ambient_strength),
+        NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        0, sizeof(LightingGlobalsUBO::ambient_color),
+        glm::value_ptr(m_ubos.lighting_globals.ambient_color));
+    glBufferSubData(GL_UNIFORM_BUFFER,
+        sizeof(LightingGlobalsUBO::ambient_color), sizeof(LightingGlobalsUBO::ambient_strength),
+        &m_ubos.lighting_globals.ambient_strength);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
+
+    glm::vec4 ls[2] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 } };
+    glGenBuffers(1, &m_ssbos.light_sources.id);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,
+        // one lightsource
+        2 * sizeof(glm::vec4),
+        ls, GL_STATIC_DRAW);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
+}
 void Game::run()
 {
     while (!glfwWindowShouldClose(m_window_ptr)) {
@@ -181,11 +191,13 @@ void Game::run()
 void Game::update()
 {
     glfwPollEvents();
-    m_view = m_camera.get_look_at();
+    m_ubos.matrices.view = m_camera.get_look_at();
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(m_view));
+    glBufferSubData(GL_UNIFORM_BUFFER,
+            0, sizeof(MatricesUBO::view), glm::value_ptr(m_ubos.matrices.view));
 
-    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
+    glBufferSubData(GL_UNIFORM_BUFFER,
+            sizeof(MatricesUBO::view), sizeof(MatricesUBO::projection), glm::value_ptr(m_ubos.matrices.projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     ImGui_ImplOpenGL3_NewFrame();
@@ -269,7 +281,7 @@ void Game::draw_gui()
         }
         if (ImGui::SliderFloat("Camera FOV", &m_gui.game_options_menu.fov, 30, 120, NULL, ImGuiSliderFlags_AlwaysClamp)) {
             m_fov = m_gui.game_options_menu.fov;
-            m_projection = glm::perspective(glm::radians(m_fov),
+            m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
                 (float)m_width / (float)m_height, 0.1f, 1000.0f);
         }
         ImGui::End();
@@ -349,19 +361,19 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     m_width = width;
     m_height = height;
 
-    m_text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
+    m_ubos.matrices.text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
 
-    m_projection = glm::perspective(glm::radians(m_fov),
+    m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
         (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     //projection
     glBufferSubData(GL_UNIFORM_BUFFER,
-        sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_projection));
+        sizeof(MatricesUBO::view), sizeof(MatricesUBO::projection), glm::value_ptr(m_ubos.matrices.projection));
 
     //text_projection
     glBufferSubData(GL_UNIFORM_BUFFER,
-        2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(m_text_projection));
+        2 * sizeof(MatricesUBO::view), sizeof(MatricesUBO::text_projection), glm::value_ptr(m_ubos.matrices.text_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
 
@@ -411,9 +423,9 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
         float z = 1.0f;
         glm::vec3 ray_nds = glm::vec3(x, y, z);
         glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, -1.0f, 1.0f);
-        glm::vec4 ray_eye = glm::inverse(m_projection) * ray_clip;
+        glm::vec4 ray_eye = glm::inverse(m_ubos.matrices.projection) * ray_clip;
         ray_eye = glm::vec4(ray_eye.x, ray_eye.y, -1.0, 0.0);
-        glm::vec3 ray_world = (glm::inverse(m_view) * ray_eye);
+        glm::vec3 ray_world = (glm::inverse(m_ubos.matrices.view) * ray_eye);
         ray_world = glm::normalize(ray_world);
         glm::vec3 origin = m_camera.get_pos();
         std::optional<float> smallest_distance = std::nullopt;
