@@ -14,6 +14,7 @@ struct SpawnMenu {
     float mass {};
     float initial_velocity {};
     glm::vec3 color { glm::vec3(0.5, 0.5, 0.5) };
+    bool is_star {false};
 };
 struct GameOptionsMenu {
     float camera_speed {};

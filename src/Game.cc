@@ -309,6 +309,7 @@ void Game::draw_gui()
         if (m_gui.spawn_menu.mass <= 0)
             m_gui.spawn_menu.mass = 0.001;
         ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
+        ImGui::Checkbox("Star", &m_gui.spawn_menu.is_star);
         ImGui::End();
     }
 
@@ -342,10 +343,16 @@ void Game::draw_gui()
             m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
         }
         if(ImGui::Button("Delete body")){
-            auto body_idx = std::ranges::find(m_bodies, m_gui.selected_body.lock());
-            if (body_idx != m_bodies.end()){
-                m_bodies.erase(body_idx);
+            auto body_as_star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
+            if(body_as_star){
+                remove_star(body_as_star);
+            } else {
+                remove_planet((obj::Planet*)m_gui.selected_body.lock().get());
             }
+            // auto body_idx = std::ranges::find(m_bodies, m_gui.selected_body.lock());
+            // if (body_idx != m_bodies.end()){
+            //     m_bodies.erase(body_idx);
+            // }
         }
         ImGui::End();
         if (!discarded){
@@ -549,9 +556,19 @@ void Game::initialize_key_bindings() {
         auto front = this->m_camera.get_front();
         auto pos = this->m_camera.get_pos() + front;
         auto vel = glm::normalize(front) * this->m_gui.spawn_menu.initial_velocity;
-        auto obj = std::make_shared<obj::Planet>(obj::Planet(nullptr, pos, vel, glm::vec3(0), this->m_gui.spawn_menu.mass));
-        obj->set_color(this->m_gui.spawn_menu.color);
-        this->m_bodies.emplace_back(std::move(obj));
+        auto color = this->m_gui.spawn_menu.color;
+        auto mass = this->m_gui.spawn_menu.mass;
+        // auto obj = std::make_shared<obj::Planet>(obj::Planet(nullptr, pos, vel, glm::vec3(0), this->m_gui.spawn_menu.mass));
+        // obj->set_color(this->m_gui.spawn_menu.color);
+        if(m_gui.spawn_menu.is_star){
+            auto star = obj::Star(nullptr, pos, vel, {}, mass);
+            star.set_color(color);
+            add_star(star);
+        } else {
+            auto planet = obj::Planet(nullptr, pos, vel, {}, mass);
+            planet.set_color(color);
+            add_planet(planet);
+        }
     }, "Spawn a new celestial body in front of the camera", GLFW_MOD_SHIFT);
     //debug menu
 #ifdef DEBUG
