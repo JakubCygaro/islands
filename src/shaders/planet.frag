@@ -10,7 +10,6 @@ in LightData {
 
 
 layout(std140, binding = 1) uniform LightingGlobals {
-    vec4 ambient_color;
     float ambient_strength;
     vec3 camera_pos;
 };
@@ -18,6 +17,8 @@ layout(std140, binding = 1) uniform LightingGlobals {
 struct LightSource {
     vec4 position;
     vec4 color;
+    float att_linear;
+    float att_quadratic;
 };
 
 layout(std140, binding = 2) buffer LightSources {
@@ -26,7 +27,7 @@ layout(std140, binding = 2) buffer LightSources {
 
 void main() {
 
-    vec3 ambient = ambient_strength * vec3(ambient_color);
+    vec3 ambient = ambient_strength * light_data.VertColor;
 
     vec3 result;
 
@@ -46,8 +47,16 @@ void main() {
         // vec3 specular = 0.5 * spec * light_data.VertColor;
         // result = (ambient + diffuse + specular) * light_data.VertColor;
 
-        result = (ambient + diffuse) * light_data.VertColor;
+        float distance = length(light_source_pos - light_data.FragPos);
+        float attenuation = 1.0 / (1.0 +
+                light_sources[i].att_linear * distance
+                + light_sources[i].att_quadratic * (distance * distance));
+
+        diffuse *= attenuation;
+
+        result += (diffuse) * light_data.VertColor;
     }
+    result += ambient;
 
 
     FragColor = vec4(result, 1.0f);

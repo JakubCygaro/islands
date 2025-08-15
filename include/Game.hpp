@@ -30,8 +30,10 @@ struct MatricesUBO : public UBO {
     MatricesUBO(uint32_t id, uint32_t mp) : UBO(id, mp){}
 };
 struct LightingGlobalsUBO : public UBO {
-    glm::vec4 ambient_color;
-    float ambient_strength;
+    union{
+        float ambient_strength;
+        glm::vec4 __ambient_s_pad{};
+    };
     glm::vec4 camera_pos;
     LightingGlobalsUBO(uint32_t id, uint32_t mp) : UBO(id, mp){}
 };
@@ -58,6 +60,14 @@ struct LightSource {
     union{
         glm::vec3 color;
         glm::vec4 __color_pad;
+    };
+    union{
+        float att_linear{0.09};
+        glm::vec4 __att_l_pad;
+    };
+    union {
+        float att_quadratic{0.032};
+        glm::vec4 __att_q_pad;
     };
 };
 struct SSBuffers {
@@ -158,7 +168,7 @@ private:
     void remove_planet(obj::Planet* planet);
     void add_star(obj::Star new_start);
     void remove_star(obj::Star* star);
-
+    void buffer_light_source(size_t offset, obj::Star* star);
 public:
     Game() = delete;
     ~Game();
