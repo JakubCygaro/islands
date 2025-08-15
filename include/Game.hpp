@@ -5,6 +5,7 @@
 #include <Camera.hpp>
 #include <GLFW/glfw3.h>
 #include <Font.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <functional>
@@ -44,6 +45,11 @@ struct SSBO : public UBO {
     SSBO(uint32_t id, uint32_t mp) : UBO(id, mp){}
 };
 
+struct LightSourcesSSBO : public SSBO {
+    size_t size{}, cap{};
+    LightSourcesSSBO(uint32_t id, uint32_t mp) : SSBO(id, mp){}
+};
+
 struct LightSource {
     union{
         glm::vec3 position;
@@ -55,7 +61,7 @@ struct LightSource {
     };
 };
 struct SSBuffers {
-    SSBO light_sources { 0, 2 };
+    LightSourcesSSBO light_sources { 0, 2 };
 };
 
 enum class BindMode {

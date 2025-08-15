@@ -128,6 +128,7 @@ public:
 public:
     virtual void render() override;
     virtual void set_mass(float) override;
+    virtual float get_mass() const override;
 };
 class Star : public CelestialBody {
 private:
@@ -167,6 +168,7 @@ public:
 public:
     virtual void render() override;
     virtual void set_mass(float) override;
+    virtual float get_mass() const override;
 };
 }
 

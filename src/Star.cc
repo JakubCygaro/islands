@@ -15,4 +15,7 @@ namespace obj {
     void Star::set_mass(float) {
 
     }
+    float Star::get_mass() const {
+        return MASS_BOOST_FACTOR * CelestialBody::get_mass();
+    }
 }

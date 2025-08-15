@@ -151,7 +151,7 @@ void Game::initialize_uniforms(){
 
     // lighting_globals uniform buffer
     m_ubos.lighting_globals.ambient_color = { 1, 1, 1, 1 };
-    m_ubos.lighting_globals.ambient_strength = .2f;
+    m_ubos.lighting_globals.ambient_strength = .05f;
     glGenBuffers(1, &m_ubos.lighting_globals.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
     glBufferData(GL_UNIFORM_BUFFER,
@@ -176,6 +176,7 @@ void Game::initialize_uniforms(){
     glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
 
     // glm::vec4 ls[2] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 } };
+    m_ssbos.light_sources.cap = 1;
     glGenBuffers(1, &m_ssbos.light_sources.id);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
     glBufferData(GL_SHADER_STORAGE_BUFFER,
@@ -228,37 +229,43 @@ void Game::update_buffers() {
         sizeof(LightingGlobalsUBO::ambient_color) + sizeof(LightingGlobalsUBO::ambient_strength),
         sizeof(LightingGlobalsUBO::camera_pos),
         m_camera.get_pos_ptr());
-
+}
+void Game::update_bodies_pos()
+{
+    //update light source ssbo
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
-    auto offset = 0;
-    for (auto [star_ptr, source_data] : m_stars){
-        source_data = { 
-            .position = star_ptr->get_pos(),
-            .color = star_ptr->get_color()
-        };
 
+    auto offset = 0;
+    LightSource source_data{};
+
+    auto update_fn = [&](obj::Star* star){
+        source_data.position = star->get_pos();
+        source_data.color = star->get_color();
         glBufferSubData(GL_SHADER_STORAGE_BUFFER,
-            0 * offset,
+            offset * (sizeof(LightSource::__pos_pad) + sizeof(LightSource::__color_pad)),
             sizeof(LightSource::__pos_pad),
             &source_data.__pos_pad);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER,
-            sizeof(LightSource::__color_pad) * (offset + 1),
+            offset * (sizeof(LightSource::__pos_pad) + sizeof(LightSource::__color_pad)) + sizeof(LightSource::__pos_pad),
             sizeof(LightSource::__color_pad),
             &source_data.__color_pad);
 
         offset++;
-    }
-}
-void Game::update_bodies_pos()
-{
+    };
+
     for (size_t body = 0; body < m_bodies.size(); body++) {
+        if(auto s = dynamic_cast<obj::Star*>(m_bodies[body].get()); s){
+            update_fn(s);
+        }
         for (size_t next_body = body + 1; next_body < m_bodies.size(); next_body++) {
+
+
             // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
             auto b_1 = m_bodies[body];
             auto b_2 = m_bodies[next_body];
 
-            auto m_1 = b_1->get_mass() * obj::Planet::MASS_BOOST_FACTOR;
-            auto m_2 = b_2->get_mass() * obj::Planet::MASS_BOOST_FACTOR;
+            auto m_1 = b_1->get_mass();
+            auto m_2 = b_2->get_mass();
 
             auto r_21 = b_2->get_pos() - b_1->get_pos();
             auto r_21_hat = glm::normalize(r_21);
@@ -347,12 +354,9 @@ void Game::draw_gui()
             if(body_as_star){
                 remove_star(body_as_star);
             } else {
-                remove_planet((obj::Planet*)m_gui.selected_body.lock().get());
+                remove_planet(dynamic_cast<obj::Planet*>(m_gui.selected_body.lock().get()));
             }
-            // auto body_idx = std::ranges::find(m_bodies, m_gui.selected_body.lock());
-            // if (body_idx != m_bodies.end()){
-            //     m_bodies.erase(body_idx);
-            // }
+            m_gui.selected_body.reset();
         }
         ImGui::End();
         if (!discarded){
@@ -385,30 +389,71 @@ void Game::add_planet(obj::Planet new_planet){
     m_bodies.push_back(planet);
 }
 void Game::remove_planet(obj::Planet* planet){
-    auto _ = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
+    auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
             return ptr.get() == planet;
     });
+    m_bodies.erase(f);
 }
 void Game::add_star(obj::Star new_star){
     auto star = std::make_shared<obj::Star>(new_star);
-    m_stars[star.get()] = LightSource {
-        .position = star->get_pos(),
-        .color = star->get_color(),
-    };
     m_bodies.push_back(star);
-    if(m_stars.size() > m_lightsources_cap){
-        m_lightsources_cap *= 2;
+    m_ssbos.light_sources.size++;
+    if(m_ssbos.light_sources.size > m_ssbos.light_sources.cap){
+        m_ssbos.light_sources.cap *= 2;
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, m_lightsources_cap * sizeof(LightSource), NULL, GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        glBufferData(GL_SHADER_STORAGE_BUFFER,
+                m_ssbos.light_sources.cap *
+                    (sizeof(LightSource::__color_pad) + sizeof(LightSource::__pos_pad)),
+                NULL,
+                GL_DYNAMIC_DRAW);
+
+        //update light source ssbo
+        auto offset = 0;
+        LightSource source_data{};
+
+        auto update_fn = [&](obj::Star* star){
+            source_data.position = star->get_pos();
+            source_data.color = star->get_color();
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER,
+                offset * (sizeof(LightSource::__pos_pad) + sizeof(LightSource::__color_pad)),
+                sizeof(LightSource::__pos_pad),
+                &source_data.__pos_pad);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER,
+                offset * (sizeof(LightSource::__pos_pad) + sizeof(LightSource::__color_pad)) + sizeof(LightSource::__pos_pad),
+                sizeof(LightSource::__color_pad),
+                &source_data.__color_pad);
+
+            offset++;
+        };
+
+        std::for_each(m_bodies.begin(), m_bodies.end(), [&](auto b_ptr){
+            if(auto star = dynamic_cast<obj::Star*>(b_ptr.get()); star)
+                update_fn(star);
+        });
     }
 }
 void Game::remove_star(obj::Star* star){
-    auto removed = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
+    auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
             return ptr.get() == star;
     });
-    if(removed != m_bodies.end()){
-        m_stars.erase(star);
+    if(f != m_bodies.end()){
+        m_bodies.erase(f);
+        m_ssbos.light_sources.size--;
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
+        if(m_ssbos.light_sources.size < (m_ssbos.light_sources.cap / 2)){
+            m_ssbos.light_sources.cap /= 2;
+            glBufferData(GL_SHADER_STORAGE_BUFFER,
+                    m_ssbos.light_sources.cap *
+                        (sizeof(LightSource::__color_pad) + sizeof(LightSource::__pos_pad)),
+                    NULL,
+                    GL_DYNAMIC_DRAW);
+        }
+
+        glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R8, GL_RED, GL_UNSIGNED_BYTE, NULL);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)
