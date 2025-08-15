@@ -30,6 +30,7 @@ void main() {
     vec3 ambient = ambient_strength * light_data.VertColor;
 
     vec3 result;
+    result += ambient;
 
     vec3 norm = normalize(light_data.Normal);
 
@@ -39,13 +40,12 @@ void main() {
 
         vec3 light_dir = normalize(light_source_pos - light_data.FragPos);
         float diff = max(dot(norm, light_dir), 0.0);
-        vec3 diffuse = diff * light_source_color;
+        vec3 diffuse = diff * light_source_color * light_data.VertColor;
 
-        // vec3 view_dir = normalize(camera_pos - light_data.FragPos);
-        // vec3 reflect_dir = reflect(-light_dir, norm);
-        // float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32); // 32 <- shininess value
-        // vec3 specular = 0.5 * spec * light_data.VertColor;
-        // result = (ambient + diffuse + specular) * light_data.VertColor;
+        vec3 view_dir = normalize(camera_pos - light_data.FragPos);
+        vec3 reflect_dir = reflect(-light_dir, norm);
+        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 4); // 4 <- shininess value
+        vec3 specular = 0.2 * spec * light_data.VertColor;
 
         float distance = length(light_source_pos - light_data.FragPos);
         float attenuation = 1.0 / (1.0 +
@@ -53,10 +53,10 @@ void main() {
                 + light_sources[i].att_quadratic * (distance * distance));
 
         diffuse *= attenuation;
+        specular *= attenuation;
 
-        result += (diffuse) * light_data.VertColor;
+        result += (diffuse + specular);
     }
-    result += ambient;
 
 
     FragColor = vec4(result, 1.0f);

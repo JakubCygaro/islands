@@ -252,8 +252,8 @@ void Game::update_bodies_pos()
             auto b_1 = m_bodies[body];
             auto b_2 = m_bodies[next_body];
 
-            auto m_1 = b_1->get_mass();
-            auto m_2 = b_2->get_mass();
+            auto m_1 = b_1->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;
+            auto m_2 = b_2->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;;
 
             auto r_21 = b_2->get_pos() - b_1->get_pos();
             auto r_21_hat = glm::normalize(r_21);

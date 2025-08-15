@@ -62,11 +62,11 @@ struct LightSource {
         glm::vec4 __color_pad;
     };
     union{
-        float att_linear{0.09};
+        float att_linear{0.014};
         glm::vec4 __att_l_pad;
     };
     union {
-        float att_quadratic{0.032};
+        float att_quadratic{0.0007};
         glm::vec4 __att_q_pad;
     };
 };

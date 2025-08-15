@@ -12,10 +12,8 @@ namespace obj {
         // m_shader->set_mat3(name_of(inverse_matrix), inverse_matrix);
         m_sphere->draw();
     }
-    void Star::set_mass(float) {
-
-    }
-    float Star::get_mass() const {
-        return MASS_BOOST_FACTOR * CelestialBody::get_mass();
+    void Star::set_mass(float m) {
+        m_mass = m;
+        m_radius = std::remove_reference<decltype(*this)>::type::calculate_radius(m_mass);
     }
 }
