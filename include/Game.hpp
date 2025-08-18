@@ -1,5 +1,6 @@
 #ifndef GAME_HPP
 #define GAME_HPP
+#include <vector>
 #include "Gui.hpp"
 #include "Object.hpp"
 #include <Camera.hpp>
@@ -61,14 +62,9 @@ struct LightSource {
         glm::vec3 color;
         glm::vec4 __color_pad;
     };
-    union{
-        float att_linear{0.014};
-        glm::vec4 __att_l_pad;
-    };
-    union {
-        float att_quadratic{0.0007};
-        glm::vec4 __att_q_pad;
-    };
+    float att_linear{0.014};
+    float att_quadratic{0.0007};
+    glm::vec2 __att_pad{};
 };
 struct SSBuffers {
     LightSourcesSSBO light_sources { 0, 2 };
@@ -149,7 +145,7 @@ private:
     void initialize_uniforms();
     void initialize_key_bindings();
     void update();
-    void update_bodies_pos();
+    void update_bodies();
     void update_buffers();
     void render();
     void continuos_key_input();
@@ -168,7 +164,8 @@ private:
     void remove_planet(obj::Planet* planet);
     void add_star(obj::Star new_start);
     void remove_star(obj::Star* star);
-    void buffer_light_source(size_t offset, obj::Star* star);
+    std::vector<LightSource> collect_light_sources();
+    void buffer_light_data(std::vector<LightSource>& data);
 public:
     Game() = delete;
     ~Game();

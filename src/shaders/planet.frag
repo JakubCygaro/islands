@@ -21,18 +21,19 @@ struct LightSource {
     float att_quadratic;
 };
 
-layout(std140, binding = 2) buffer LightSources {
+layout(std140, binding = 2) restrict readonly buffer LightSources {
     LightSource light_sources[];
 };
 
 void main() {
 
-    vec3 ambient = ambient_strength * light_data.VertColor;
+    vec3 result = vec3(0);
 
-    vec3 result;
+    vec3 ambient = ambient_strength * light_data.VertColor;
     result += ambient;
 
     vec3 norm = normalize(light_data.Normal);
+    vec3 view_dir = normalize(camera_pos - light_data.FragPos);
 
     for(int i = 0; i < light_sources.length(); i++) {
         vec3 light_source_color = vec3(light_sources[i].color);
@@ -40,9 +41,8 @@ void main() {
 
         vec3 light_dir = normalize(light_source_pos - light_data.FragPos);
         float diff = max(dot(norm, light_dir), 0.0);
-        vec3 diffuse = diff * light_source_color * light_data.VertColor;
+        vec3 diffuse = light_source_color * diff * light_data.VertColor;
 
-        vec3 view_dir = normalize(camera_pos - light_data.FragPos);
         vec3 reflect_dir = reflect(-light_dir, norm);
         float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 4); // 4 <- shininess value
         vec3 specular = 0.2 * spec * light_data.VertColor;
@@ -57,8 +57,6 @@ void main() {
 
         result += (diffuse + specular);
     }
-
-
     FragColor = vec4(result, 1.0f);
     // FragColor = vec4(light_data.VertColor, 1.0f);
 }
