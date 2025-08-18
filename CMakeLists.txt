@@ -24,12 +24,12 @@ add_custom_command(
     DEPENDS ${GAME_DATA}
 )
 
-add_custom_target(gen_paths 
+add_custom_target(gen_paths
     DEPENDS ${CMAKE_BINARY_DIR}/files.hpp
 )
 
 set(SHADERS_DIR ${CMAKE_SOURCE_DIR}/src/shaders)
-set(SHADERS 
+set(SHADERS
     ${SHADERS_DIR}/c_body.frag
     ${SHADERS_DIR}/c_body.vert
     ${SHADERS_DIR}/font_bitmap.frag
@@ -42,6 +42,9 @@ set(SHADERS
     ${SHADERS_DIR}/test.vert
     ${SHADERS_DIR}/text.frag
     ${SHADERS_DIR}/text.vert
+    ${SHADERS_DIR}/normals.vert
+    ${SHADERS_DIR}/normals.geom
+    ${SHADERS_DIR}/normals.frag
 )
 
 add_custom_command(
@@ -49,7 +52,7 @@ add_custom_command(
     COMMAND python ${SCRIPTS_DIR}/pack_shaders.py ${CMAKE_SOURCE_DIR}/src/shaders ${CMAKE_BINARY_DIR}/shaders.hpp
     DEPENDS ${SHADERS}
 )
-add_custom_target(pack_shaders 
+add_custom_target(pack_shaders
     DEPENDS ${CMAKE_BINARY_DIR}/shaders.hpp
 )
 add_custom_command(TARGET pack_shaders

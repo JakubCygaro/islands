@@ -39,6 +39,8 @@ std::vector<LightSource> Game::collect_light_sources(){
             ls[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
+                .att_linear = star->get_attenuation_linear(),
+                .att_quadratic = star->get_attenuation_quadratic(),
             };
     });
     return ls;
@@ -252,9 +254,11 @@ void Game::update_bodies()
     for (size_t body = 0; body < m_bodies.size(); body++) {
         //if this celestial body is a star, collect its light data
         if(auto star = dynamic_cast<obj::Star*>(m_bodies[body].get()); star){
-            ls[offset++] = LightSource {
+            ls[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
+                .att_linear = star->get_attenuation_linear(),
+                .att_quadratic = star->get_attenuation_quadratic(),
             };
         }
         for (size_t next_body = body + 1; next_body < m_bodies.size(); next_body++) {
@@ -284,7 +288,7 @@ void Game::render()
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for (auto& c_obj : m_bodies) {
-        c_obj->render();
+        c_obj->render(m_gui.debug_menu.draw_normals);
     }
     render_2d();
 }
@@ -377,6 +381,7 @@ void Game::draw_gui()
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
         }
+        if(ImGui::Checkbox("Draw normals", &m_gui.debug_menu.draw_normals)) {}
         ImGui::End();
     }
 #endif

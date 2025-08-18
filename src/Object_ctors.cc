@@ -2,7 +2,7 @@
 
 namespace obj{
 
-    CelestialBody::CelestialBody() : m_sphere{nullptr} {}
+    CelestialBody::CelestialBody() : m_sphere{nullptr}, m_normals_shader(nullptr) {}
     CelestialBody::CelestialBody(std::shared_ptr<UnitSphere> sphere,
         glm::vec3 pos,
         glm::vec3 speed,
@@ -14,14 +14,17 @@ namespace obj{
         m_sphere(sphere),
         m_mass(mass)
     {
-
+        if (!m_normals_shader){
+            m_normals_shader = get_normals_shader_instance();
+        }
     }
 
     // copy constructor
     CelestialBody::CelestialBody(const CelestialBody &other)
         : m_pos{other.m_pos}, m_sphere{other.m_sphere},
           m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}, 
-          m_color(other.m_color)
+          m_color(other.m_color),
+          m_normals_shader(other.m_normals_shader)
     {}
     // copy assign
     CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
@@ -32,15 +35,18 @@ namespace obj{
       m_mass = other.m_mass;
       m_radius = other.m_radius;
       m_color = other.m_color;
+      m_normals_shader = other.m_normals_shader;
       return *this;
     }
     //move constructor
     CelestialBody::CelestialBody(CelestialBody &&other)
         : m_pos{other.m_pos}, m_sphere{std::move(other.m_sphere)},
           m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius},
-          m_color(other.m_color)
+          m_color(other.m_color),
+          m_normals_shader(other.m_normals_shader)
     {
       other.m_sphere = nullptr;
+      other.m_normals_shader = nullptr;
     }
     // move assign
     CelestialBody &CelestialBody::operator=(CelestialBody &&other) {
@@ -51,7 +57,9 @@ namespace obj{
       m_mass = other.m_mass;
       m_radius = other.m_radius;
       m_color = other.m_color;
+      m_normals_shader = other.m_normals_shader;
       other.m_sphere = nullptr;
+      other.m_normals_shader = nullptr;
       return *this;
     }
     CelestialBody::~CelestialBody() {}

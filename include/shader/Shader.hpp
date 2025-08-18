@@ -6,7 +6,6 @@
 #include <iostream>
 #include <fstream>
 #include <glad/glad.h>
-#include <sstream>
 #include <stdexcept>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -21,8 +20,8 @@ public:
     Shader(Shader&& other);
     Shader& operator=(Shader&& other);
     ~Shader();
-    Shader(const std::string& vert_path, const std::string& frag_path);
-    Shader(const char* vert, const char* frag);
+    Shader(const std::string& vert_path, const std::string& frag_path, const std::string* geom = nullptr);
+    Shader(const char* vert, const char* frag, const char* geom = nullptr);
     static Shader from_shader_dir(const std::string& name);
     void use_shader() const;
     void set_vec3(const char* uniform_name, const glm::vec3& v);

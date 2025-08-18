@@ -1,6 +1,29 @@
 # TODO LIST
 
-- implement classes derived from CelestialBody: Planet, Star
-- implement lighting, Star : CelestialBody would emit light then
+- eclipses/shadows
+- add collisions
 - add trails to objects
 - skybox
+- custom textures for planets
+
+
+
+## Multithreaded gravity calculation algorithm proposition
+
+Input: slice of Celestial Bodies
+
+Output: the same slice with gravitational forces calculated between each body
+
+
+if len(V) == 1:
+    return V
+
+M := midpoint of V
+
+CalcGrav(0, M)
+CalcGrav(M, len(V))
+
+for i := 0 to M:
+    for j := M to len(V):
+        g := grav(V[i], V[j])
+return V

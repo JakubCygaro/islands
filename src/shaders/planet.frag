@@ -43,9 +43,11 @@ void main() {
         float diff = max(dot(norm, light_dir), 0.0);
         vec3 diffuse = light_source_color * diff * light_data.VertColor;
 
+        vec3 halfway_dir = normalize(light_dir + view_dir);
+
         vec3 reflect_dir = reflect(-light_dir, norm);
-        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 4); // 4 <- shininess value
-        vec3 specular = 0.2 * spec * light_data.VertColor;
+        float spec = pow(max(dot(norm, halfway_dir), 0.0), 8.0); // 4 <- shininess value
+        vec3 specular = 0.25 * light_source_color * spec;
 
         float distance = length(light_source_pos - light_data.FragPos);
         float attenuation = 1.0 / (1.0 +

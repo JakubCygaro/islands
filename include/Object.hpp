@@ -66,8 +66,32 @@ protected:
     PROTECTED_PROPERTY(glm::vec3, color)
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
+    std::shared_ptr<Shader> m_normals_shader = nullptr;
     float m_mass {};
     float m_radius {};
+
+private:
+    inline static std::shared_ptr<Shader> s_normals_shader = nullptr;
+    inline static std::shared_ptr<Shader> get_normals_shader_instance(){
+        if (s_normals_shader){
+            return s_normals_shader;
+        } else {
+#ifdef DEBUG
+            auto geom = std::string(files::src::shaders::NORMALS_GEOM);
+            s_normals_shader = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::NORMALS_VERT),
+                        std::string(files::src::shaders::NORMALS_FRAG),
+                        &geom));
+#else
+            s_normals_shader = std::make_shared<Shader>(Shader(
+                        shaders::NORMALS_VERT,
+                        shaders::NORMALS_FRAG,
+                        shaders::NORMALS_GEOM
+                        ));
+#endif
+            return s_normals_shader;
+        }
+    }
 
 public:
     // one unit of mass in the simulation is equal to 1 kg
@@ -84,7 +108,7 @@ public:
     CelestialBody& operator=(CelestialBody&&);
     virtual ~CelestialBody();
     virtual void update(double& delta_t);
-    virtual void render() = 0;
+    virtual void render(bool render_normals) = 0;
     virtual float get_mass() const;
     virtual void set_mass(float m);
     virtual float get_radius() const;
@@ -126,7 +150,7 @@ public:
     Planet& operator=(Planet&&);
     virtual ~Planet();
 public:
-    virtual void render() override;
+    virtual void render(bool render_normals) override;
     virtual void set_mass(float) override;
 };
 class Star : public CelestialBody {
@@ -153,6 +177,9 @@ private:
     }
 
     std::shared_ptr<Shader> m_shader = nullptr;
+
+    float m_attenuation_linear{};
+    float m_attenuation_quadratic{};
 public:
     Star(std::shared_ptr<Shader> shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
@@ -165,8 +192,13 @@ public:
     Star& operator=(Star&&);
     virtual ~Star();
 public:
-    virtual void render() override;
+    virtual void render(bool render_normals) override;
     virtual void set_mass(float) override;
+    float get_attenuation_linear() const;
+    float get_attenuation_quadratic() const;
+private:
+    static float calc_attenuation_linear(float);
+    static float calc_attenuation_quadratic(float);
 };
 }
 

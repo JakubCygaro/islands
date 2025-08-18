@@ -1,9 +1,8 @@
-#include "Object.hpp"
+#include "Font.hpp"
 #include <cstdio>
-#include <functional>
 #include <glm/gtc/type_ptr.hpp>
-#include <memory>
 #include <shader/Shader.hpp>
+#include <sstream>
 
 constexpr const char* SHADER_DIR_PREFIX = "./game_data/shaders/";
 Shader::Shader() {
@@ -31,11 +30,12 @@ Shader& Shader::operator=(Shader&& other){
 Shader::~Shader(){
     glDeleteShader(m_shader_id);
 }
-Shader::Shader(const char* vert, const char* frag) try {
+Shader::Shader(const char* vert, const char* frag, const char* geom) try {
     const char* vert_char_ptr = vert;
     const char* frag_char_ptr = frag;
+    const char* geom_char_ptr = geom;
 
-    std::uint32_t vert_id, frag_id;
+    std::uint32_t vert_id, frag_id, geom_id;
     int succ;
     char info_log[512];
 
@@ -63,9 +63,26 @@ Shader::Shader(const char* vert, const char* frag) try {
         std::string err_msg = err_stream.str();
         throw std::runtime_error{std::move(err_msg)};
     }
+    if(geom){
+        geom_id = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geom_id, 1, &geom_char_ptr, NULL);
+        glCompileShader(geom_id);
+        glGetShaderiv(geom_id, GL_COMPILE_STATUS, &succ);
+        if(!succ) {
+            glGetShaderInfoLog(geom_id, 512, NULL, info_log);
+            std::stringstream err_stream;
+            err_stream << "Geom shader compile error: ";
+            err_stream << info_log;
+            std::string err_msg = err_stream.str();
+            throw std::runtime_error{std::move(err_msg)};
+        }
+    }
     m_shader_id = glCreateProgram();
     glAttachShader(m_shader_id, vert_id);
     glAttachShader(m_shader_id, frag_id);
+    if(geom){
+        glAttachShader(m_shader_id, geom_id);
+    }
     glLinkProgram(m_shader_id);
 
     glGetProgramiv(m_shader_id, GL_LINK_STATUS, &succ);
@@ -80,6 +97,7 @@ Shader::Shader(const char* vert, const char* frag) try {
 
     glDeleteShader(vert_id);
     glDeleteShader(frag_id);
+    glDeleteShader(geom_id);
 } catch(const std::runtime_error& e){
     std::stringstream err_stream;
     err_stream << "Shader creation error: ";
@@ -88,13 +106,16 @@ Shader::Shader(const char* vert, const char* frag) try {
     throw std::runtime_error{std::move(err_msg)};
 }
 
-Shader::Shader(const std::string& vert_path, const std::string& frag_path) try {
+Shader::Shader(const std::string& vert_path, const std::string& frag_path, const std::string* geom_path) try {
     /*std::cout << "vert_path: " << vert_path << "\nfrag_path: " << frag_path << '\n';*/
     std::ifstream vert_file;
     std::ifstream frag_file;
+    std::ifstream geom_file;
 
     vert_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     frag_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    geom_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
     vert_file.open(vert_path.c_str());
     std::stringstream vert_stream;
     vert_stream << vert_file.rdbuf();
@@ -103,15 +124,22 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path) try {
     std::stringstream frag_stream;
     frag_stream << frag_file.rdbuf();
 
+    std::string geom_src;
+    if(geom_path != nullptr){
+        geom_file.open(geom_path->c_str());
+        std::stringstream geom_stream;
+        geom_stream << geom_file.rdbuf();
+        geom_src = geom_stream.str();
+    }
+
     std::string vert_src = vert_stream.str();
     std::string frag_src = frag_stream.str();
 
-    /*std::cout << "vert_src: " << vert_src << "\nfrag_src: " << frag_src << '\n';*/
-
     const char* vert_char_ptr = vert_src.c_str();
     const char* frag_char_ptr = frag_src.c_str();
+    const char* geom_char_ptr = geom_src.c_str();
 
-    std::uint32_t vert_id, frag_id;
+    std::uint32_t vert_id, frag_id, geom_id;
     int succ;
     char info_log[512];
 
@@ -124,6 +152,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path) try {
         std::stringstream err_stream;
         err_stream << "Vertex shader compile error: ";
         err_stream << info_log;
+        err_stream << " file: " << vert_path;
         std::string err_msg = err_stream.str();
         throw std::runtime_error{std::move(err_msg)};
     }
@@ -136,12 +165,32 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path) try {
         std::stringstream err_stream;
         err_stream << "Fragment shader compile error: ";
         err_stream << info_log;
+        err_stream << " file: " << frag_path;
         std::string err_msg = err_stream.str();
         throw std::runtime_error{std::move(err_msg)};
     }
+    if(geom_path){
+        geom_id = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geom_id, 1, &geom_char_ptr, NULL);
+        glCompileShader(geom_id);
+        glGetShaderiv(geom_id, GL_COMPILE_STATUS, &succ);
+        if(!succ) {
+            glGetShaderInfoLog(geom_id, 512, NULL, info_log);
+            std::stringstream err_stream;
+            err_stream << "Geometry shader compile error: ";
+            err_stream << info_log;
+            err_stream << " file: " << geom_path;
+            std::string err_msg = err_stream.str();
+            throw std::runtime_error{std::move(err_msg)};
+        }
+    }
+
     m_shader_id = glCreateProgram();
     glAttachShader(m_shader_id, vert_id);
     glAttachShader(m_shader_id, frag_id);
+    if(geom_path){
+        glAttachShader(m_shader_id, geom_id);
+    }
     glLinkProgram(m_shader_id);
 
     glGetProgramiv(m_shader_id, GL_LINK_STATUS, &succ);
@@ -156,6 +205,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path) try {
 
     glDeleteShader(vert_id);
     glDeleteShader(frag_id);
+    glDeleteShader(geom_id);
 } catch(const std::runtime_error& e){
     std::stringstream err_stream;
     err_stream << "Shader creation error: ";
