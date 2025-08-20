@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(islands VERSION 0.1.1.0)
+project(islands VERSION 0.2.0.0)
 
 set(FREETYPE_ROOT_PATHS "" CACHE FILEPATH "Where to search for the freetype library install directory")
 
@@ -8,7 +8,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
         set(CMAKE_BUILD_TYPE "Debug")
     endif()
 endif()
-find_package(glfw3 REQUIRED)
+find_package(glfw3 3.4 REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Freetype REQUIRED
     PATHS ${FREETYPE_ROOT_PATHS}
