@@ -105,6 +105,7 @@ void Game::initialize()
     }
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     initialize_uniforms();
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
@@ -179,7 +180,7 @@ void Game::initialize_uniforms(){
     glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.matrices.mount_point, m_ubos.matrices.id);
 
     // lighting_globals uniform buffer
-    m_ubos.lighting_globals.ambient_strength = 0.02f;
+    m_ubos.lighting_globals.ambient_strength = 0.005f;
     glGenBuffers(1, &m_ubos.lighting_globals.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
     glBufferData(GL_UNIFORM_BUFFER,

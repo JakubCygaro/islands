@@ -29,9 +29,9 @@ namespace obj {
         return m_attenuation_quadratic;
     }
     float Star::calc_attenuation_linear(float mass) {
-        return 1.0 / std::pow(mass + 2.0, 4);
+        return 1.0 / std::pow(mass + 2.0, 1);
     }
     float Star::calc_attenuation_quadratic(float mass) {
-        return 1.0 / std::pow(mass + 2.0, 6);
+        return 1.0 / std::pow(mass + 2.0, 2);
     }
 }
