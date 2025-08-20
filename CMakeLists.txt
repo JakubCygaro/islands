@@ -14,13 +14,15 @@ find_package(Freetype REQUIRED
     PATHS ${FREETYPE_ROOT_PATHS}
 )
 
-set(SCRIPTS_DIR ${CMAKE_SOURCE_DIR}/scripts)
+set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 file(GLOB_RECURSE GAME_DATA LIST_DIRECTORIES YES ${CMAKE_SOURCE_DIR}/game_data/*)
 
+message(${CMAKE_CURRENT_SOURCE_DIR}/game_data)
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/files.hpp
-    COMMAND python ${SCRIPTS_DIR}/gen_paths.py game_data/ ${CMAKE_BINARY_DIR}/files.hpp #--deps files.d
+    COMMAND python ${SCRIPTS_DIR}/gen_paths.py ${CMAKE_SOURCE_DIR}/game_data ${CMAKE_BINARY_DIR}/files.hpp #--deps files.d
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS ${GAME_DATA}
 )
 

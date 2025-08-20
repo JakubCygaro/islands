@@ -17,6 +17,11 @@ game_data_path: str = args.source_dir
 
 game_data_dir = os.fsencode(game_data_path)
 
+cwd = os.fsencode(os.getcwd())
+
+base = os.path.commonpath([cwd, game_data_dir])
+
+
 files: dict[str, list[str]] = dict()
 deps = []
 
@@ -49,7 +54,8 @@ for key, value in files.items():
         vars = vars + variable_def
         # print(vars)
 
-    ns = os.fsdecode(key).replace("/", "::")
+    base = os.path.relpath(key, cwd)
+    ns = os.fsdecode(base).replace("/", "::")
     namespace = """
         namespace {ns} {{
             {variable_def}

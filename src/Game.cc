@@ -211,8 +211,10 @@ void Game::run()
         update_buffers();
         update();
         render();
+        glDisable(GL_FRAMEBUFFER_SRGB);
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glEnable(GL_FRAMEBUFFER_SRGB);
         glfwSwapBuffers(m_window_ptr);
     }
 }
@@ -224,8 +226,9 @@ void Game::update()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     continuos_key_input();
-    if (m_gui_enabled)
+    if (m_gui_enabled){
         draw_gui();
+    }
     if (!m_paused) {
         update_bodies();
     }
@@ -289,7 +292,11 @@ void Game::render()
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for (auto& c_obj : m_bodies) {
+#ifdef DEBUG
         c_obj->render(m_gui.debug_menu.draw_normals);
+#else
+        c_obj->render(false);
+#endif
     }
     render_2d();
 }
