@@ -19,10 +19,8 @@ game_data_dir = os.fsencode(game_data_path)
 
 cwd = os.fsencode(os.getcwd())
 
-base = os.path.commonpath([cwd, game_data_dir])
-
-
 files: dict[str, list[str]] = dict()
+
 deps = []
 
 

@@ -107,6 +107,7 @@ void Game::initialize()
     glEnable(GL_CULL_FACE);
     glEnable(GL_FRAMEBUFFER_SRGB);
     initialize_uniforms();
+    m_gbuffer = Gbuffer{ this->m_width, this->m_height };
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
@@ -289,15 +290,61 @@ void Game::update_bodies()
 }
 void Game::render()
 {
+    m_gbuffer.bind();
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for (auto& c_obj : m_bodies) {
 #ifdef DEBUG
-        c_obj->render(m_gui.debug_menu.draw_normals);
+        if(auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet){
+            planet->render(m_gui.debug_menu.draw_normals);
+        }
 #else
-        c_obj->render(false);
+        if(auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet){
+            planet->render(false);
+        }
 #endif
     }
+    m_gbuffer.unbind();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_position);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_normal);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_color_spec);
+
+    auto light_pass = Gbuffer::get_lighting_shader_instance();
+    light_pass->use_shader();
+    light_pass->set_int("g_position", 0);
+    light_pass->set_int("g_normal", 1);
+    light_pass->set_int("g_albedo_spec", 2);
+    // uniform sampler2D g_position;
+    // uniform sampler2D g_normal;
+    // uniform sampler2D g_albedo_spec;
+    glBindVertexArray(m_gbuffer.quad_vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+
+    glBindVertexArray(0);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(
+        0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
+    );
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    for (auto& c_obj : m_bodies) {
+#ifdef DEBUG
+        if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
+            star->render(m_gui.debug_menu.draw_normals);
+        }
+#else
+        if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
+            star->render(false);
+        }
+#endif
+    }
+
     render_2d();
 }
 void Game::render_2d() {

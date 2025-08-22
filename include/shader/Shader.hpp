@@ -27,6 +27,7 @@ public:
     void set_vec3(const char* uniform_name, const glm::vec3& v);
     void set_mat4(const char* uniform_name, glm::mat4 m);
     void set_mat3(const char* uniform_name, glm::mat3 m);
+    void set_int(const char* uniform_name, int i);
     uint32_t get_uniform_block_index(const char* block_name);
     void set_uniform_block_binding(const char* block_name, uint32_t binding);
 };

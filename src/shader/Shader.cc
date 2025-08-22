@@ -240,6 +240,10 @@ void Shader::set_mat3(const char* uniform_name, glm::mat3 m) {
     int loc = glGetUniformLocation(m_shader_id, uniform_name);
     glUniformMatrix3fv(loc, 1, GL_FALSE, &m[0][0]);
 }
+void Shader::set_int(const char* uniform_name, int i) {
+    int loc = glGetUniformLocation(m_shader_id, uniform_name);
+    glUniform1i(loc, i);
+}
 uint32_t Shader::get_uniform_block_index(const char* block_name){
     return glGetUniformBlockIndex(m_shader_id, block_name);
 }

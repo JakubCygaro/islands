@@ -32,18 +32,16 @@ add_custom_target(gen_paths
 
 set(SHADERS_DIR ${CMAKE_SOURCE_DIR}/src/shaders)
 set(SHADERS
-    ${SHADERS_DIR}/c_body.frag
-    ${SHADERS_DIR}/c_body.vert
     ${SHADERS_DIR}/font_bitmap.frag
     ${SHADERS_DIR}/font_bitmap.vert
     ${SHADERS_DIR}/planet.frag
     ${SHADERS_DIR}/planet.vert
     ${SHADERS_DIR}/star.frag
     ${SHADERS_DIR}/star.vert
-    ${SHADERS_DIR}/test.frag
-    ${SHADERS_DIR}/test.vert
     ${SHADERS_DIR}/text.frag
     ${SHADERS_DIR}/text.vert
+    ${SHADERS_DIR}/light_pass.frag
+    ${SHADERS_DIR}/light_pass.vert
     ${SHADERS_DIR}/normals.vert
     ${SHADERS_DIR}/normals.geom
     ${SHADERS_DIR}/normals.frag
@@ -81,6 +79,7 @@ add_executable(islands
     src/shader/Shader.cc
     src/Camera.cc
     src/Game.cc
+    src/gbuffer.cc
     src/Game_ctors.cc
     src/Object.cc
     src/Object_ctors.cc

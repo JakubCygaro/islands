@@ -1,5 +1,6 @@
 #ifndef GAME_HPP
 #define GAME_HPP
+#include <string>
 #include <vector>
 #include "Gui.hpp"
 #include "Object.hpp"
@@ -17,6 +18,48 @@
 #include <ostream>
 #include <unordered_map>
 #include <vector>
+
+struct Gbuffer {
+private:
+    int32_t width{}, height{};
+    uint32_t quad_vbo{}, quad_ebo{};
+public:
+    uint32_t g_position{}, g_normal{}, g_color_spec{}, fbo{}, rbo{};
+    uint32_t quad_vao{};
+    Gbuffer();
+    Gbuffer(int32_t width, int32_t height);
+    Gbuffer(const Gbuffer& other);
+    Gbuffer& operator=(const Gbuffer& other);
+    Gbuffer(Gbuffer&& other);
+    Gbuffer& operator=(Gbuffer&& other);
+    ~Gbuffer();
+
+    void bind() const;
+    void unbind() const;
+
+
+private:
+    inline static std::shared_ptr<Shader> s_lighting_shader_instance = nullptr;
+public:
+    inline static std::shared_ptr<Shader> get_lighting_shader_instance() {
+        if(s_lighting_shader_instance){
+            return s_lighting_shader_instance;
+        } else {
+#ifdef DEBUG
+            s_lighting_shader_instance = std::make_shared<Shader>(Shader{
+                std::string(files::src::shaders::LIGHT_PASS_VERT),
+                std::string(files::src::shaders::LIGHT_PASS_FRAG)
+            });
+#else
+            s_lighting_shader_instance = std::make_shared<Shader>(Shader{
+                shaders::LIGHT_PASS_VERT,
+                shaders::LIGHT_PASS_FRAG
+            });
+#endif
+            return s_lighting_shader_instance;
+        }
+    }
+};
 
 struct UBO {
     uint32_t id{};
@@ -130,6 +173,7 @@ private:
     bool m_gui_enabled { true };
     bool m_paused { false };
     size_t m_lightsources_cap {1};
+    Gbuffer m_gbuffer{};
     GLFWwindow* m_window_ptr { nullptr };
     Camera m_camera;
 
