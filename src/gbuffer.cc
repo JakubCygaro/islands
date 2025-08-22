@@ -202,6 +202,8 @@ void Gbuffer::bind() const{
     assert(quad_vao != 0);
     assert(quad_vbo != 0);
     assert(quad_ebo != 0);
+    assert(g_position != 0);
+    assert(g_normal != 0);
     assert(rbo != 0);
     glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
 }

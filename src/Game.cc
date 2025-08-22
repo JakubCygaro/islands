@@ -290,9 +290,12 @@ void Game::update_bodies()
 }
 void Game::render()
 {
-    m_gbuffer.bind();
     glClearColor(0, 0, 0, 0);
+    m_gbuffer.bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_BLEND);
+    glDisable(GL_FRAMEBUFFER_SRGB);
+    // glDisable(GL_CULL_FACE);
     for (auto& c_obj : m_bodies) {
 #ifdef DEBUG
         if(auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet){
@@ -307,6 +310,11 @@ void Game::render()
     m_gbuffer.unbind();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    auto light_pass = Gbuffer::get_lighting_shader_instance();
+    light_pass->use_shader();
+    light_pass->set_int("g_position", 0);
+    light_pass->set_int("g_normal", 1);
+    light_pass->set_int("g_albedo_spec", 2);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_position);
     glActiveTexture(GL_TEXTURE1);
@@ -314,11 +322,6 @@ void Game::render()
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_color_spec);
 
-    auto light_pass = Gbuffer::get_lighting_shader_instance();
-    light_pass->use_shader();
-    light_pass->set_int("g_position", 0);
-    light_pass->set_int("g_normal", 1);
-    light_pass->set_int("g_albedo_spec", 2);
     // uniform sampler2D g_position;
     // uniform sampler2D g_normal;
     // uniform sampler2D g_albedo_spec;
@@ -345,6 +348,9 @@ void Game::render()
 #endif
     }
 
+    glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     render_2d();
 }
 void Game::render_2d() {

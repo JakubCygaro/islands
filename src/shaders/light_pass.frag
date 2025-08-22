@@ -14,8 +14,8 @@ layout(std140, binding = 1) uniform LightingGlobals {
 };
 
 struct LightSource {
-    vec3 position;
-    vec3 color;
+    vec4 position;
+    vec4 color;
     float att_linear;
     float att_quadratic;
 };
@@ -48,7 +48,7 @@ void main(){
         vec3 halfway_dir = normalize(light_dir + view_dir);
 
         vec3 reflect_dir = reflect(-light_dir, norm);
-        float spec = pow(max(dot(norm, halfway_dir), 0.0), specular); // 4 <- shininess value
+        float spec = pow(max(dot(norm, halfway_dir), 0.0), 8.0); // 4 <- shininess value
         vec3 specular = 0.25 * light_source_color * spec;
 
         // float distance = length(light_source_pos - frag_pos);
