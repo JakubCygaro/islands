@@ -107,7 +107,8 @@ struct LightSource {
     };
     float att_linear{0.014};
     float att_quadratic{0.0007};
-    glm::vec2 __att_pad{};
+    float radius{0};
+    float __att_pad{};
 };
 struct SSBuffers {
     LightSourcesSSBO light_sources { 0, 2 };

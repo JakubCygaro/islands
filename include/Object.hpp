@@ -180,6 +180,7 @@ private:
 
     float m_attenuation_linear{};
     float m_attenuation_quadratic{};
+    float m_light_source_radius{};
 public:
     Star(std::shared_ptr<Shader> shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
@@ -196,9 +197,11 @@ public:
     virtual void set_mass(float) override;
     float get_attenuation_linear() const;
     float get_attenuation_quadratic() const;
+    float get_light_source_radius() const;
 private:
     static float calc_attenuation_linear(float);
     static float calc_attenuation_quadratic(float);
+    static float calc_light_source_radius(float, float, const glm::vec3&);
 };
 }
 

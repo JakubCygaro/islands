@@ -41,6 +41,7 @@ std::vector<LightSource> Game::collect_light_sources(){
                 .color = star->get_color(),
                 .att_linear = star->get_attenuation_linear(),
                 .att_quadratic = star->get_attenuation_quadratic(),
+                .radius = star->get_light_source_radius(),
             };
     });
     return ls;
@@ -264,6 +265,7 @@ void Game::update_bodies()
                 .color = star->get_color(),
                 .att_linear = star->get_attenuation_linear(),
                 .att_quadratic = star->get_attenuation_quadratic(),
+                .radius = star->get_light_source_radius(),
             };
         }
         for (size_t next_body = body + 1; next_body < m_bodies.size(); next_body++) {
@@ -336,6 +338,7 @@ void Game::render()
         0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
     );
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     for (auto& c_obj : m_bodies) {
 #ifdef DEBUG
         if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
@@ -349,8 +352,6 @@ void Game::render()
     }
 
     glEnable(GL_BLEND);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_FRAMEBUFFER_SRGB);
     render_2d();
 }
 void Game::render_2d() {

@@ -13,6 +13,7 @@ namespace obj {
         m_radius = std::remove_reference<decltype(*this)>::type::calculate_radius(m_mass);
         m_attenuation_linear = calc_attenuation_linear(m_mass);
         m_attenuation_quadratic = calc_attenuation_quadratic(m_mass);
+        m_light_source_radius = calc_light_source_radius(m_attenuation_linear, m_attenuation_quadratic, m_color);
     }
     Star::Star(const Star& other) : CelestialBody(other),
         m_shader(other.m_shader),
