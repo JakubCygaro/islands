@@ -31,12 +31,15 @@ namespace {
     }
 }
 
-std::vector<LightSource> Game::collect_light_sources(){
+void Game::collect_light_sources(){
     auto offset = 0;
-    std::vector<LightSource> ls(m_ssbos.light_sources.size);
+    if(m_ssbos.light_sources.size != m_light_data.size()){
+        m_light_data.resize(m_ssbos.light_sources.size);
+    }
+    // std::vector<LightSource> ls(m_ssbos.light_sources.size);
     std::for_each(m_bodies.begin(), m_bodies.end(), [&](auto b_ptr){
         if(auto star = dynamic_cast<obj::Star*>(b_ptr.get()); star)
-            ls[offset++] = {
+            m_light_data[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
                 .att_linear = star->get_attenuation_linear(),
@@ -44,14 +47,14 @@ std::vector<LightSource> Game::collect_light_sources(){
                 .radius = star->get_light_source_radius(),
             };
     });
-    return ls;
+    // return ls;
 }
 
-void Game::buffer_light_data(std::vector<LightSource>& data){
+void Game::buffer_light_data(){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
     glBufferData(GL_SHADER_STORAGE_BUFFER,
-            data.size() * sizeof(LightSource),
-            data.data(),
+            m_light_data.size() * sizeof(LightSource),
+            m_light_data.data(),
             GL_DYNAMIC_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
@@ -200,7 +203,6 @@ void Game::initialize_uniforms(){
         m_camera.get_pos_ptr());
 
     glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
-    m_ssbos.light_sources.cap = 1;
     glGenBuffers(1, &m_ssbos.light_sources.id);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
 }
@@ -255,12 +257,11 @@ void Game::update_buffers() {
 }
 void Game::update_bodies()
 {
-    std::vector<LightSource> ls(m_ssbos.light_sources.size);
     auto offset = 0;
     for (size_t body = 0; body < m_bodies.size(); body++) {
         //if this celestial body is a star, collect its light data
         if(auto star = dynamic_cast<obj::Star*>(m_bodies[body].get()); star){
-            ls[offset++] = {
+            m_light_data[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
                 .att_linear = star->get_attenuation_linear(),
@@ -288,7 +289,7 @@ void Game::update_bodies()
         }
         m_bodies[body]->update(m_delta_t);
     }
-    buffer_light_data(ls);
+    buffer_light_data();
 }
 void Game::render()
 {
@@ -312,25 +313,38 @@ void Game::render()
     m_gbuffer.unbind();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    auto light_pass = Gbuffer::get_lighting_shader_instance();
-    light_pass->use_shader();
-    light_pass->set_int("g_position", 0);
-    light_pass->set_int("g_normal", 1);
-    light_pass->set_int("g_albedo_spec", 2);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glCullFace(GL_FRONT);
+    auto uv = obj::UnitSphere::instance();
+    auto lv_shader = Gbuffer::get_light_volumes_shader_instance();
+    lv_shader->use_shader();
+    lv_shader->set_int("g_position", 0);
+    lv_shader->set_int("g_normal", 1);
+    lv_shader->set_int("g_albedo_spec", 2);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_position);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_normal);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_color_spec);
-
-    // uniform sampler2D g_position;
-    // uniform sampler2D g_normal;
-    // uniform sampler2D g_albedo_spec;
-    glBindVertexArray(m_gbuffer.quad_vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-
-    glBindVertexArray(0);
+    for(auto& ls : m_light_data){
+        auto model = glm::mat4(1.0f);
+        model = glm::translate(model, ls.position);
+        model = glm::scale(model, glm::vec3(ls.radius));
+        lv_shader->set_mat4("model", model);
+        lv_shader->set_vec3("color", ls.color);
+        lv_shader->set_float("att_linear", ls.att_linear);
+        lv_shader->set_float("att_quadratic", ls.att_quadratic);
+        lv_shader->set_vec3("light_source_pos", ls.position);
+        uv->draw();
+    }
+    glDisable(GL_CULL_FACE);
+    glBlendFunc(GL_ONE, GL_ZERO);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -338,6 +352,8 @@ void Game::render()
         0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
     );
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     glEnable(GL_FRAMEBUFFER_SRGB);
     for (auto& c_obj : m_bodies) {
 #ifdef DEBUG
@@ -462,8 +478,8 @@ void Game::add_star(obj::Star new_star){
     auto star = std::make_shared<obj::Star>(new_star);
     m_bodies.push_back(star);
     m_ssbos.light_sources.size++;
-    auto ls = collect_light_sources();
-    buffer_light_data(ls);
+    collect_light_sources();
+    buffer_light_data();
 }
 void Game::remove_star(obj::Star* star){
     auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
@@ -472,8 +488,8 @@ void Game::remove_star(obj::Star* star){
     if(f != m_bodies.end()){
         m_bodies.erase(f);
         m_ssbos.light_sources.size--;
-        auto ls = collect_light_sources();
-        buffer_light_data(ls);
+        collect_light_sources();
+        buffer_light_data();
     }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)

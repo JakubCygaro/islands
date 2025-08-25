@@ -244,6 +244,10 @@ void Shader::set_int(const char* uniform_name, int i) {
     int loc = glGetUniformLocation(m_shader_id, uniform_name);
     glUniform1i(loc, i);
 }
+void Shader::set_float(const char* uniform_name, float f) {
+    int loc = glGetUniformLocation(m_shader_id, uniform_name);
+    glUniform1f(loc, f);
+}
 uint32_t Shader::get_uniform_block_index(const char* block_name){
     return glGetUniformBlockIndex(m_shader_id, block_name);
 }

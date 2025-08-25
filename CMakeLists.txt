@@ -18,7 +18,6 @@ set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 file(GLOB_RECURSE GAME_DATA LIST_DIRECTORIES YES ${CMAKE_SOURCE_DIR}/game_data/*)
 
-message(${CMAKE_CURRENT_SOURCE_DIR}/game_data)
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/files.hpp
     COMMAND python ${SCRIPTS_DIR}/gen_paths.py ${CMAKE_SOURCE_DIR}/game_data ${CMAKE_BINARY_DIR}/files.hpp #--deps files.d
@@ -42,6 +41,8 @@ set(SHADERS
     ${SHADERS_DIR}/text.vert
     ${SHADERS_DIR}/light_pass.frag
     ${SHADERS_DIR}/light_pass.vert
+    ${SHADERS_DIR}/light_pass_sphere.frag
+    ${SHADERS_DIR}/light_pass_sphere.vert
     ${SHADERS_DIR}/normals.vert
     ${SHADERS_DIR}/normals.geom
     ${SHADERS_DIR}/normals.frag

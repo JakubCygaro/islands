@@ -40,6 +40,7 @@ public:
 
 private:
     inline static std::shared_ptr<Shader> s_lighting_shader_instance = nullptr;
+    inline static std::shared_ptr<Shader> s_light_volumes_shader_instance = nullptr;
 public:
     inline static std::shared_ptr<Shader> get_lighting_shader_instance() {
         if(s_lighting_shader_instance){
@@ -57,6 +58,24 @@ public:
             });
 #endif
             return s_lighting_shader_instance;
+        }
+    }
+    inline static std::shared_ptr<Shader> get_light_volumes_shader_instance() {
+        if(s_light_volumes_shader_instance){
+            return s_light_volumes_shader_instance;
+        } else {
+#ifdef DEBUG
+            s_light_volumes_shader_instance = std::make_shared<Shader>(Shader{
+                std::string(files::src::shaders::LIGHT_PASS_SPHERE_VERT),
+                std::string(files::src::shaders::LIGHT_PASS_SPHERE_FRAG)
+            });
+#else
+            s_light_volumes_shader_instance = std::make_shared<Shader>(Shader{
+                shaders::LIGHT_PASS_SPHERE_VERT,
+                shaders::LIGHT_PASS_SPHERE_FRAG
+            });
+#endif
+            return s_light_volumes_shader_instance;
         }
     }
 };
@@ -92,7 +111,7 @@ struct SSBO : public UBO {
 };
 
 struct LightSourcesSSBO : public SSBO {
-    size_t size{}, cap{};
+    size_t size{};
     LightSourcesSSBO(uint32_t id, uint32_t mp) : SSBO(id, mp){}
 };
 
@@ -181,7 +200,7 @@ private:
     UniformBuffers m_ubos {};
     SSBuffers m_ssbos{};
     std::vector<std::shared_ptr<obj::CelestialBody>> m_bodies {};
-    std::unordered_map<obj::Star*, LightSource> m_stars{};
+    std::vector<LightSource> m_light_data{};
     gui::GameUI m_gui {};
     KeybindHandler m_keybinds {};
 
@@ -209,8 +228,8 @@ private:
     void remove_planet(obj::Planet* planet);
     void add_star(obj::Star new_start);
     void remove_star(obj::Star* star);
-    std::vector<LightSource> collect_light_sources();
-    void buffer_light_data(std::vector<LightSource>& data);
+    void collect_light_sources();
+    void buffer_light_data();
 public:
     Game() = delete;
     ~Game();

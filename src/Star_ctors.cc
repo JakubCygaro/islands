@@ -18,7 +18,9 @@ namespace obj {
     Star::Star(const Star& other) : CelestialBody(other),
         m_shader(other.m_shader),
         m_attenuation_linear(other.m_attenuation_linear),
-        m_attenuation_quadratic(other.m_attenuation_quadratic){
+        m_attenuation_quadratic(other.m_attenuation_quadratic),
+        m_light_source_radius(other.m_light_source_radius)
+    {
 
     }
     Star& Star::operator=(const Star& other) {
@@ -26,12 +28,14 @@ namespace obj {
         m_shader = other.m_shader;
         m_attenuation_linear = other.m_attenuation_linear;
         m_attenuation_quadratic = other.m_attenuation_quadratic;
+        m_light_source_radius = other.m_light_source_radius;
         return *this;
     }
     Star::Star(Star&& other) : CelestialBody(other),
         m_shader(other.m_shader),
         m_attenuation_linear(other.m_attenuation_linear),
-        m_attenuation_quadratic(other.m_attenuation_quadratic)
+        m_attenuation_quadratic(other.m_attenuation_quadratic),
+        m_light_source_radius(other.m_light_source_radius)
     {
         other.m_shader = nullptr;
     }
@@ -40,6 +44,7 @@ namespace obj {
         m_shader = other.m_shader;
         m_attenuation_linear = other.m_attenuation_linear;
         m_attenuation_quadratic = other.m_attenuation_quadratic;
+        m_light_source_radius = other.m_light_source_radius;
         other.m_shader = nullptr;
         return *this;
     }

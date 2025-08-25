@@ -51,13 +51,13 @@ void main(){
         float spec = pow(max(dot(norm, halfway_dir), 0.0), 8.0); // 4 <- shininess value
         vec3 specular = 0.25 * light_source_color * spec;
 
-        // float distance = length(light_source_pos - frag_pos);
-        // float attenuation = 1.0 / (1.0 +
-        //         light_sources[i].att_linear * distance
-        //         + light_sources[i].att_quadratic * (distance * distance));
-        //
-        // diffuse *= attenuation;
-        // specular *= attenuation;
+        float distance = length(light_source_pos - frag_pos);
+        float attenuation = 1.0 / (1.0 +
+                light_sources[i].att_linear * distance
+                + light_sources[i].att_quadratic * (distance * distance));
+
+        diffuse *= attenuation;
+        specular *= attenuation;
 
         result += (diffuse + specular);
     }
