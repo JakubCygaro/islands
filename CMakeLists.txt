@@ -66,12 +66,12 @@ add_custom_command(TARGET pack_shaders
 # this is for Debug build purposes, so i dont have to rebuild the whole project when woring with shaders
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/shader_files.hpp
-    COMMAND python ${SCRIPTS_DIR}/gen_paths.py src/shaders ${CMAKE_BINARY_DIR}/shader_files.hpp
+    COMMAND python ${SCRIPTS_DIR}/gen_paths.py ${CMAKE_SOURCE_DIR}/src/shaders ${CMAKE_BINARY_DIR}/shader_files.hpp
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     DEPENDS ${SHADERS}
 )
 
-add_custom_target(gen_shader_paths 
+add_custom_target(gen_shader_paths
     DEPENDS ${CMAKE_BINARY_DIR}/shader_files.hpp
 )
 
