@@ -23,6 +23,10 @@ namespace obj {
         m_attenuation_quadratic = calc_attenuation_quadratic(m_mass);
         m_light_source_radius = calc_light_source_radius(m_attenuation_linear, m_attenuation_quadratic, m_color);
     }
+    void Star::set_color(glm::vec3 color) {
+        m_color = color;
+        m_light_source_radius = calc_light_source_radius(m_attenuation_linear, m_attenuation_quadratic, m_color);
+    }
     float Star::get_attenuation_linear() const {
         return m_attenuation_linear;
     }

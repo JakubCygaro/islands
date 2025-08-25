@@ -63,12 +63,12 @@ protected:
     PROTECTED_PROPERTY(glm::vec3, pos)
     PROTECTED_PROPERTY(glm::vec3, speed)
     PROTECTED_PROPERTY(glm::vec3, acceleration)
-    PROTECTED_PROPERTY(glm::vec3, color)
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
     std::shared_ptr<Shader> m_normals_shader = nullptr;
     float m_mass {};
     float m_radius {};
+    glm::vec3 m_color;
 
 private:
     inline static std::shared_ptr<Shader> s_normals_shader = nullptr;
@@ -112,6 +112,8 @@ public:
     virtual float get_mass() const;
     virtual void set_mass(float m);
     virtual float get_radius() const;
+    virtual glm::vec3 get_color() const;
+    virtual void set_color(glm::vec3 color);
 };
 
 class Planet : public CelestialBody {
@@ -198,6 +200,7 @@ public:
     float get_attenuation_linear() const;
     float get_attenuation_quadratic() const;
     float get_light_source_radius() const;
+    virtual void set_color(glm::vec3 color) override;
 private:
     static float calc_attenuation_linear(float);
     static float calc_attenuation_quadratic(float);

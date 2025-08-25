@@ -19,6 +19,12 @@ namespace obj {
     float CelestialBody::get_radius() const {
         return m_radius;
     }
+    glm::vec3 CelestialBody::get_color() const {
+        return m_color;
+    }
+    void CelestialBody::set_color(glm::vec3 color){
+        m_color = color;
+    }
     void UnitSphere::draw() const {
         glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);

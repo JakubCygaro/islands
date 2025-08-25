@@ -38,7 +38,7 @@ void Game::collect_light_sources(){
     }
     // std::vector<LightSource> ls(m_ssbos.light_sources.size);
     std::for_each(m_bodies.begin(), m_bodies.end(), [&](auto b_ptr){
-        if(auto star = dynamic_cast<obj::Star*>(b_ptr.get()); star)
+        if(auto star = dynamic_cast<obj::Star*>(b_ptr.get()); star){
             m_light_data[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
@@ -46,6 +46,7 @@ void Game::collect_light_sources(){
                 .att_quadratic = star->get_attenuation_quadratic(),
                 .radius = star->get_light_source_radius(),
             };
+        }
     });
     // return ls;
 }
@@ -185,7 +186,7 @@ void Game::initialize_uniforms(){
     glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.matrices.mount_point, m_ubos.matrices.id);
 
     // lighting_globals uniform buffer
-    m_ubos.lighting_globals.ambient_strength = 0.005f;
+    m_ubos.lighting_globals.ambient_strength = 0.010f;
     glGenBuffers(1, &m_ubos.lighting_globals.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
     glBufferData(GL_UNIFORM_BUFFER,
@@ -202,9 +203,9 @@ void Game::initialize_uniforms(){
         sizeof(LightingGlobalsUBO::camera_pos),
         m_camera.get_pos_ptr());
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
-    glGenBuffers(1, &m_ssbos.light_sources.id);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
+    // glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
+    // glGenBuffers(1, &m_ssbos.light_sources.id);
+    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
 }
 void Game::run()
 {
@@ -345,6 +346,7 @@ void Game::render()
     glBlendFunc(GL_ONE, GL_ZERO);
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_FRAMEBUFFER_SRGB);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -354,7 +356,6 @@ void Game::render()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    glEnable(GL_FRAMEBUFFER_SRGB);
     for (auto& c_obj : m_bodies) {
 #ifdef DEBUG
         if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
@@ -479,7 +480,9 @@ void Game::add_star(obj::Star new_star){
     m_bodies.push_back(star);
     m_ssbos.light_sources.size++;
     collect_light_sources();
-    buffer_light_data();
+    // buffer_light_data();
+    // if(m_paused)
+    //     render();
 }
 void Game::remove_star(obj::Star* star){
     auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
@@ -489,7 +492,7 @@ void Game::remove_star(obj::Star* star){
         m_bodies.erase(f);
         m_ssbos.light_sources.size--;
         collect_light_sources();
-        buffer_light_data();
+        // buffer_light_data();
     }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)
