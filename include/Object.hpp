@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <memory>
+#include <tuple>
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
@@ -92,6 +93,28 @@ private:
             return s_normals_shader;
         }
     }
+    inline static std::shared_ptr<Shader> shadow_map_shader_instance() {
+        if(s_shadow_map_shader){
+            return s_shadow_map_shader;
+        } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            auto geom = std::string(files::src::shaders::SHADOW_MAP_GEOM);
+            s_shadow_map_shader = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::SHADOW_MAP_VERT),
+                        std::string(files::src::shaders::SHADOW_MAP_FRAG),
+                        &geom
+                        ));
+#else
+            s_shadow_map_shader = std::make_shared<Shader>(Shader(
+                        shaders::SHADOW_MAP_VERT,
+                        shaders::SHADOW_MAP_GEOM,
+                        shaders::SHADOW_MAP_FRAG));
+#endif
+            return s_shadow_map_shader;
+        }
+    }
+    inline static std::shared_ptr<Shader> s_shadow_map_shader = nullptr;
 
 public:
     // one unit of mass in the simulation is equal to 1 kg
@@ -109,6 +132,7 @@ public:
     virtual ~CelestialBody();
     virtual void update(double& delta_t);
     virtual void render(bool render_normals) = 0;
+    virtual void shadow_render();
     virtual float get_mass() const;
     virtual void set_mass(float m);
     virtual float get_radius() const;
@@ -183,6 +207,22 @@ private:
     float m_attenuation_linear{};
     float m_attenuation_quadratic{};
     float m_light_source_radius{};
+
+    uint32_t m_shadow_cube_map_id{};
+
+    inline static constexpr uint32_t SHADOW_MAP_W = 1024;
+    inline static constexpr uint32_t SHADOW_MAP_H = 1024;
+    inline static uint32_t s_shadow_map_width{SHADOW_MAP_W}, s_shadow_map_height{SHADOW_MAP_H};
+    inline static uint32_t s_shadow_map_fbo{};
+    inline static glm::mat4 s_shadow_projection = glm::perspective(
+            glm::radians(90.0f),
+            (float)s_shadow_map_width/(float)s_shadow_map_height, //aspect
+            1.0f, //near
+            25.0f);//far
+    glm::mat4 m_shadow_transforms[6] = {
+        {1}
+    };
+
 public:
     Star(std::shared_ptr<Shader> shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
@@ -196,11 +236,40 @@ public:
     virtual ~Star();
 public:
     virtual void render(bool render_normals) override;
+    virtual void update(double& delta_t) override;
     virtual void set_mass(float) override;
     float get_attenuation_linear() const;
     float get_attenuation_quadratic() const;
     float get_light_source_radius() const;
+    uint32_t get_shadow_map_id() const;
     virtual void set_color(glm::vec3 color) override;
+    const glm::mat4* get_shadow_transforms_ptr() const;
+
+    inline static void set_shadow_map_size(uint32_t width, uint32_t height){
+        s_shadow_map_width = width;
+        s_shadow_map_height = height;
+        s_shadow_projection = glm::perspective(
+            glm::radians(90.0f),
+            (float)s_shadow_map_width/(float)s_shadow_map_height, //aspect
+            1.0f, //near
+            25.0f);//far
+    }
+    inline static std::tuple<uint32_t, uint32_t> get_shadow_map_size(){
+        return {s_shadow_map_width, s_shadow_map_height};
+    }
+    inline static void initialize_shadow_map_fbo(){
+        glGenFramebuffers(1, &s_shadow_map_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, s_shadow_map_fbo);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    inline static void cleanup_shadow_map_fbo(){
+        glDeleteFramebuffers(1, &s_shadow_map_fbo);
+    }
+    inline static uint32_t get_shadow_map_fbo(){
+        return s_shadow_map_fbo;
+    }
 private:
     static float calc_attenuation_linear(float);
     static float calc_attenuation_quadratic(float);

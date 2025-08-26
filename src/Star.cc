@@ -15,6 +15,21 @@ namespace obj {
             m_sphere->draw();
         }
     }
+    void Star::update(double& delta_t) {
+        CelestialBody::update(delta_t);
+        m_shadow_transforms[0] = (s_shadow_projection *
+                         glm::lookAt(m_pos, m_pos + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+        m_shadow_transforms[1] = (s_shadow_projection *
+                         glm::lookAt(m_pos, m_pos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
+        m_shadow_transforms[2] = (s_shadow_projection *
+                         glm::lookAt(m_pos, m_pos + glm::vec3( 0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+        m_shadow_transforms[3] = (s_shadow_projection *
+                         glm::lookAt(m_pos, m_pos + glm::vec3( 0.0,-1.0, 0.0), glm::vec3(0.0, 0.0,-1.0)));
+        m_shadow_transforms[4] = (s_shadow_projection *
+                         glm::lookAt(m_pos, m_pos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)));
+        m_shadow_transforms[5] = (s_shadow_projection *
+                         glm::lookAt(m_pos, m_pos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
+    }
     void Star::set_mass(float m) {
         m_mass = m;
         m_radius = std::remove_reference<decltype(*this)>::type::calculate_radius(m_mass);
@@ -33,8 +48,14 @@ namespace obj {
     float Star::get_attenuation_quadratic() const {
         return m_attenuation_quadratic;
     }
+    uint32_t Star::get_shadow_map_id() const {
+        return m_shadow_cube_map_id;
+    }
     float Star::get_light_source_radius() const {
         return m_light_source_radius;
+    }
+    const glm::mat4* Star::get_shadow_transforms_ptr() const {
+        return &m_shadow_transforms[0];
     }
     float Star::calc_attenuation_linear(float mass) {
         return 1.0 / std::pow(mass + 2.0, 1);

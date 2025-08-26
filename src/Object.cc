@@ -3,7 +3,15 @@
 
 
 namespace obj {
-
+    void CelestialBody::shadow_render() {
+        auto sh = shadow_map_shader_instance();
+        auto model = glm::mat4(1.0);
+        model = glm::translate(model, m_pos);
+        model = glm::scale(model, glm::vec3(m_radius));
+        sh->set_mat4("model", model);
+        sh->set_float("far_plane", 25.0f);
+        m_sphere->draw();
+    }
     void CelestialBody::update(double& delta_t){
         m_speed += m_acceleration;
         auto tmp_speed = m_speed;

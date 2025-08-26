@@ -1,5 +1,4 @@
 #include <Object.hpp>
-#include <cstdio>
 
 namespace obj {
     void Planet::render(bool render_normals){

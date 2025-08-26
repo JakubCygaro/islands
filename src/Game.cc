@@ -99,6 +99,11 @@ void Game::initialize()
         instance->mouse_button_handler(window, button, action, mods);
     };
     glfwSetMouseButtonCallback(m_window_ptr, mouse_button_callback);
+    auto window_maximize_callback = [](GLFWwindow* window, int maximized) {
+        Game* instance = get_game_instance_ptr_from_window(window);
+        instance->window_maximize_handler(window, maximized);
+    };
+    glfwSetWindowMaximizeCallback(m_window_ptr, window_maximize_callback);
 
     // tell GLFW to capture our mouse
     /*glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);*/
@@ -112,6 +117,7 @@ void Game::initialize()
     glEnable(GL_CULL_FACE);
     glEnable(GL_FRAMEBUFFER_SRGB);
     initialize_uniforms();
+    obj::Star::initialize_shadow_map_fbo();
     m_gbuffer = Gbuffer{ this->m_width, this->m_height };
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
@@ -193,10 +199,10 @@ void Game::initialize_uniforms(){
         sizeof(LightingGlobalsUBO),
         &m_ubos.lighting_globals, GL_STATIC_DRAW);
 
-    glBufferSubData(GL_UNIFORM_BUFFER,
-        0,
-        sizeof(LightingGlobalsUBO::ambient_strength),
-        &m_ubos.lighting_globals.ambient_strength);
+    // glBufferSubData(GL_UNIFORM_BUFFER,
+    //     0,
+    //     sizeof(LightingGlobalsUBO::ambient_strength),
+    //     &m_ubos.lighting_globals.ambient_strength);
 
     glBufferSubData(GL_UNIFORM_BUFFER,
         sizeof(LightingGlobalsUBO::__ambient_s_pad),
@@ -310,6 +316,36 @@ void Game::render()
             planet->render(false);
         }
 #endif
+        if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
+            glBindFramebuffer(GL_FRAMEBUFFER, obj::Star::get_shadow_map_fbo());
+            auto [w, h] = obj::Star::get_shadow_map_size();
+            glViewport(0, 0, w, h);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            auto pos = star->get_pos();
+            glBufferSubData(GL_UNIFORM_BUFFER,
+                    sizeof(LightingGlobalsUBO::__ambient_s_pad)
+                     + sizeof(LightingGlobalsUBO::camera_pos),
+                    sizeof(LightingGlobalsUBO::current_light_pos),
+                    glm::value_ptr(pos)
+                    );
+            glBufferSubData(GL_UNIFORM_BUFFER,
+                    sizeof(LightingGlobalsUBO::__ambient_s_pad)
+                     + sizeof(LightingGlobalsUBO::camera_pos)
+                     + sizeof(LightingGlobalsUBO::current_light_pos),
+                    sizeof(LightingGlobalsUBO::shadow_matrices),
+                    star->get_shadow_transforms_ptr()
+                    );
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, star->get_shadow_map_id());
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, star->get_shadow_map_id(), 0);
+            for(auto& obj : m_bodies){
+                if(obj.get() == star) continue;
+                obj->shadow_render();
+            }
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, m_width, m_height);
+        }
     }
     m_gbuffer.unbind();
 
@@ -346,7 +382,6 @@ void Game::render()
     glBlendFunc(GL_ONE, GL_ZERO);
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_FRAMEBUFFER_SRGB);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -356,6 +391,7 @@ void Game::render()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     for (auto& c_obj : m_bodies) {
 #ifdef DEBUG
         if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
@@ -571,6 +607,15 @@ void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset)
     (void)window;
     (void)xoffset;
     m_camera.set_speed(std::max(m_camera.get_speed() + yoffset, 0.0));
+}
+void Game::window_maximize_handler(GLFWwindow* window, int maximized) {
+    if(maximized){
+        auto width{0}, height{0};
+        glfwGetWindowSize(window, &width, &height);
+        glViewport(0, 0, width, height);
+    } else {
+        framebuffer_size_handler(window, m_width, m_height);
+    }
 }
 
 void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int mods) {

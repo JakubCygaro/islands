@@ -98,6 +98,8 @@ struct LightingGlobalsUBO : public UBO {
         glm::vec4 __ambient_s_pad{};
     };
     glm::vec4 camera_pos;
+    glm::vec4 current_light_pos;
+    glm::mat4 shadow_matrices[6]{};
     LightingGlobalsUBO(uint32_t id, uint32_t mp) : UBO(id, mp){}
 };
 
@@ -214,6 +216,7 @@ private:
     void render();
     void continuos_key_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);
+    void window_maximize_handler(GLFWwindow* window, int maximized);
     void draw_gui();
     void render_2d();
 

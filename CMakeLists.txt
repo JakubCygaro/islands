@@ -46,6 +46,9 @@ set(SHADERS
     ${SHADERS_DIR}/normals.vert
     ${SHADERS_DIR}/normals.geom
     ${SHADERS_DIR}/normals.frag
+    ${SHADERS_DIR}/shadow_map.vert
+    ${SHADERS_DIR}/shadow_map.geom
+    ${SHADERS_DIR}/shadow_map.frag
 )
 
 add_custom_command(
