@@ -34,6 +34,10 @@ float calculate_shadow(vec3 frag_pos){
 
 void main(){
     vec2 ndc = fs_in.TexCoords;
+    ndc = vec2(
+            clamp(ndc.x, -1, 1),
+            clamp(ndc.y, -1, 1)
+            );
     vec3 frag_pos = texture(g_position, ndc).rgb;
     vec3 norm = texture(g_normal, ndc).rgb;
     vec3 albedo = texture(g_albedo_spec, ndc).rgb;

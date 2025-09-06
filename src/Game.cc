@@ -322,6 +322,7 @@ void Game::render()
             auto [w, h] = obj::Star::get_shadow_map_size();
             glViewport(0, 0, w, h);
             glClear(GL_DEPTH_BUFFER_BIT);
+            glCullFace(GL_FRONT);
 
             auto pos = star->get_pos();
             glBufferSubData(GL_UNIFORM_BUFFER,
@@ -340,6 +341,7 @@ void Game::render()
             glViewport(0, 0, m_width, m_height);
             m_gbuffer.bind();
             m_light_data[i++].shadow_map_id = star->get_shadow_map_id();
+            glCullFace(GL_BACK);
         }
     }
     m_gbuffer.unbind();
