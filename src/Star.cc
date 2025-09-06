@@ -16,16 +16,7 @@ namespace obj {
             m_sphere->draw();
         }
     }
-    void Star::load_shadow_transforms_uniform() const {
-        auto sh = CelestialBody::shadow_map_shader_instance();
-        sh->use_shader();
-        for(size_t i = 0; i < 6; i++){
-            auto name = "shadow_trans[" + std::to_string(i) + "]";
-            sh->set_mat4(name.c_str(), m_shadow_transforms[i]);
-        }
-    }
-    void Star::update(double& delta_t) {
-        CelestialBody::update(delta_t);
+    void Star::load_shadow_transforms_uniform() {
         m_shadow_transforms[0] = (s_shadow_projection *
                          glm::lookAt(m_pos, m_pos + glm::vec3( 1.0, 0.0, 0.0), glm::vec3(0.0,-1.0, 0.0)));
         m_shadow_transforms[1] = (s_shadow_projection *
@@ -38,6 +29,17 @@ namespace obj {
                          glm::lookAt(m_pos, m_pos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)));
         m_shadow_transforms[5] = (s_shadow_projection *
                          glm::lookAt(m_pos, m_pos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
+        auto sh = CelestialBody::shadow_map_shader_instance();
+        sh->use_shader();
+        for(size_t i = 0; i < 6; i++){
+            auto name = "shadow_trans[" + std::to_string(i) + "]";
+            sh->set_mat4(name.c_str(), m_shadow_transforms[i]);
+        }
+        sh->set_vec3("current_light_pos", m_pos);
+        sh->set_float("far_plane", s_shadow_far_plane);
+    }
+    void Star::update(double& delta_t) {
+        CelestialBody::update(delta_t);
     }
     void Star::set_mass(float m) {
         m_mass = m;

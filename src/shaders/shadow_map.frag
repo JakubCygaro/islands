@@ -3,12 +3,11 @@
 in vec4 FragPos;
 
 uniform float far_plane;
+uniform vec3 current_light_pos;
 
 layout(std140, binding = 1) uniform LightingGlobals {
     float ambient_strength;
     vec3 camera_pos;
-    vec3 current_light_pos;
-    mat4 shadow_matrices[6];
 };
 
 void main() {

@@ -11,8 +11,6 @@ uniform sampler2D g_albedo_spec;
 layout(std140, binding = 1) uniform LightingGlobals {
     float ambient_strength;
     vec3 camera_pos;
-    vec3 current_light_pos;
-    mat4 shadow_matrices[6];
 };
 
 struct LightSource {

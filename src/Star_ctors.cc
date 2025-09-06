@@ -59,9 +59,7 @@ namespace obj {
         m_attenuation_quadratic = calc_attenuation_quadratic(m_mass);
         m_light_source_radius = calc_light_source_radius(m_attenuation_linear, m_attenuation_quadratic, m_color);
         m_shadow_cube_map_id = gen_shadow_cube_map();
-        std::printf("m_shadow_cube_map_id: %d\n", m_shadow_cube_map_id);
         m_shadow_map_fbo = initialize_shadow_map_fbo(m_shadow_cube_map_id);
-        std::printf("m_shadow_map_fbo: %d\n", m_shadow_map_fbo);
     }
     // Star::Star(const Star& other) : CelestialBody(other),
     //     m_shader(other.m_shader),
@@ -113,13 +111,9 @@ namespace obj {
     }
     Star::~Star() {
         if(m_shadow_map_fbo){
-            std::printf("delete 1\n");
-            std::printf("m_shadow_map_fbo: %d\n", m_shadow_map_fbo);
             glDeleteFramebuffers(1, &m_shadow_map_fbo);
         }
         if(m_shadow_cube_map_id){
-            std::printf("delete 2\n");
-            std::printf("m_shadow_cube_map_id: %d\n", m_shadow_cube_map_id);
             glDeleteTextures(1, &m_shadow_cube_map_id);
         }
     }

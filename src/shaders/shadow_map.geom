@@ -7,8 +7,6 @@ layout (triangle_strip, max_vertices = 18) out;
 layout(std140, binding = 1) uniform LightingGlobals {
     float ambient_strength;
     vec3 camera_pos;
-    vec3 current_light_pos;
-    mat4 shadow_matrices[6];
 };
 uniform mat4 shadow_trans[6];
 

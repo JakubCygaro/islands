@@ -10,7 +10,6 @@ namespace obj {
         model = glm::translate(model, m_pos);
         model = glm::scale(model, glm::vec3(m_radius));
         sh->set_mat4("model", model);
-        sh->set_float("far_plane", 25.0f);
         m_sphere->draw();
     }
     void CelestialBody::update(double& delta_t){

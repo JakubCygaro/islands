@@ -182,6 +182,9 @@ public:
     virtual void set_mass(float) override;
 };
 class Star : public CelestialBody {
+public:
+    inline static const float s_shadow_far_plane = 25.0f;
+private:
 private:
     inline static std::shared_ptr<Shader> shader_instance() {
         if(s_star_shader){
@@ -219,7 +222,7 @@ private:
             glm::radians(90.0f),
             (float)s_shadow_map_width/(float)s_shadow_map_height, //aspect
             1.0f, //near
-            25.0f);//far
+            s_shadow_far_plane);//far
     glm::mat4 m_shadow_transforms[6] = {
         {1},
         {1},
@@ -251,16 +254,16 @@ public:
     uint32_t get_shadow_map_id() const;
     virtual void set_color(glm::vec3 color) override;
     const glm::mat4* get_shadow_transforms_ptr() const;
-    void load_shadow_transforms_uniform() const;
+    void load_shadow_transforms_uniform();
 
     inline static void set_shadow_map_size(uint32_t width, uint32_t height){
         s_shadow_map_width = width;
         s_shadow_map_height = height;
         s_shadow_projection = glm::perspective(
             glm::radians(90.0f),
-            (float)s_shadow_map_width/(float)s_shadow_map_height, //aspect
+            (float)s_shadow_map_width/(float)s_shadow_map_height,
             1.0f, //near
-            25.0f);//far
+            s_shadow_far_plane);
     }
     inline static std::tuple<uint32_t, uint32_t> get_shadow_map_size(){
         return {s_shadow_map_width, s_shadow_map_height};

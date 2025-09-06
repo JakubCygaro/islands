@@ -330,13 +330,6 @@ void Game::render()
                     sizeof(glm::vec3),
                     glm::value_ptr(pos)
                     );
-            glBufferSubData(GL_UNIFORM_BUFFER,
-                    sizeof(LightingGlobalsUBO::__ambient_s_pad)
-                     + sizeof(LightingGlobalsUBO::camera_pos)
-                     + sizeof(LightingGlobalsUBO::current_light_pos),
-                    sizeof(LightingGlobalsUBO::shadow_matrices),
-                    star->get_shadow_transforms_ptr()
-                    );
             star->load_shadow_transforms_uniform();
             for(auto& obj : m_bodies){
                 if(obj.get() == star) continue;
@@ -363,6 +356,7 @@ void Game::render()
     lv_shader->set_int("g_position", 0);
     lv_shader->set_int("g_normal", 1);
     lv_shader->set_int("g_albedo_spec", 2);
+    lv_shader->set_float("far_plane", obj::Star::s_shadow_far_plane);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_position);
     glActiveTexture(GL_TEXTURE1);
