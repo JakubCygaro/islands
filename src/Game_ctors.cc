@@ -38,5 +38,4 @@ Game::~Game()
     m_bodies.clear();
     glfwDestroyWindow(m_window_ptr);
     glfwTerminate();
-    obj::Star::cleanup_shadow_map_fbo();
 }

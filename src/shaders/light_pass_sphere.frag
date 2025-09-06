@@ -5,10 +5,13 @@ out vec4 FragColor;
 uniform sampler2D g_position;
 uniform sampler2D g_normal;
 uniform sampler2D g_albedo_spec;
+uniform samplerCube shadow_map;
 
 layout(std140, binding = 1) uniform LightingGlobals {
     float ambient_strength;
     vec3 camera_pos;
+    vec3 current_light_pos;
+    mat4 shadow_matrices[6];
 };
 
 uniform vec3 color;
@@ -19,6 +22,16 @@ uniform vec3 light_source_pos;
 in VS_OUT {
     noperspective vec2 TexCoords;
 } fs_in;
+
+float calculate_shadow(vec3 frag_pos){
+    vec3 frag_to_light = frag_pos - light_source_pos;
+    float closest_depth = texture(shadow_map, frag_to_light).r;
+    closest_depth = closest_depth * 25.0; // far plane
+    float current_depth = length(frag_to_light);
+    float bias = 0.05;
+    float shadow = current_depth - bias > closest_depth ? 1.0 : 0.0;
+    return shadow;
+}
 
 void main(){
     vec2 ndc = fs_in.TexCoords;
@@ -54,6 +67,18 @@ void main(){
     diffuse *= attenuation;
     specular *= attenuation;
 
-    result += (diffuse + specular);
-    FragColor = vec4(result, 1.0f);
+    // float shadow = calculate_shadow(frag_pos);
+    //
+    // result += (1.0 - shadow) * (diffuse + specular);
+    {
+        vec3 frag_to_light = frag_pos - light_source_pos;
+        float closest_depth = texture(shadow_map, frag_to_light).r;
+        closest_depth *= 25.0; // far plane
+        float current_depth = length(frag_to_light);
+        float bias = 0.05;
+        float shadow = current_depth - bias > closest_depth ? 1.0 : 0.0;
+        FragColor = vec4(vec3(closest_depth / 25.0), 1.0);
+    }
+    // result += (diffuse + specular);
+    // FragColor = vec4(result, 1.0f);
 }

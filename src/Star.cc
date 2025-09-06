@@ -1,4 +1,5 @@
 #include "Object.hpp"
+#include <cstddef>
 
 namespace obj {
     void Star::render(bool render_normals) {
@@ -13,6 +14,14 @@ namespace obj {
             m_normals_shader->use_shader();
             m_normals_shader->set_mat4(name_of(model), model);
             m_sphere->draw();
+        }
+    }
+    void Star::load_shadow_transforms_uniform() const {
+        auto sh = CelestialBody::shadow_map_shader_instance();
+        sh->use_shader();
+        for(size_t i = 0; i < 6; i++){
+            auto name = "shadow_trans[" + std::to_string(i) + "]";
+            sh->set_mat4(name.c_str(), m_shadow_transforms[i]);
         }
     }
     void Star::update(double& delta_t) {
@@ -56,6 +65,9 @@ namespace obj {
     }
     const glm::mat4* Star::get_shadow_transforms_ptr() const {
         return &m_shadow_transforms[0];
+    }
+    uint32_t Star::get_shadow_map_fbo() const {
+        return m_shadow_map_fbo;
     }
     float Star::calc_attenuation_linear(float mass) {
         return 1.0 / std::pow(mass + 2.0, 1);

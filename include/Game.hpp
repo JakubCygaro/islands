@@ -130,6 +130,7 @@ struct LightSource {
     float att_quadratic{0.0007};
     float radius{0};
     float __att_pad{};
+    uint32_t shadow_map_id{};
 };
 struct SSBuffers {
     LightSourcesSSBO light_sources { 0, 2 };
@@ -229,7 +230,7 @@ private:
 
     void add_planet(obj::Planet new_planet);
     void remove_planet(obj::Planet* planet);
-    void add_star(obj::Star new_start);
+    void add_star(obj::Star&& new_start);
     void remove_star(obj::Star* star);
     void collect_light_sources();
     void buffer_light_data();

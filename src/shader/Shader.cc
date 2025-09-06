@@ -37,14 +37,14 @@ Shader::Shader(const char* vert, const char* frag, const char* geom) try {
 
     std::uint32_t vert_id, frag_id, geom_id;
     int succ;
-    char info_log[512];
+    char info_log[1024];
 
     vert_id = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vert_id, 1, &vert_char_ptr, NULL);
     glCompileShader(vert_id);
     glGetShaderiv(vert_id, GL_COMPILE_STATUS, &succ);
     if(!succ) {
-        glGetShaderInfoLog(vert_id, 512, NULL, info_log);
+        glGetShaderInfoLog(vert_id, sizeof info_log, NULL, info_log);
         std::stringstream err_stream;
         err_stream << "Vertex shader compile error: ";
         err_stream << info_log;
@@ -56,7 +56,7 @@ Shader::Shader(const char* vert, const char* frag, const char* geom) try {
     glCompileShader(frag_id);
     glGetShaderiv(frag_id, GL_COMPILE_STATUS, &succ);
     if(!succ) {
-        glGetShaderInfoLog(frag_id, 512, NULL, info_log);
+        glGetShaderInfoLog(frag_id, sizeof info_log, NULL, info_log);
         std::stringstream err_stream;
         err_stream << "Fragment shader compile error: ";
         err_stream << info_log;
@@ -69,7 +69,7 @@ Shader::Shader(const char* vert, const char* frag, const char* geom) try {
         glCompileShader(geom_id);
         glGetShaderiv(geom_id, GL_COMPILE_STATUS, &succ);
         if(!succ) {
-            glGetShaderInfoLog(geom_id, 512, NULL, info_log);
+            glGetShaderInfoLog(geom_id, sizeof info_log, NULL, info_log);
             std::stringstream err_stream;
             err_stream << "Geom shader compile error: ";
             err_stream << info_log;
@@ -87,7 +87,7 @@ Shader::Shader(const char* vert, const char* frag, const char* geom) try {
 
     glGetProgramiv(m_shader_id, GL_LINK_STATUS, &succ);
     if(!succ) {
-        glGetProgramInfoLog(m_shader_id, 512, NULL, info_log);
+        glGetProgramInfoLog(m_shader_id, sizeof info_log, NULL, info_log);
         std::stringstream err_stream;
         err_stream << "Shader link error: ";
         err_stream << info_log;
@@ -141,14 +141,14 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path, const
 
     std::uint32_t vert_id, frag_id, geom_id;
     int succ;
-    char info_log[512];
+    char info_log[1024];
 
     vert_id = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vert_id, 1, &vert_char_ptr, NULL);
     glCompileShader(vert_id);
     glGetShaderiv(vert_id, GL_COMPILE_STATUS, &succ);
     if(!succ) {
-        glGetShaderInfoLog(vert_id, 512, NULL, info_log);
+        glGetShaderInfoLog(vert_id, sizeof info_log, NULL, info_log);
         std::stringstream err_stream;
         err_stream << "Vertex shader compile error: ";
         err_stream << info_log;
@@ -161,7 +161,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path, const
     glCompileShader(frag_id);
     glGetShaderiv(frag_id, GL_COMPILE_STATUS, &succ);
     if(!succ) {
-        glGetShaderInfoLog(frag_id, 512, NULL, info_log);
+        glGetShaderInfoLog(frag_id, sizeof info_log, NULL, info_log);
         std::stringstream err_stream;
         err_stream << "Fragment shader compile error: ";
         err_stream << info_log;
@@ -175,7 +175,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path, const
         glCompileShader(geom_id);
         glGetShaderiv(geom_id, GL_COMPILE_STATUS, &succ);
         if(!succ) {
-            glGetShaderInfoLog(geom_id, 512, NULL, info_log);
+            glGetShaderInfoLog(geom_id, sizeof info_log, NULL, info_log);
             std::stringstream err_stream;
             err_stream << "Geometry shader compile error: ";
             err_stream << info_log;
@@ -195,7 +195,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path, const
 
     glGetProgramiv(m_shader_id, GL_LINK_STATUS, &succ);
     if(!succ) {
-        glGetProgramInfoLog(m_shader_id, 512, NULL, info_log);
+        glGetProgramInfoLog(m_shader_id, sizeof info_log, NULL, info_log);
         std::stringstream err_stream;
         err_stream << "Shader link error: ";
         err_stream << info_log;
@@ -210,6 +210,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path, const
     std::stringstream err_stream;
     err_stream << "Shader creation error: ";
     err_stream << e.what();
+    err_stream << " file: " << geom_path;
     std::string err_msg = err_stream.str();
     throw std::runtime_error{std::move(err_msg)};
 }

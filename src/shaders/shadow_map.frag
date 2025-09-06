@@ -1,4 +1,5 @@
-#version 460 care
+#version 460 core
+
 in vec4 FragPos;
 
 uniform float far_plane;
@@ -9,10 +10,11 @@ layout(std140, binding = 1) uniform LightingGlobals {
     vec3 current_light_pos;
     mat4 shadow_matrices[6];
 };
+
 void main() {
     float light_dist = length(FragPos.xyz - current_light_pos);
 
-    light_pos = light_dist / far_plane;
+    light_dist = light_dist / far_plane;
 
     gl_FragDepth = light_dist;
 }

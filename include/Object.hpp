@@ -93,6 +93,7 @@ private:
             return s_normals_shader;
         }
     }
+protected:
     inline static std::shared_ptr<Shader> shadow_map_shader_instance() {
         if(s_shadow_map_shader){
             return s_shadow_map_shader;
@@ -108,12 +109,13 @@ private:
 #else
             s_shadow_map_shader = std::make_shared<Shader>(Shader(
                         shaders::SHADOW_MAP_VERT,
-                        shaders::SHADOW_MAP_GEOM,
-                        shaders::SHADOW_MAP_FRAG));
+                        shaders::SHADOW_MAP_FRAG
+                        shaders::SHADOW_MAP_GEOM));
 #endif
             return s_shadow_map_shader;
         }
     }
+private:
     inline static std::shared_ptr<Shader> s_shadow_map_shader = nullptr;
 
 public:
@@ -213,15 +215,20 @@ private:
     inline static constexpr uint32_t SHADOW_MAP_W = 1024;
     inline static constexpr uint32_t SHADOW_MAP_H = 1024;
     inline static uint32_t s_shadow_map_width{SHADOW_MAP_W}, s_shadow_map_height{SHADOW_MAP_H};
-    inline static uint32_t s_shadow_map_fbo{};
     inline static glm::mat4 s_shadow_projection = glm::perspective(
             glm::radians(90.0f),
             (float)s_shadow_map_width/(float)s_shadow_map_height, //aspect
             1.0f, //near
             25.0f);//far
     glm::mat4 m_shadow_transforms[6] = {
+        {1},
+        {1},
+        {1},
+        {1},
+        {1},
         {1}
     };
+    uint32_t m_shadow_map_fbo{};
 
 public:
     Star(std::shared_ptr<Shader> shader = nullptr,
@@ -229,8 +236,8 @@ public:
         glm::vec3 speed = glm::vec3(0),
         glm::vec3 acc = glm::vec3(0),
         float mass = 1.0);
-    Star(const Star&);
-    Star& operator=(const Star&);
+    Star(const Star&) = delete;
+    Star& operator=(const Star&) = delete;
     Star(Star&&);
     Star& operator=(Star&&);
     virtual ~Star();
@@ -244,6 +251,7 @@ public:
     uint32_t get_shadow_map_id() const;
     virtual void set_color(glm::vec3 color) override;
     const glm::mat4* get_shadow_transforms_ptr() const;
+    void load_shadow_transforms_uniform() const;
 
     inline static void set_shadow_map_size(uint32_t width, uint32_t height){
         s_shadow_map_width = width;
@@ -257,19 +265,7 @@ public:
     inline static std::tuple<uint32_t, uint32_t> get_shadow_map_size(){
         return {s_shadow_map_width, s_shadow_map_height};
     }
-    inline static void initialize_shadow_map_fbo(){
-        glGenFramebuffers(1, &s_shadow_map_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, s_shadow_map_fbo);
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-    inline static void cleanup_shadow_map_fbo(){
-        glDeleteFramebuffers(1, &s_shadow_map_fbo);
-    }
-    inline static uint32_t get_shadow_map_fbo(){
-        return s_shadow_map_fbo;
-    }
+    uint32_t get_shadow_map_fbo() const;
 private:
     static float calc_attenuation_linear(float);
     static float calc_attenuation_quadratic(float);

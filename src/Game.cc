@@ -117,7 +117,6 @@ void Game::initialize()
     glEnable(GL_CULL_FACE);
     glEnable(GL_FRAMEBUFFER_SRGB);
     initialize_uniforms();
-    obj::Star::initialize_shadow_map_fbo();
     m_gbuffer = Gbuffer{ this->m_width, this->m_height };
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
@@ -134,11 +133,11 @@ void Game::initialize()
 
     auto star = obj::Star(nullptr, { 0, 5, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
     star.set_color({ 0.78, 0.52, 0.06 });
-    add_star(star);
+    add_star(std::move(star));
 
     star = obj::Star(nullptr, { 0, -10, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
     star.set_color({ 0.78, 0.52, 0.06 });
-    add_star(star);
+    add_star(std::move(star));
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -306,6 +305,7 @@ void Game::render()
     glDisable(GL_BLEND);
     glDisable(GL_FRAMEBUFFER_SRGB);
     // glDisable(GL_CULL_FACE);
+    std::size_t i = 0;
     for (auto& c_obj : m_bodies) {
 #ifdef DEBUG
         if(auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet){
@@ -317,16 +317,17 @@ void Game::render()
         }
 #endif
         if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
-            glBindFramebuffer(GL_FRAMEBUFFER, obj::Star::get_shadow_map_fbo());
+            m_gbuffer.unbind();
+            glBindFramebuffer(GL_FRAMEBUFFER, star->get_shadow_map_fbo());
             auto [w, h] = obj::Star::get_shadow_map_size();
             glViewport(0, 0, w, h);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_DEPTH_BUFFER_BIT);
 
             auto pos = star->get_pos();
             glBufferSubData(GL_UNIFORM_BUFFER,
                     sizeof(LightingGlobalsUBO::__ambient_s_pad)
                      + sizeof(LightingGlobalsUBO::camera_pos),
-                    sizeof(LightingGlobalsUBO::current_light_pos),
+                    sizeof(glm::vec3),
                     glm::value_ptr(pos)
                     );
             glBufferSubData(GL_UNIFORM_BUFFER,
@@ -336,15 +337,16 @@ void Game::render()
                     sizeof(LightingGlobalsUBO::shadow_matrices),
                     star->get_shadow_transforms_ptr()
                     );
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, star->get_shadow_map_id());
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, star->get_shadow_map_id(), 0);
+            star->load_shadow_transforms_uniform();
             for(auto& obj : m_bodies){
                 if(obj.get() == star) continue;
                 obj->shadow_render();
             }
+            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glViewport(0, 0, m_width, m_height);
+            m_gbuffer.bind();
+            m_light_data[i++].shadow_map_id = star->get_shadow_map_id();
         }
     }
     m_gbuffer.unbind();
@@ -368,6 +370,9 @@ void Game::render()
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_color_spec);
     for(auto& ls : m_light_data){
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, ls.shadow_map_id);
+        lv_shader->set_int("shadow_map", 3);
         auto model = glm::mat4(1.0f);
         model = glm::translate(model, ls.position);
         model = glm::scale(model, glm::vec3(ls.radius));
@@ -511,9 +516,9 @@ void Game::remove_planet(obj::Planet* planet){
     });
     m_bodies.erase(f);
 }
-void Game::add_star(obj::Star new_star){
-    auto star = std::make_shared<obj::Star>(new_star);
-    m_bodies.push_back(star);
+void Game::add_star(obj::Star&& new_star){
+    auto star = std::make_shared<obj::Star>(std::move(new_star));
+    m_bodies.emplace_back(std::move(star));
     m_ssbos.light_sources.size++;
     collect_light_sources();
     // buffer_light_data();
@@ -692,7 +697,7 @@ void Game::initialize_key_bindings() {
         if(m_gui.spawn_menu.is_star){
             auto star = obj::Star(nullptr, pos, vel, {}, mass);
             star.set_color(color);
-            add_star(star);
+            add_star(std::move(star));
         } else {
             auto planet = obj::Planet(nullptr, pos, vel, {}, mass);
             planet.set_color(color);
