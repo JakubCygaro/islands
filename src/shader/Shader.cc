@@ -28,7 +28,8 @@ Shader& Shader::operator=(Shader&& other){
     return *this;
 }
 Shader::~Shader(){
-    glDeleteShader(m_shader_id);
+    if(m_shader_id)
+        glDeleteShader(m_shader_id);
 }
 Shader::Shader(const char* vert, const char* frag, const char* geom) try {
     const char* vert_char_ptr = vert;

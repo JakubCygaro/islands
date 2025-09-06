@@ -324,13 +324,6 @@ void Game::render()
             glClear(GL_DEPTH_BUFFER_BIT);
             glCullFace(GL_FRONT);
 
-            auto pos = star->get_pos();
-            glBufferSubData(GL_UNIFORM_BUFFER,
-                    sizeof(LightingGlobalsUBO::__ambient_s_pad)
-                     + sizeof(LightingGlobalsUBO::camera_pos),
-                    sizeof(glm::vec3),
-                    glm::value_ptr(pos)
-                    );
             star->load_shadow_transforms_uniform();
             for(auto& obj : m_bodies){
                 if(obj.get() == star) continue;
