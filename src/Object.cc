@@ -3,7 +3,15 @@
 
 
 namespace obj {
-
+    void CelestialBody::shadow_render() {
+        auto sh = shadow_map_shader_instance();
+        sh->use_shader();
+        auto model = glm::mat4(1.0);
+        model = glm::translate(model, m_pos);
+        model = glm::scale(model, glm::vec3(m_radius));
+        sh->set_mat4("model", model);
+        m_sphere->draw();
+    }
     void CelestialBody::update(double& delta_t){
         m_speed += m_acceleration;
         auto tmp_speed = m_speed;
@@ -18,6 +26,12 @@ namespace obj {
     }
     float CelestialBody::get_radius() const {
         return m_radius;
+    }
+    glm::vec3 CelestialBody::get_color() const {
+        return m_color;
+    }
+    void CelestialBody::set_color(glm::vec3 color){
+        m_color = color;
     }
     void UnitSphere::draw() const {
         glBindVertexArray(m_vao);
@@ -75,7 +89,7 @@ namespace obj {
 
         //indices for the bottom pole cap (triangles with the bottom pole)
         const auto bottom_idx = 0;
-        for(size_t idx = 1; idx < step; idx++){
+        for(size_t idx = 1; idx < step - 1; idx++){
             indices.push_back(bottom_idx);
             indices.push_back(idx);
             indices.push_back(idx + 1);

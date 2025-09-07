@@ -31,26 +31,31 @@ namespace {
     }
 }
 
-std::vector<LightSource> Game::collect_light_sources(){
+void Game::collect_light_sources(){
     auto offset = 0;
-    std::vector<LightSource> ls(m_ssbos.light_sources.size);
+    if(m_ssbos.light_sources.size != m_light_data.size()){
+        m_light_data.resize(m_ssbos.light_sources.size);
+    }
+    // std::vector<LightSource> ls(m_ssbos.light_sources.size);
     std::for_each(m_bodies.begin(), m_bodies.end(), [&](auto b_ptr){
-        if(auto star = dynamic_cast<obj::Star*>(b_ptr.get()); star)
-            ls[offset++] = {
+        if(auto star = dynamic_cast<obj::Star*>(b_ptr.get()); star){
+            m_light_data[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
                 .att_linear = star->get_attenuation_linear(),
                 .att_quadratic = star->get_attenuation_quadratic(),
+                .radius = star->get_light_source_radius(),
             };
+        }
     });
-    return ls;
+    // return ls;
 }
 
-void Game::buffer_light_data(std::vector<LightSource>& data){
+void Game::buffer_light_data(){
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
     glBufferData(GL_SHADER_STORAGE_BUFFER,
-            data.size() * sizeof(LightSource),
-            data.data(),
+            m_light_data.size() * sizeof(LightSource),
+            m_light_data.data(),
             GL_DYNAMIC_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
@@ -94,6 +99,11 @@ void Game::initialize()
         instance->mouse_button_handler(window, button, action, mods);
     };
     glfwSetMouseButtonCallback(m_window_ptr, mouse_button_callback);
+    auto window_maximize_callback = [](GLFWwindow* window, int maximized) {
+        Game* instance = get_game_instance_ptr_from_window(window);
+        instance->window_maximize_handler(window, maximized);
+    };
+    glfwSetWindowMaximizeCallback(m_window_ptr, window_maximize_callback);
 
     // tell GLFW to capture our mouse
     /*glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);*/
@@ -107,6 +117,7 @@ void Game::initialize()
     glEnable(GL_CULL_FACE);
     glEnable(GL_FRAMEBUFFER_SRGB);
     initialize_uniforms();
+    m_gbuffer = Gbuffer{ this->m_width, this->m_height };
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
@@ -122,11 +133,11 @@ void Game::initialize()
 
     auto star = obj::Star(nullptr, { 0, 5, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
     star.set_color({ 0.78, 0.52, 0.06 });
-    add_star(star);
+    add_star(std::move(star));
 
     star = obj::Star(nullptr, { 0, -10, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
     star.set_color({ 0.78, 0.52, 0.06 });
-    add_star(star);
+    add_star(std::move(star));
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -180,27 +191,26 @@ void Game::initialize_uniforms(){
     glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.matrices.mount_point, m_ubos.matrices.id);
 
     // lighting_globals uniform buffer
-    m_ubos.lighting_globals.ambient_strength = 0.005f;
+    m_ubos.lighting_globals.ambient_strength = 0.010f;
     glGenBuffers(1, &m_ubos.lighting_globals.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
     glBufferData(GL_UNIFORM_BUFFER,
         sizeof(LightingGlobalsUBO),
         &m_ubos.lighting_globals, GL_STATIC_DRAW);
 
-    glBufferSubData(GL_UNIFORM_BUFFER,
-        0,
-        sizeof(LightingGlobalsUBO::ambient_strength),
-        &m_ubos.lighting_globals.ambient_strength);
+    // glBufferSubData(GL_UNIFORM_BUFFER,
+    //     0,
+    //     sizeof(LightingGlobalsUBO::ambient_strength),
+    //     &m_ubos.lighting_globals.ambient_strength);
 
     glBufferSubData(GL_UNIFORM_BUFFER,
         sizeof(LightingGlobalsUBO::__ambient_s_pad),
         sizeof(LightingGlobalsUBO::camera_pos),
         m_camera.get_pos_ptr());
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
-    m_ssbos.light_sources.cap = 1;
-    glGenBuffers(1, &m_ssbos.light_sources.id);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
+    // glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
+    // glGenBuffers(1, &m_ssbos.light_sources.id);
+    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
 }
 void Game::run()
 {
@@ -253,16 +263,16 @@ void Game::update_buffers() {
 }
 void Game::update_bodies()
 {
-    std::vector<LightSource> ls(m_ssbos.light_sources.size);
     auto offset = 0;
     for (size_t body = 0; body < m_bodies.size(); body++) {
         //if this celestial body is a star, collect its light data
         if(auto star = dynamic_cast<obj::Star*>(m_bodies[body].get()); star){
-            ls[offset++] = {
+            m_light_data[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
                 .att_linear = star->get_attenuation_linear(),
                 .att_quadratic = star->get_attenuation_quadratic(),
+                .radius = star->get_light_source_radius(),
             };
         }
         for (size_t next_body = body + 1; next_body < m_bodies.size(); next_body++) {
@@ -285,33 +295,143 @@ void Game::update_bodies()
         }
         m_bodies[body]->update(m_delta_t);
     }
-    buffer_light_data(ls);
+    buffer_light_data();
+}
+void Game::render_gbuffer(){
+    glClearColor(0, 0, 0, 0);
+    m_gbuffer.bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_BLEND);
+    glDisable(GL_FRAMEBUFFER_SRGB);
+    // glDisable(GL_CULL_FACE);
+    std::size_t i = 0;
+    for (auto& c_obj : m_bodies) {
+        if(auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet){
+            planet->deferred_render();
+        }
+        if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
+            m_gbuffer.unbind();
+            glBindFramebuffer(GL_FRAMEBUFFER, star->get_shadow_map_fbo());
+            auto [w, h] = obj::Star::get_shadow_map_size();
+            glViewport(0, 0, w, h);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            glCullFace(GL_FRONT);
+
+            star->load_shadow_transforms_uniform();
+            for(auto& obj : m_bodies){
+                if(obj.get() == star) continue;
+                obj->shadow_render();
+            }
+            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glViewport(0, 0, m_width, m_height);
+            m_gbuffer.bind();
+            m_light_data[i++].shadow_map_id = star->get_shadow_map_id();
+            glCullFace(GL_BACK);
+        }
+    }
+    m_gbuffer.unbind();
+
+}
+void Game::render_light_volumes(){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glCullFace(GL_FRONT);
+    auto uv = obj::UnitSphere::instance();
+    auto lv_shader = Gbuffer::get_light_volumes_shader_instance();
+    lv_shader->use_shader();
+    lv_shader->set_int("g_position", 0);
+    lv_shader->set_int("g_normal", 1);
+    lv_shader->set_int("g_albedo_spec", 2);
+    lv_shader->set_float("far_plane", obj::Star::s_shadow_far_plane);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_position);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_normal);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_color_spec);
+    for(auto& ls : m_light_data){
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, ls.shadow_map_id);
+        lv_shader->set_int("shadow_map", 3);
+        auto model = glm::mat4(1.0f);
+        model = glm::translate(model, ls.position);
+        model = glm::scale(model, glm::vec3(ls.radius));
+        lv_shader->set_mat4("model", model);
+        lv_shader->set_vec3("color", ls.color);
+        lv_shader->set_float("att_linear", ls.att_linear);
+        lv_shader->set_float("att_quadratic", ls.att_quadratic);
+        lv_shader->set_vec3("light_source_pos", ls.position);
+        uv->draw();
+    }
+    glDisable(GL_CULL_FACE);
+    glBlendFunc(GL_ONE, GL_ZERO);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+
+    //blit the depth buffer
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(
+        0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
+    );
+    //return to the default framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glEnable(GL_FRAMEBUFFER_SRGB);
 }
 void Game::render()
 {
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    for (auto& c_obj : m_bodies) {
+    const bool normals_draw =
 #ifdef DEBUG
-        c_obj->render(m_gui.debug_menu.draw_normals);
+        m_gui.debug_menu.draw_normals;
 #else
-        c_obj->render(false);
+        false;
 #endif
+    const bool wireframe_draw =
+#ifdef DEBUG
+        m_gui.debug_menu.draw_wireframe;
+#else
+        false;
+#endif
+    if(!wireframe_draw) render_gbuffer();
+
+    if(!wireframe_draw)
+        render_light_volumes();
+    else {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
+
+    for (auto& c_obj : m_bodies) {
+        c_obj->forward_render(normals_draw, wireframe_draw);
+    }
+
+    glEnable(GL_BLEND);
     render_2d();
 }
 void Game::render_2d() {
     glDisable(GL_CULL_FACE);
+#ifdef DEBUG
+    if(m_gui.debug_menu.draw_wireframe){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+#endif
     m_gui.mode.draw();
     if(m_paused){
         m_gui.paused.draw();
     }
     m_gui.game_version.draw();
 #ifdef DEBUG
+    if(m_gui.debug_menu.draw_wireframe){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
     if(m_gui.debug_menu.do_face_culling){
 #endif
         glEnable(GL_CULL_FACE);
-
 #ifdef DEBUG
     }
 #endif
@@ -382,8 +502,8 @@ void Game::draw_gui()
                 glDisable(GL_CULL_FACE);
             }
         }
-        if(ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.do_wireframe)) {
-            if(m_gui.debug_menu.do_wireframe){
+        if(ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.draw_wireframe)) {
+            if(m_gui.debug_menu.draw_wireframe){
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             } else {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -404,12 +524,14 @@ void Game::remove_planet(obj::Planet* planet){
     });
     m_bodies.erase(f);
 }
-void Game::add_star(obj::Star new_star){
-    auto star = std::make_shared<obj::Star>(new_star);
-    m_bodies.push_back(star);
+void Game::add_star(obj::Star&& new_star){
+    auto star = std::make_shared<obj::Star>(std::move(new_star));
+    m_bodies.emplace_back(std::move(star));
     m_ssbos.light_sources.size++;
-    auto ls = collect_light_sources();
-    buffer_light_data(ls);
+    collect_light_sources();
+    // buffer_light_data();
+    // if(m_paused)
+    //     render();
 }
 void Game::remove_star(obj::Star* star){
     auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
@@ -418,8 +540,8 @@ void Game::remove_star(obj::Star* star){
     if(f != m_bodies.end()){
         m_bodies.erase(f);
         m_ssbos.light_sources.size--;
-        auto ls = collect_light_sources();
-        buffer_light_data(ls);
+        collect_light_sources();
+        // buffer_light_data();
     }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -499,6 +621,15 @@ void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset)
     (void)xoffset;
     m_camera.set_speed(std::max(m_camera.get_speed() + yoffset, 0.0));
 }
+void Game::window_maximize_handler(GLFWwindow* window, int maximized) {
+    if(maximized){
+        auto width{0}, height{0};
+        glfwGetWindowSize(window, &width, &height);
+        glViewport(0, 0, width, height);
+    } else {
+        framebuffer_size_handler(window, m_width, m_height);
+    }
+}
 
 void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int mods) {
     (void)mods;
@@ -574,7 +705,7 @@ void Game::initialize_key_bindings() {
         if(m_gui.spawn_menu.is_star){
             auto star = obj::Star(nullptr, pos, vel, {}, mass);
             star.set_color(color);
-            add_star(star);
+            add_star(std::move(star));
         } else {
             auto planet = obj::Planet(nullptr, pos, vel, {}, mass);
             planet.set_color(color);

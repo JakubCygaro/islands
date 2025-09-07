@@ -1,6 +1,5 @@
 # TODO LIST
 
-- eclipses/shadows
 - add collisions
 - add trails to objects
 - more control over planet velocity

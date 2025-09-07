@@ -8,7 +8,7 @@
 namespace gui {
 struct DebugMenu {
     bool do_face_culling {true};
-    bool do_wireframe {false};
+    bool draw_wireframe {false};
     bool draw_normals {false};
 };
 struct SpawnMenu {

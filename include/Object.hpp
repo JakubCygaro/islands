@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <memory>
+#include <tuple>
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
@@ -63,12 +64,12 @@ protected:
     PROTECTED_PROPERTY(glm::vec3, pos)
     PROTECTED_PROPERTY(glm::vec3, speed)
     PROTECTED_PROPERTY(glm::vec3, acceleration)
-    PROTECTED_PROPERTY(glm::vec3, color)
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
     std::shared_ptr<Shader> m_normals_shader = nullptr;
     float m_mass {};
     float m_radius {};
+    glm::vec3 m_color;
 
 private:
     inline static std::shared_ptr<Shader> s_normals_shader = nullptr;
@@ -92,6 +93,30 @@ private:
             return s_normals_shader;
         }
     }
+protected:
+    inline static std::shared_ptr<Shader> shadow_map_shader_instance() {
+        if(s_shadow_map_shader){
+            return s_shadow_map_shader;
+        } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            auto geom = std::string(files::src::shaders::SHADOW_MAP_GEOM);
+            s_shadow_map_shader = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::SHADOW_MAP_VERT),
+                        std::string(files::src::shaders::SHADOW_MAP_FRAG),
+                        &geom
+                        ));
+#else
+            s_shadow_map_shader = std::make_shared<Shader>(Shader(
+                        shaders::SHADOW_MAP_VERT,
+                        shaders::SHADOW_MAP_FRAG
+                        shaders::SHADOW_MAP_GEOM));
+#endif
+            return s_shadow_map_shader;
+        }
+    }
+private:
+    inline static std::shared_ptr<Shader> s_shadow_map_shader = nullptr;
 
 public:
     // one unit of mass in the simulation is equal to 1 kg
@@ -108,35 +133,57 @@ public:
     CelestialBody& operator=(CelestialBody&&);
     virtual ~CelestialBody();
     virtual void update(double& delta_t);
-    virtual void render(bool render_normals) = 0;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) = 0;
+    virtual void deferred_render() = 0;
+    virtual void shadow_render();
     virtual float get_mass() const;
     virtual void set_mass(float m);
     virtual float get_radius() const;
+    virtual glm::vec3 get_color() const;
+    virtual void set_color(glm::vec3 color);
 };
 
 class Planet : public CelestialBody {
 private:
     inline static std::shared_ptr<Shader> shader_instance() {
-        if(s_planet_shader){
-            return s_planet_shader;
+        if(s_planet_shader_deferred){
+            return s_planet_shader_deferred;
         } else {
 #ifdef DEBUG
             //load directly from source tree -> works without whole project rebuild
-            s_planet_shader = std::make_shared<Shader>(Shader(std::string(files::src::shaders::PLANET_VERT),
+            s_planet_shader_deferred = std::make_shared<Shader>(Shader(std::string(files::src::shaders::PLANET_VERT),
                         std::string(files::src::shaders::PLANET_FRAG)));
 #else
             s_planet_shader = std::make_shared<Shader>(Shader(shaders::PLANET_VERT, shaders::PLANET_FRAG));
 #endif
-            return s_planet_shader;
+            return s_planet_shader_deferred;
         }
     }
-    inline static std::shared_ptr<Shader> s_planet_shader = nullptr;
+    inline static std::shared_ptr<Shader> s_planet_shader_deferred = nullptr;
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
         //assuming the density of a planet to be equal to the density of the earth
         return std::pow(mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
     }
 
+    inline static std::shared_ptr<Shader> forward_shader_instance() {
+        if(s_planet_shader_forward){
+            return s_planet_shader_forward;
+        } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            s_planet_shader_forward = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::PLANET_FORWARD_VERT),
+                        std::string(files::src::shaders::PLANET_FORWARD_FRAG)));
+#else
+            s_planet_shader = std::make_shared<Shader>(Shader(
+                        shaders::PLANET_FORWARD_VERT,
+                        shaders::PLANET_FORWARD_FRAG));
+#endif
+            return s_planet_shader_forward;
+        }
+    }
+    inline static std::shared_ptr<Shader> s_planet_shader_forward = nullptr;
     std::shared_ptr<Shader> m_shader = nullptr;
 public:
     Planet(std::shared_ptr<Shader> shader = nullptr,
@@ -150,10 +197,14 @@ public:
     Planet& operator=(Planet&&);
     virtual ~Planet();
 public:
-    virtual void render(bool render_normals) override;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) override;
+    virtual void deferred_render() override;
     virtual void set_mass(float) override;
 };
 class Star : public CelestialBody {
+public:
+    inline static const float s_shadow_far_plane = 25.0f;
+private:
 private:
     inline static std::shared_ptr<Shader> shader_instance() {
         if(s_star_shader){
@@ -180,25 +231,69 @@ private:
 
     float m_attenuation_linear{};
     float m_attenuation_quadratic{};
+    float m_light_source_radius{};
+
+    uint32_t m_shadow_cube_map_id{};
+
+    inline static constexpr uint32_t SHADOW_MAP_W = 1024;
+    inline static constexpr uint32_t SHADOW_MAP_H = 1024;
+    inline static uint32_t s_shadow_map_width{SHADOW_MAP_W}, s_shadow_map_height{SHADOW_MAP_H};
+    inline static glm::mat4 s_shadow_projection = glm::perspective(
+            glm::radians(90.0f),
+            (float)s_shadow_map_width/(float)s_shadow_map_height, //aspect
+            1.0f, //near
+            s_shadow_far_plane);//far
+    glm::mat4 m_shadow_transforms[6] = {
+        {1},
+        {1},
+        {1},
+        {1},
+        {1},
+        {1}
+    };
+    uint32_t m_shadow_map_fbo{};
+
 public:
     Star(std::shared_ptr<Shader> shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
         glm::vec3 speed = glm::vec3(0),
         glm::vec3 acc = glm::vec3(0),
         float mass = 1.0);
-    Star(const Star&);
-    Star& operator=(const Star&);
+    Star(const Star&) = delete;
+    Star& operator=(const Star&) = delete;
     Star(Star&&);
     Star& operator=(Star&&);
     virtual ~Star();
 public:
-    virtual void render(bool render_normals) override;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) override;
+    virtual void deferred_render() override;
+    virtual void update(double& delta_t) override;
     virtual void set_mass(float) override;
     float get_attenuation_linear() const;
     float get_attenuation_quadratic() const;
+    float get_light_source_radius() const;
+    uint32_t get_shadow_map_id() const;
+    virtual void set_color(glm::vec3 color) override;
+    const glm::mat4* get_shadow_transforms_ptr() const;
+    void load_shadow_transforms_uniform();
+
+    inline static void set_shadow_map_size(uint32_t width, uint32_t height){
+        s_shadow_map_width = width;
+        s_shadow_map_height = height;
+        s_shadow_projection = glm::perspective(
+            glm::radians(90.0f),
+            (float)s_shadow_map_width/(float)s_shadow_map_height,
+            1.0f, //near
+            s_shadow_far_plane);
+    }
+    inline static std::tuple<uint32_t, uint32_t> get_shadow_map_size(){
+        return {s_shadow_map_width, s_shadow_map_height};
+    }
+    uint32_t get_shadow_map_fbo() const;
 private:
     static float calc_attenuation_linear(float);
     static float calc_attenuation_quadratic(float);
+    static float calc_light_source_radius(float, float, const glm::vec3&);
 };
 }
 

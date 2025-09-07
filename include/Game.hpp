@@ -1,5 +1,6 @@
 #ifndef GAME_HPP
 #define GAME_HPP
+#include <string>
 #include <vector>
 #include "Gui.hpp"
 #include "Object.hpp"
@@ -17,6 +18,67 @@
 #include <ostream>
 #include <unordered_map>
 #include <vector>
+
+struct Gbuffer {
+private:
+    int32_t width{}, height{};
+    uint32_t quad_vbo{}, quad_ebo{};
+public:
+    uint32_t g_position{}, g_normal{}, g_color_spec{}, fbo{}, rbo{};
+    uint32_t quad_vao{};
+    Gbuffer();
+    Gbuffer(int32_t width, int32_t height);
+    Gbuffer(const Gbuffer& other);
+    Gbuffer& operator=(const Gbuffer& other);
+    Gbuffer(Gbuffer&& other);
+    Gbuffer& operator=(Gbuffer&& other);
+    ~Gbuffer();
+
+    void bind() const;
+    void unbind() const;
+
+
+private:
+    inline static std::shared_ptr<Shader> s_lighting_shader_instance = nullptr;
+    inline static std::shared_ptr<Shader> s_light_volumes_shader_instance = nullptr;
+public:
+    inline static std::shared_ptr<Shader> get_lighting_shader_instance() {
+        if(s_lighting_shader_instance){
+            return s_lighting_shader_instance;
+        } else {
+#ifdef DEBUG
+            s_lighting_shader_instance = std::make_shared<Shader>(Shader{
+                std::string(files::src::shaders::LIGHT_PASS_VERT),
+                std::string(files::src::shaders::LIGHT_PASS_FRAG)
+            });
+#else
+            s_lighting_shader_instance = std::make_shared<Shader>(Shader{
+                shaders::LIGHT_PASS_VERT,
+                shaders::LIGHT_PASS_FRAG
+            });
+#endif
+            return s_lighting_shader_instance;
+        }
+    }
+    inline static std::shared_ptr<Shader> get_light_volumes_shader_instance() {
+        if(s_light_volumes_shader_instance){
+            return s_light_volumes_shader_instance;
+        } else {
+#ifdef DEBUG
+            s_light_volumes_shader_instance = std::make_shared<Shader>(Shader{
+                std::string(files::src::shaders::LIGHT_PASS_SPHERE_VERT),
+                std::string(files::src::shaders::LIGHT_PASS_SPHERE_FRAG)
+            });
+#else
+            s_light_volumes_shader_instance = std::make_shared<Shader>(Shader{
+                shaders::LIGHT_PASS_SPHERE_VERT,
+                shaders::LIGHT_PASS_SPHERE_FRAG
+            });
+#endif
+            return s_light_volumes_shader_instance;
+        }
+    }
+};
 
 struct UBO {
     uint32_t id{};
@@ -49,7 +111,7 @@ struct SSBO : public UBO {
 };
 
 struct LightSourcesSSBO : public SSBO {
-    size_t size{}, cap{};
+    size_t size{};
     LightSourcesSSBO(uint32_t id, uint32_t mp) : SSBO(id, mp){}
 };
 
@@ -64,7 +126,9 @@ struct LightSource {
     };
     float att_linear{0.014};
     float att_quadratic{0.0007};
-    glm::vec2 __att_pad{};
+    float radius{0};
+    float __att_pad{};
+    uint32_t shadow_map_id{};
 };
 struct SSBuffers {
     LightSourcesSSBO light_sources { 0, 2 };
@@ -130,13 +194,14 @@ private:
     bool m_gui_enabled { true };
     bool m_paused { false };
     size_t m_lightsources_cap {1};
+    Gbuffer m_gbuffer{};
     GLFWwindow* m_window_ptr { nullptr };
     Camera m_camera;
 
     UniformBuffers m_ubos {};
     SSBuffers m_ssbos{};
     std::vector<std::shared_ptr<obj::CelestialBody>> m_bodies {};
-    std::unordered_map<obj::Star*, LightSource> m_stars{};
+    std::vector<LightSource> m_light_data{};
     gui::GameUI m_gui {};
     KeybindHandler m_keybinds {};
 
@@ -148,8 +213,11 @@ private:
     void update_bodies();
     void update_buffers();
     void render();
+    void render_gbuffer();
+    void render_light_volumes();
     void continuos_key_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);
+    void window_maximize_handler(GLFWwindow* window, int maximized);
     void draw_gui();
     void render_2d();
 
@@ -162,10 +230,10 @@ private:
 
     void add_planet(obj::Planet new_planet);
     void remove_planet(obj::Planet* planet);
-    void add_star(obj::Star new_start);
+    void add_star(obj::Star&& new_start);
     void remove_star(obj::Star* star);
-    std::vector<LightSource> collect_light_sources();
-    void buffer_light_data(std::vector<LightSource>& data);
+    void collect_light_sources();
+    void buffer_light_data();
 public:
     Game() = delete;
     ~Game();

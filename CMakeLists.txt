@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(islands VERSION 0.2.0.0)
+project(islands VERSION 0.3.0.0)
 
 set(FREETYPE_ROOT_PATHS "" CACHE FILEPATH "Where to search for the freetype library install directory")
 
@@ -18,7 +18,6 @@ set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 file(GLOB_RECURSE GAME_DATA LIST_DIRECTORIES YES ${CMAKE_SOURCE_DIR}/game_data/*)
 
-message(${CMAKE_CURRENT_SOURCE_DIR}/game_data)
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/files.hpp
     COMMAND python ${SCRIPTS_DIR}/gen_paths.py ${CMAKE_SOURCE_DIR}/game_data ${CMAKE_BINARY_DIR}/files.hpp #--deps files.d
@@ -32,21 +31,26 @@ add_custom_target(gen_paths
 
 set(SHADERS_DIR ${CMAKE_SOURCE_DIR}/src/shaders)
 set(SHADERS
-    ${SHADERS_DIR}/c_body.frag
-    ${SHADERS_DIR}/c_body.vert
     ${SHADERS_DIR}/font_bitmap.frag
     ${SHADERS_DIR}/font_bitmap.vert
     ${SHADERS_DIR}/planet.frag
     ${SHADERS_DIR}/planet.vert
+    ${SHADERS_DIR}/planet_forward.frag
+    ${SHADERS_DIR}/planet_forward.vert
     ${SHADERS_DIR}/star.frag
     ${SHADERS_DIR}/star.vert
-    ${SHADERS_DIR}/test.frag
-    ${SHADERS_DIR}/test.vert
     ${SHADERS_DIR}/text.frag
     ${SHADERS_DIR}/text.vert
+    ${SHADERS_DIR}/light_pass.frag
+    ${SHADERS_DIR}/light_pass.vert
+    ${SHADERS_DIR}/light_pass_sphere.frag
+    ${SHADERS_DIR}/light_pass_sphere.vert
     ${SHADERS_DIR}/normals.vert
     ${SHADERS_DIR}/normals.geom
     ${SHADERS_DIR}/normals.frag
+    ${SHADERS_DIR}/shadow_map.vert
+    ${SHADERS_DIR}/shadow_map.geom
+    ${SHADERS_DIR}/shadow_map.frag
 )
 
 add_custom_command(
@@ -81,6 +85,7 @@ add_executable(islands
     src/shader/Shader.cc
     src/Camera.cc
     src/Game.cc
+    src/gbuffer.cc
     src/Game_ctors.cc
     src/Object.cc
     src/Object_ctors.cc
