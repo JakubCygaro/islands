@@ -297,8 +297,7 @@ void Game::update_bodies()
     }
     buffer_light_data();
 }
-void Game::render()
-{
+void Game::render_gbuffer(){
     glClearColor(0, 0, 0, 0);
     m_gbuffer.bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -307,15 +306,9 @@ void Game::render()
     // glDisable(GL_CULL_FACE);
     std::size_t i = 0;
     for (auto& c_obj : m_bodies) {
-#ifdef DEBUG
         if(auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet){
-            planet->render(m_gui.debug_menu.draw_normals);
+            planet->deferred_render();
         }
-#else
-        if(auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet){
-            planet->render(false);
-        }
-#endif
         if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
             m_gbuffer.unbind();
             glBindFramebuffer(GL_FRAMEBUFFER, star->get_shadow_map_fbo());
@@ -339,6 +332,8 @@ void Game::render()
     }
     m_gbuffer.unbind();
 
+}
+void Game::render_light_volumes(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -377,25 +372,42 @@ void Game::render()
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
+    //blit the depth buffer
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(
         0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
     );
+    //return to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glEnable(GL_FRAMEBUFFER_SRGB);
-    for (auto& c_obj : m_bodies) {
+}
+void Game::render()
+{
+    const bool normals_draw =
 #ifdef DEBUG
-        if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
-            star->render(m_gui.debug_menu.draw_normals);
-        }
+        m_gui.debug_menu.draw_normals;
 #else
-        if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
-            star->render(false);
-        }
+        false;
 #endif
+    const bool wireframe_draw =
+#ifdef DEBUG
+        m_gui.debug_menu.draw_wireframe;
+#else
+        false;
+#endif
+    if(!wireframe_draw) render_gbuffer();
+
+    if(!wireframe_draw)
+        render_light_volumes();
+    else {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    for (auto& c_obj : m_bodies) {
+        c_obj->forward_render(normals_draw, wireframe_draw);
     }
 
     glEnable(GL_BLEND);
@@ -403,16 +415,23 @@ void Game::render()
 }
 void Game::render_2d() {
     glDisable(GL_CULL_FACE);
+#ifdef DEBUG
+    if(m_gui.debug_menu.draw_wireframe){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+#endif
     m_gui.mode.draw();
     if(m_paused){
         m_gui.paused.draw();
     }
     m_gui.game_version.draw();
 #ifdef DEBUG
+    if(m_gui.debug_menu.draw_wireframe){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
     if(m_gui.debug_menu.do_face_culling){
 #endif
         glEnable(GL_CULL_FACE);
-
 #ifdef DEBUG
     }
 #endif
@@ -483,8 +502,8 @@ void Game::draw_gui()
                 glDisable(GL_CULL_FACE);
             }
         }
-        if(ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.do_wireframe)) {
-            if(m_gui.debug_menu.do_wireframe){
+        if(ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.draw_wireframe)) {
+            if(m_gui.debug_menu.draw_wireframe){
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             } else {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

@@ -2,7 +2,7 @@
 #include <cstddef>
 
 namespace obj {
-    void Star::render(bool render_normals) {
+    void Star::forward_render(bool render_normals, bool) {
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);
         model = glm::scale(model, glm::vec3(1) * m_radius);
@@ -15,6 +15,9 @@ namespace obj {
             m_normals_shader->set_mat4(name_of(model), model);
             m_sphere->draw();
         }
+    }
+    void Star::deferred_render() {
+
     }
     void Star::load_shadow_transforms_uniform() {
         m_shadow_transforms[0] = (s_shadow_projection *

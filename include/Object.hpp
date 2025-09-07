@@ -133,7 +133,8 @@ public:
     CelestialBody& operator=(CelestialBody&&);
     virtual ~CelestialBody();
     virtual void update(double& delta_t);
-    virtual void render(bool render_normals) = 0;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) = 0;
+    virtual void deferred_render() = 0;
     virtual void shadow_render();
     virtual float get_mass() const;
     virtual void set_mass(float m);
@@ -145,26 +146,44 @@ public:
 class Planet : public CelestialBody {
 private:
     inline static std::shared_ptr<Shader> shader_instance() {
-        if(s_planet_shader){
-            return s_planet_shader;
+        if(s_planet_shader_deferred){
+            return s_planet_shader_deferred;
         } else {
 #ifdef DEBUG
             //load directly from source tree -> works without whole project rebuild
-            s_planet_shader = std::make_shared<Shader>(Shader(std::string(files::src::shaders::PLANET_VERT),
+            s_planet_shader_deferred = std::make_shared<Shader>(Shader(std::string(files::src::shaders::PLANET_VERT),
                         std::string(files::src::shaders::PLANET_FRAG)));
 #else
             s_planet_shader = std::make_shared<Shader>(Shader(shaders::PLANET_VERT, shaders::PLANET_FRAG));
 #endif
-            return s_planet_shader;
+            return s_planet_shader_deferred;
         }
     }
-    inline static std::shared_ptr<Shader> s_planet_shader = nullptr;
+    inline static std::shared_ptr<Shader> s_planet_shader_deferred = nullptr;
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
         //assuming the density of a planet to be equal to the density of the earth
         return std::pow(mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
     }
 
+    inline static std::shared_ptr<Shader> forward_shader_instance() {
+        if(s_planet_shader_forward){
+            return s_planet_shader_forward;
+        } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            s_planet_shader_forward = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::PLANET_FORWARD_VERT),
+                        std::string(files::src::shaders::PLANET_FORWARD_FRAG)));
+#else
+            s_planet_shader = std::make_shared<Shader>(Shader(
+                        shaders::PLANET_FORWARD_VERT,
+                        shaders::PLANET_FORWARD_FRAG));
+#endif
+            return s_planet_shader_forward;
+        }
+    }
+    inline static std::shared_ptr<Shader> s_planet_shader_forward = nullptr;
     std::shared_ptr<Shader> m_shader = nullptr;
 public:
     Planet(std::shared_ptr<Shader> shader = nullptr,
@@ -178,7 +197,8 @@ public:
     Planet& operator=(Planet&&);
     virtual ~Planet();
 public:
-    virtual void render(bool render_normals) override;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) override;
+    virtual void deferred_render() override;
     virtual void set_mass(float) override;
 };
 class Star : public CelestialBody {
@@ -245,7 +265,8 @@ public:
     Star& operator=(Star&&);
     virtual ~Star();
 public:
-    virtual void render(bool render_normals) override;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) override;
+    virtual void deferred_render() override;
     virtual void update(double& delta_t) override;
     virtual void set_mass(float) override;
     float get_attenuation_linear() const;

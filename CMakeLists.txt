@@ -35,6 +35,8 @@ set(SHADERS
     ${SHADERS_DIR}/font_bitmap.vert
     ${SHADERS_DIR}/planet.frag
     ${SHADERS_DIR}/planet.vert
+    ${SHADERS_DIR}/planet_forward.frag
+    ${SHADERS_DIR}/planet_forward.vert
     ${SHADERS_DIR}/star.frag
     ${SHADERS_DIR}/star.vert
     ${SHADERS_DIR}/text.frag

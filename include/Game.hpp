@@ -213,6 +213,8 @@ private:
     void update_bodies();
     void update_buffers();
     void render();
+    void render_gbuffer();
+    void render_light_volumes();
     void continuos_key_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);
     void window_maximize_handler(GLFWwindow* window, int maximized);
