@@ -15,8 +15,8 @@ private:
 
 public:
     Shader();
-    Shader(const Shader& other);
-    Shader& operator=(const Shader& other);
+    Shader(const Shader& other) = delete;
+    Shader& operator=(const Shader& other) = delete;
     Shader(Shader&& other);
     Shader& operator=(Shader&& other);
     ~Shader();

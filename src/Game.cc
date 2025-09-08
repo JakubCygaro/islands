@@ -17,6 +17,7 @@
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <optional>
+#include <tuple>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
@@ -263,6 +264,8 @@ void Game::update_buffers() {
 }
 void Game::update_bodies()
 {
+    std::unordered_map<std::shared_ptr<obj::CelestialBody>, size_t> to_delete{};
+    // std::vector<std::shared_ptr<obj::CelestialBody>> to_delete{};
     auto offset = 0;
     for (size_t body = 0; body < m_bodies.size(); body++) {
         //if this celestial body is a star, collect its light data
@@ -276,10 +279,19 @@ void Game::update_bodies()
             };
         }
         for (size_t next_body = body + 1; next_body < m_bodies.size(); next_body++) {
-            // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
             auto b_1 = m_bodies[body];
             auto b_2 = m_bodies[next_body];
 
+            //check if collision first
+            if(glm::distance(b_1->get_pos(), b_2->get_pos()) <= b_1->get_radius() + b_2->get_radius()){
+                auto [eater, eaten] = b_1->get_mass() > b_2->get_mass() ? std::make_tuple(b_1, b_2) : std::make_tuple(b_2, b_1);
+                if(!to_delete.contains(eaten)){
+                    eater->set_mass(eater->get_mass() + eaten->get_mass());
+                    to_delete.insert({ eaten, next_body });
+                    break;
+                }
+            }
+            // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
             auto m_1 = b_1->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;
             auto m_2 = b_2->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;;
 
@@ -295,7 +307,17 @@ void Game::update_bodies()
         }
         m_bodies[body]->update(m_delta_t);
     }
+    for (auto [ptr, idx] : to_delete){
+        remove_body(ptr.get());
+    }
     buffer_light_data();
+}
+void Game::remove_body(obj::CelestialBody* body){
+    if(auto star = dynamic_cast<obj::Star*>(body); star){
+        remove_star(star);
+    } else {
+        remove_planet(dynamic_cast<obj::Planet*>(body));
+    }
 }
 void Game::render_gbuffer(){
     glClearColor(0, 0, 0, 0);
@@ -469,14 +491,21 @@ void Game::draw_gui()
     }
     if (!m_gui.selected_body.expired()){
         bool discarded = true;
+        auto star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
         ImGui::Begin("Selected Celestial Body", &discarded);
         if(ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))){
             m_gui.selected_body.lock()->set_color(m_gui.selected_body_menu.color);
+            if(star){
+                collect_light_sources();
+            }
         }
         if(ImGui::SliderFloat("Object mass", &m_gui.selected_body_menu.mass, 0.001, 1000)) {
             if (m_gui.selected_body_menu.mass <= 0)
                 m_gui.selected_body_menu.mass = 0.001;
             m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
+            if(star){
+                collect_light_sources();
+            }
         }
         if(ImGui::Button("Delete body")){
             auto body_as_star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
@@ -517,21 +546,23 @@ void Game::draw_gui()
 void Game::add_planet(obj::Planet new_planet){
     auto planet = std::make_shared<obj::Planet>(new_planet);
     m_bodies.push_back(planet);
+    collect_light_sources();
 }
 void Game::remove_planet(obj::Planet* planet){
     auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
             return ptr.get() == planet;
     });
-    m_bodies.erase(f);
+    if(f != m_bodies.end()){
+        m_bodies.erase(f);
+        m_ssbos.light_sources.size--;
+        // collect_light_sources();
+    }
 }
 void Game::add_star(obj::Star&& new_star){
     auto star = std::make_shared<obj::Star>(std::move(new_star));
     m_bodies.emplace_back(std::move(star));
     m_ssbos.light_sources.size++;
     collect_light_sources();
-    // buffer_light_data();
-    // if(m_paused)
-    //     render();
 }
 void Game::remove_star(obj::Star* star){
     auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
@@ -541,7 +572,6 @@ void Game::remove_star(obj::Star* star){
         m_bodies.erase(f);
         m_ssbos.light_sources.size--;
         collect_light_sources();
-        // buffer_light_data();
     }
 }
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)

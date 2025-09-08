@@ -8,15 +8,15 @@ constexpr const char* SHADER_DIR_PREFIX = "./game_data/shaders/";
 Shader::Shader() {
 
 }
-Shader::Shader(const Shader& other):
-    m_shader_id{other.m_shader_id}
-{
-
-}
-Shader& Shader::operator=(const Shader& other){
-    m_shader_id = other.m_shader_id;
-    return *this;
-}
+// Shader::Shader(const Shader& other):
+//     m_shader_id{other.m_shader_id}
+// {
+//
+// }
+// Shader& Shader::operator=(const Shader& other){
+//     m_shader_id = other.m_shader_id;
+//     return *this;
+// }
 Shader::Shader(Shader&& other):
     m_shader_id{other.m_shader_id}
 {
