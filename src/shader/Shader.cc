@@ -180,7 +180,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path, const
             std::stringstream err_stream;
             err_stream << "Geometry shader compile error: ";
             err_stream << info_log;
-            err_stream << " file: " << geom_path;
+            err_stream << " file: " << *geom_path;
             std::string err_msg = err_stream.str();
             throw std::runtime_error{std::move(err_msg)};
         }
@@ -211,7 +211,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path, const
     std::stringstream err_stream;
     err_stream << "Shader creation error: ";
     err_stream << e.what();
-    err_stream << " file: " << geom_path;
+    // err_stream << " file: " << *geom_path;
     std::string err_msg = err_stream.str();
     throw std::runtime_error{std::move(err_msg)};
 }

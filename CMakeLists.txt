@@ -51,6 +51,9 @@ set(SHADERS
     ${SHADERS_DIR}/shadow_map.vert
     ${SHADERS_DIR}/shadow_map.geom
     ${SHADERS_DIR}/shadow_map.frag
+    ${SHADERS_DIR}/selected.vert
+    ${SHADERS_DIR}/selected.geom
+    ${SHADERS_DIR}/selected.frag
 )
 
 add_custom_command(

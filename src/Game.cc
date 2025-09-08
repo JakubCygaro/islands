@@ -510,6 +510,10 @@ void Game::draw_gui()
                 collect_light_sources();
             }
         }
+        if(ImGui::Button("Deselect")){
+            m_gui.selected_body.lock()->set_selected(false);
+            m_gui.selected_body.reset();
+        }
         if(ImGui::Button("Delete body")){
             auto body_as_star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
             if(body_as_star){
@@ -694,6 +698,10 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
             }
             if (distance < smallest_distance.value_or(1000) && distance >= 0){
                 smallest_distance = distance;
+                if(!m_gui.selected_body.expired()){
+                    m_gui.selected_body.lock()->set_selected(false);
+                }
+                obj->set_selected(true);
                 m_gui.selected_body = obj;
                 m_gui.selected_body_menu.mass = obj->get_mass();
                 m_gui.selected_body_menu.color = obj->get_color();

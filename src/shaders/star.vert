@@ -5,6 +5,7 @@ layout (location = 1) in vec3 normal;
 
 uniform mat4 model;
 uniform vec3 color;
+uniform bool selected;
 
 layout(std140, binding = 0) uniform Matrices {
     mat4 view;

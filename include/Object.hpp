@@ -64,6 +64,7 @@ protected:
     PROTECTED_PROPERTY(glm::vec3, pos)
     PROTECTED_PROPERTY(glm::vec3, speed)
     PROTECTED_PROPERTY(glm::vec3, acceleration)
+    PROTECTED_PROPERTY(bool, selected)
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
     std::shared_ptr<Shader> m_normals_shader = nullptr;
@@ -117,7 +118,67 @@ protected:
     }
 private:
     inline static std::shared_ptr<Shader> s_shadow_map_shader = nullptr;
+protected:
+    inline static std::shared_ptr<Shader> selected_shader_instance() {
+        if(s_selected_shader){
+            return s_selected_shader;
+        } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            auto geom = std::string(files::src::shaders::SELECTED_GEOM);
+            s_selected_shader = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::SELECTED_VERT),
+                        std::string(files::src::shaders::SELECTED_FRAG),
+                        &geom
+                        ));
+#else
+            s_selected_shader = std::make_shared<Shader>(Shader(
+                        shaders::SELECTED_VERT,
+                        shaders::SELECTED_FRAG
+                        shaders::SELECTED_GEOM));
+#endif
+            return s_selected_shader;
+        }
+    }
+private:
+    inline static std::shared_ptr<Shader> s_selected_shader = nullptr;
 
+protected:
+    struct MoveVectorVAO {
+        uint32_t vao{}, vbo{};
+    private:
+        MoveVectorVAO(const MoveVectorVAO&) = delete;
+        MoveVectorVAO& operator=(const MoveVectorVAO&) = delete;
+        inline MoveVectorVAO(){
+            glGenVertexArrays(1, &vao);
+            glGenBuffers(1, &vbo);
+            glBindVertexArray(vao);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+            glm::vec3 center{};
+            glBufferData(GL_ARRAY_BUFFER, sizeof(center), glm::value_ptr(center), GL_STATIC_DRAW);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(center), (void*)0);
+            glEnableVertexAttribArray(0);
+            glBindVertexArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        };
+        inline ~MoveVectorVAO(){
+            if(vao)
+                glDeleteVertexArrays(1, &vao);
+            if(vbo)
+                glDeleteBuffers(1, &vbo);
+        }
+    public:
+        inline static MoveVectorVAO& get_instance(){
+            static MoveVectorVAO instance;
+            return instance;
+        }
+        inline void draw() const {
+            glBindVertexArray(vao);
+            glDrawArrays(GL_POINTS, 0, 1);
+            glBindVertexArray(0);
+        }
+    };
 public:
     // one unit of mass in the simulation is equal to 1 kg
     inline static const float MASS_BOOST_FACTOR = 1e3;
@@ -133,7 +194,7 @@ public:
     CelestialBody& operator=(CelestialBody&&);
     virtual ~CelestialBody();
     virtual void update(double& delta_t);
-    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) = 0;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false);
     virtual void deferred_render() = 0;
     virtual void shadow_render();
     virtual float get_mass() const;

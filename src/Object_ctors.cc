@@ -11,6 +11,7 @@ namespace obj{
         m_pos(pos),
         m_speed(speed),
         m_acceleration(acc),
+        m_selected(false),
         m_sphere(sphere),
         m_mass(mass)
     {
@@ -22,9 +23,10 @@ namespace obj{
     // copy constructor
     CelestialBody::CelestialBody(const CelestialBody &other)
         : m_pos{other.m_pos}, m_sphere{other.m_sphere},
-          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius}, 
+          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius},
           m_color(other.m_color),
-          m_normals_shader(other.m_normals_shader)
+          m_normals_shader(other.m_normals_shader),
+          m_selected(other.m_selected)
     {}
     // copy assign
     CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
@@ -36,6 +38,7 @@ namespace obj{
       m_radius = other.m_radius;
       m_color = other.m_color;
       m_normals_shader = other.m_normals_shader;
+      m_selected = other.m_selected;
       return *this;
     }
     //move constructor
@@ -43,10 +46,12 @@ namespace obj{
         : m_pos{other.m_pos}, m_sphere{std::move(other.m_sphere)},
           m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius},
           m_color(other.m_color),
-          m_normals_shader(other.m_normals_shader)
+          m_normals_shader(other.m_normals_shader),
+          m_selected(other.m_selected)
     {
       other.m_sphere = nullptr;
       other.m_normals_shader = nullptr;
+      other.m_selected = false;
     }
     // move assign
     CelestialBody &CelestialBody::operator=(CelestialBody &&other) {
@@ -58,6 +63,8 @@ namespace obj{
       m_radius = other.m_radius;
       m_color = other.m_color;
       m_normals_shader = other.m_normals_shader;
+      m_selected = other.m_selected;
+      other.m_selected = false;
       other.m_sphere = nullptr;
       other.m_normals_shader = nullptr;
       return *this;

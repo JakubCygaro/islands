@@ -1,5 +1,6 @@
 #include <Object.hpp>
 #include <algorithm>
+#include <cstdio>
 
 
 namespace obj {
@@ -11,6 +12,19 @@ namespace obj {
         model = glm::scale(model, glm::vec3(m_radius));
         sh->set_mat4("model", model);
         m_sphere->draw();
+    }
+    void CelestialBody::forward_render(bool, bool){
+        if(m_selected){
+            auto model = glm::mat4(1.0);
+            model = glm::translate(model, m_pos);
+            auto s_sh = selected_shader_instance();
+            s_sh->use_shader();
+            s_sh->set_mat4(name_of(model), model);
+            s_sh->set_vec3("move_vector", m_speed);
+            s_sh->set_vec3(name_of(color), m_color);
+            s_sh->set_float(name_of(radius), m_radius);
+            MoveVectorVAO::get_instance().draw();
+        }
     }
     void CelestialBody::update(double& delta_t){
         m_speed += m_acceleration;
