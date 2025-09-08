@@ -285,6 +285,9 @@ void Game::update_bodies()
             //check if collision first
             if(glm::distance(b_1->get_pos(), b_2->get_pos()) <= b_1->get_radius() + b_2->get_radius()){
                 auto [eater, eaten] = b_1->get_mass() > b_2->get_mass() ? std::make_tuple(b_1, b_2) : std::make_tuple(b_2, b_1);
+                if (dynamic_cast<obj::Star*>(eaten.get())){
+                    std::swap(eater, eaten);
+                }
                 if(!to_delete.contains(eaten)){
                     eater->set_mass(eater->get_mass() + eaten->get_mass());
                     to_delete.insert({ eaten, next_body });
@@ -554,8 +557,7 @@ void Game::remove_planet(obj::Planet* planet){
     });
     if(f != m_bodies.end()){
         m_bodies.erase(f);
-        m_ssbos.light_sources.size--;
-        // collect_light_sources();
+        collect_light_sources();
     }
 }
 void Game::add_star(obj::Star&& new_star){
