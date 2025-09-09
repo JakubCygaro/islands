@@ -1,7 +1,6 @@
 # TODO LIST
 
 - add trails to objects
-- more control over planet velocity
 - grid
 - planet predicted path
 - planet label 3d text

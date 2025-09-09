@@ -777,6 +777,7 @@ void Game::initialize_key_bindings() {
         this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled;
     }, "Open spawn menu");
     m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Editor, [this](){
+        this->m_gui.selected_body.lock()->set_selected(false);
         this->m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
     }, "Deselect currently selected body");
     // Simulation mode specific keybinds
