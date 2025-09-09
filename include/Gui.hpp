@@ -27,6 +27,8 @@ struct HelpMenu {
 struct SelectedBodyMenu {
     glm::vec3 color;
     float mass;
+    glm::vec3 velocity;
+    float speed;
 };
 struct GameUI {
     inline static const glm::vec3 EDIT_MODE_TEXT_COLOR = { .0, .7, .0 };

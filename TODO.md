@@ -2,13 +2,11 @@
 
 - add trails to objects
 - more control over planet velocity
-- velocity vector visualization
 - grid
 - planet predicted path
+- planet label 3d text
 - skybox
 - custom textures for planets
-
-
 
 ## Multithreaded gravity calculation algorithm proposition
 

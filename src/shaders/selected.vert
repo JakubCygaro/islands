@@ -20,5 +20,5 @@ out VS_OUT {
 void main() {
     gl_Position = model * vec4(0.0, 0.0, 0.0, 1.0);
     vs_out.radius = radius;
-    vs_out.move_vector = normalize(move_vector);
+    vs_out.move_vector = move_vector;
 }

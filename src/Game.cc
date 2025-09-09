@@ -510,6 +510,15 @@ void Game::draw_gui()
                 collect_light_sources();
             }
         }
+        if(ImGui::SliderFloat3("Object velocity vector components", glm::value_ptr(m_gui.selected_body_menu.velocity), -50, 50)){
+            m_gui.selected_body.lock()->set_speed(m_gui.selected_body_menu.velocity);
+            m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
+        }
+        if(ImGui::SliderFloat("Object speed", &m_gui.selected_body_menu.speed, 0, 50)){
+            m_gui.selected_body.lock()->set_speed(
+                    glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
+            m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
+        }
         if(ImGui::Button("Deselect")){
             m_gui.selected_body.lock()->set_selected(false);
             m_gui.selected_body.reset();
@@ -705,6 +714,8 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
                 m_gui.selected_body = obj;
                 m_gui.selected_body_menu.mass = obj->get_mass();
                 m_gui.selected_body_menu.color = obj->get_color();
+                m_gui.selected_body_menu.velocity = obj->get_speed();
+                m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
             }
         }
     }
