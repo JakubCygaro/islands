@@ -54,6 +54,8 @@ set(SHADERS
     ${SHADERS_DIR}/selected.vert
     ${SHADERS_DIR}/selected.geom
     ${SHADERS_DIR}/selected.frag
+    ${SHADERS_DIR}/internal.vert
+    ${SHADERS_DIR}/internal.frag
 )
 
 add_custom_command(

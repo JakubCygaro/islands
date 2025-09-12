@@ -35,7 +35,7 @@ public:
     ~Gbuffer();
 
     void bind() const;
-    void unbind() const;
+    void unbind(uint32_t fbo = 0) const;
 
 
 private:
@@ -181,8 +181,22 @@ public:
 
 class Game final {
 private:
-    int32_t m_width;
-    int32_t m_height;
+    struct InternalFBO{
+        uint32_t fbo_id{};
+        uint32_t texture_id{};
+        uint32_t depth_buffer_id{};
+        inline InternalFBO(){}
+        InternalFBO(const InternalFBO&) = delete;
+        InternalFBO& operator=(const InternalFBO&) = delete;
+        inline ~InternalFBO(){
+            glDeleteFramebuffers(1, &fbo_id);
+            glDeleteTextures(1, &texture_id);
+            glDeleteRenderbuffers(1, &depth_buffer_id);
+        }
+    };
+    int32_t m_width, m_internal_width;
+    int32_t m_height, m_internal_height;
+    InternalFBO m_internal_fbo{};
     double m_delta_t {};
     double m_last_frame_t {};
     double m_current_frame_t {};
@@ -238,7 +252,7 @@ private:
 public:
     Game() = delete;
     ~Game();
-    Game(int32_t window_width, int32_t window_height);
+    Game(int32_t window_width, int32_t window_height, int32_t internal_width, int32_t internal_height);
     Game(const Game&) = delete;
     Game& operator=(const Game&) = delete;
     void run();

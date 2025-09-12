@@ -30,6 +30,77 @@ namespace {
         Game* instance = static_cast<Game*>(glfwGetWindowUserPointer(window));
         return instance;
     }
+    struct FullScreenQuadVAO {
+        uint32_t vao{}, vbo{}, ebo{};
+        Shader shader;
+
+    private:
+        FullScreenQuadVAO(){
+            glGenVertexArrays(1, &vao);
+            glGenBuffers(GL_ARRAY_BUFFER, &vbo);
+            glGenBuffers(GL_ELEMENT_ARRAY_BUFFER, &ebo);
+            glBindVertexArray(vao);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+            glm::vec2 data[] = {
+                // position   texture coord
+                { -1, 1 }, { 0, 1 }, // top left
+                { -1, -1 }, { 0, 0 }, // bottom left
+                { 1, -1 }, { 1, 0 }, // bottom right
+                { 1, 1 }, { 1, 1 }, // top right
+            };
+
+            glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+            int32_t ebo_data[] = {
+                0, 1, 2,
+                2, 3, 1
+            };
+
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ebo_data), ebo_data, GL_STATIC_DRAW);
+
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec2), (void*)0);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec2), (void*)sizeof(glm::vec2));
+            glEnableVertexAttribArray(1);
+
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            shader = Shader(
+                        std::string(files::src::shaders::INTERNAL_VERT),
+                        std::string(files::src::shaders::INTERNAL_FRAG)
+                        );
+#else
+            shader = Shader(
+                        shaders::INTERNAL_VERT,
+                        shaders::INTERNAL_FRAG
+                        );
+#endif
+
+            glBindVertexArray(0);
+        }
+        FullScreenQuadVAO(const FullScreenQuadVAO&) = delete;
+        FullScreenQuadVAO& operator=(const FullScreenQuadVAO&) = delete;
+    public:
+        ~FullScreenQuadVAO(){
+            glDeleteVertexArrays(1, &vao);
+            glDeleteBuffers(1, &vbo);
+            glDeleteBuffers(1, &ebo);
+        }
+        static FullScreenQuadVAO& instance(){
+            static FullScreenQuadVAO instance;
+            return instance;
+        }
+
+        void draw() const {
+            glBindVertexArray(vao);
+            shader.use_shader();
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+            glBindVertexArray(0);
+        }
+    };
 }
 
 void Game::collect_light_sources(){
@@ -117,8 +188,53 @@ void Game::initialize()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_FRAMEBUFFER_SRGB);
+
+    glGenFramebuffers(1, &m_internal_fbo.fbo_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_internal_fbo.fbo_id);
+    glViewport(0, 0, m_internal_width, m_internal_height);
+    glGenTextures(1, &m_internal_fbo.texture_id);
+
+    glBindTexture(GL_TEXTURE_2D, m_internal_fbo.texture_id);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA,
+        m_internal_width,
+        m_internal_height,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        NULL
+    );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_internal_fbo.texture_id, 0);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+    glGenTextures(1, &m_internal_fbo.depth_buffer_id);
+
+    glBindTexture(GL_TEXTURE_2D, m_internal_fbo.depth_buffer_id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glGenRenderbuffers(1, &m_internal_fbo.depth_buffer_id);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_internal_fbo.depth_buffer_id);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_internal_width, m_internal_height);
+
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_internal_fbo.depth_buffer_id);
+
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
+        throw std::runtime_error("Failed to complete the internal framebuffer");
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, m_width, m_height);
+
     initialize_uniforms();
-    m_gbuffer = Gbuffer{ this->m_width, this->m_height };
+    m_gbuffer = Gbuffer{ this->m_internal_width, this->m_internal_height };
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
@@ -160,18 +276,24 @@ void Game::initialize()
 
     m_gui.paused = font::Text2D(font, font_shader, "PAUSED");
     m_gui.paused.set_color({ 1.0, .0, .0 });
-    m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
+    m_gui.paused.set_pos({ 0, m_internal_height - m_gui.paused.get_text_height() });
 
     m_gui.game_version = font::Text2D(font, font_shader, global_decl::GAME_VERSION);
     m_gui.game_version.set_color({ 1.0, 1.0, 1.0 });
     m_gui.game_version.set_scale(.5f);
-    m_gui.game_version.set_pos({ m_width - m_gui.game_version.get_text_width(), m_height - m_gui.game_version.get_text_height() });
+    m_gui.game_version.set_pos({ m_internal_width - m_gui.game_version.get_text_width(), m_internal_height - m_gui.game_version.get_text_height() });
 }
 void Game::initialize_uniforms(){
     m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
-        (float)m_width / (float)m_height, 0.1f, 1000.0f);
+        (float)m_internal_width / (float)m_internal_height, 0.1f, 1000.0f);
 
-    m_ubos.matrices.text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
+    m_ubos.matrices.text_projection = glm::ortho(
+            0.0f,
+            static_cast<float>(m_internal_width),
+            static_cast<float>(m_internal_height),
+            0.0f,
+            0.0f,
+            100.0f);
 
     glGenBuffers(1, &m_ubos.matrices.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
@@ -335,7 +457,7 @@ void Game::render_gbuffer(){
             planet->deferred_render();
         }
         if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
-            m_gbuffer.unbind();
+            m_gbuffer.unbind(m_internal_fbo.fbo_id);
             glBindFramebuffer(GL_FRAMEBUFFER, star->get_shadow_map_fbo());
             auto [w, h] = obj::Star::get_shadow_map_size();
             glViewport(0, 0, w, h);
@@ -355,7 +477,7 @@ void Game::render_gbuffer(){
             glCullFace(GL_BACK);
         }
     }
-    m_gbuffer.unbind();
+    m_gbuffer.unbind(m_internal_fbo.fbo_id);
 
 }
 void Game::render_light_volumes(){
@@ -399,12 +521,12 @@ void Game::render_light_volumes(){
 
     //blit the depth buffer
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_internal_fbo.fbo_id);
     glBlitFramebuffer(
         0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
     );
-    //return to the default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //return to the internal framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, m_internal_fbo.fbo_id);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glEnable(GL_FRAMEBUFFER_SRGB);
@@ -423,6 +545,8 @@ void Game::render()
 #else
         false;
 #endif
+    glBindFramebuffer(GL_FRAMEBUFFER, m_internal_fbo.fbo_id);
+    glViewport(0, 0, m_internal_width, m_internal_height);
     if(!wireframe_draw) render_gbuffer();
 
     if(!wireframe_draw)
@@ -437,6 +561,15 @@ void Game::render()
 
     glEnable(GL_BLEND);
     render_2d();
+
+    // now render everything to the default framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, m_width, m_height);
+    auto& vao = FullScreenQuadVAO::instance();
+    vao.shader.set_int("internal_buffer_texture", 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_internal_fbo.texture_id);
+    vao.draw();
 }
 void Game::render_2d() {
     glDisable(GL_CULL_FACE);
@@ -614,6 +747,7 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
     m_width = width;
     m_height = height;
+    // m_gbuffer = Gbuffer(width, height);
 
     m_ubos.matrices.text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
 

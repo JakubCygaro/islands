@@ -73,35 +73,6 @@ Gbuffer::Gbuffer(int32_t width, int32_t height):
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // glGenBuffers(1, &quad_vbo);
-    // glGenBuffers(1, &quad_ebo);
-    // glGenVertexArrays(1, &quad_vao);
-    //
-    // glBindVertexArray(quad_vao);
-    // glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
-    // glm::vec2 quad_data[8] = {
-    //     {-1.0, 1.0}, {0.0, 1.0},
-    //     {-1.0, -1.0},{0.0, 0.0},
-    //     {1.0, -1.0}, {1.0, 0.0},
-    //     {1.0, 1.0},  {1.0, 1.0}
-    // };
-    // glBufferData(GL_ARRAY_BUFFER, sizeof quad_data, quad_data, GL_STATIC_DRAW);
-    //
-    // uint32_t ebo_data[6] = {
-    //     0, 1, 2,
-    //     2, 3, 0
-    // };
-    //
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quad_ebo);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof ebo_data, ebo_data, GL_STATIC_DRAW);
-    //
-    // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec2),
-    //     (void*)0);
-    // glEnableVertexAttribArray(0);
-    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec2),
-    //     (void*)sizeof(glm::vec2));
-    // glEnableVertexAttribArray(1);
-    // glBindVertexArray(0);
 
 }
 Gbuffer::Gbuffer(const Gbuffer& other):
@@ -200,6 +171,6 @@ Gbuffer::~Gbuffer(){
 void Gbuffer::bind() const{
     glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
 }
-void Gbuffer::unbind() const{
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+void Gbuffer::unbind(uint32_t fbo) const{
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 }
