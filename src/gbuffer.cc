@@ -170,6 +170,7 @@ Gbuffer::~Gbuffer(){
 }
 void Gbuffer::bind() const{
     glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
+    glViewport(0, 0, width, height);
 }
 void Gbuffer::unbind(uint32_t fbo) const{
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);

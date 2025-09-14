@@ -6,5 +6,6 @@ in vec2 TexCoord;
 out vec4 FragColor;
 
 void main(){
-    FragColor = texture(TexCoord, internal_buffer_texture);
+    FragColor = texture(internal_buffer_texture, TexCoord);
+    // FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }

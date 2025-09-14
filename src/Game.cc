@@ -37,12 +37,12 @@ namespace {
     private:
         FullScreenQuadVAO(){
             glGenVertexArrays(1, &vao);
-            glGenBuffers(GL_ARRAY_BUFFER, &vbo);
-            glGenBuffers(GL_ELEMENT_ARRAY_BUFFER, &ebo);
+            glGenBuffers(1, &vbo);
+            glGenBuffers(1, &ebo);
             glBindVertexArray(vao);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-            glm::vec2 data[] = {
+            glm::vec2 vbo_data[] = {
                 // position   texture coord
                 { -1, 1 }, { 0, 1 }, // top left
                 { -1, -1 }, { 0, 0 }, // bottom left
@@ -50,13 +50,13 @@ namespace {
                 { 1, 1 }, { 1, 1 }, // top right
             };
 
-            glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vbo_data), vbo_data, GL_STATIC_DRAW);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
             int32_t ebo_data[] = {
                 0, 1, 2,
-                2, 3, 1
+                2, 3, 0
             };
 
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ebo_data), ebo_data, GL_STATIC_DRAW);
@@ -96,7 +96,6 @@ namespace {
 
         void draw() const {
             glBindVertexArray(vao);
-            shader.use_shader();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
             glBindVertexArray(0);
         }
@@ -213,13 +212,6 @@ void Game::initialize()
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_internal_fbo.texture_id, 0);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-    glGenTextures(1, &m_internal_fbo.depth_buffer_id);
-
-    glBindTexture(GL_TEXTURE_2D, m_internal_fbo.depth_buffer_id);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glGenRenderbuffers(1, &m_internal_fbo.depth_buffer_id);
     glBindRenderbuffer(GL_RENDERBUFFER, m_internal_fbo.depth_buffer_id);
@@ -471,7 +463,6 @@ void Game::render_gbuffer(){
             }
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, m_width, m_height);
             m_gbuffer.bind();
             m_light_data[i++].shadow_map_id = star->get_shadow_map_id();
             glCullFace(GL_BACK);
@@ -565,7 +556,9 @@ void Game::render()
     // now render everything to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, m_width, m_height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     auto& vao = FullScreenQuadVAO::instance();
+    vao.shader.use_shader();
     vao.shader.set_int("internal_buffer_texture", 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_internal_fbo.texture_id);
