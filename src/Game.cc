@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <functional>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -67,6 +68,8 @@ void Game::initialize()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     m_window_ptr = glfwCreateWindow(m_width, m_height, "Islands", NULL, NULL);
     if (m_window_ptr == NULL) {
@@ -176,7 +179,6 @@ void Game::initialize_uniforms(){
     glGenBuffers(1, &m_ubos.matrices.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     glBufferData(GL_UNIFORM_BUFFER,
-        // view projection text_projection
         sizeof(MatricesUBO),
         NULL, GL_STATIC_DRAW);
 
@@ -484,6 +486,15 @@ void Game::draw_gui()
             m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
                 (float)m_width / (float)m_height, 0.1f, 1000.0f);
         }
+        if(ImGui::Combo("Resolutions",
+                &m_gui.game_options_menu.current,
+                &m_gui.game_options_menu.get_resolution,
+                nullptr,
+                m_gui.game_options_menu.resolutions.size()))
+        {
+            auto& selected = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
+            glfwSetWindowSize(m_window_ptr, selected.width, selected.height);
+        }
         ImGui::End();
     }
     if (m_gui.help_menu_enabled) {
@@ -601,7 +612,7 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
     m_width = width;
     m_height = height;
-
+    m_gbuffer = Gbuffer(width, height);
     m_ubos.matrices.text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
 
     m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
@@ -655,11 +666,23 @@ void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset)
 }
 void Game::window_maximize_handler(GLFWwindow* window, int maximized) {
     if(maximized){
-        auto width{0}, height{0};
-        glfwGetWindowSize(window, &width, &height);
-        glViewport(0, 0, width, height);
+        // auto width{0}, height{0};
+        // auto* monitor = glfwGetWindowMonitor(window);
+        // if(!monitor){
+        //     throw std::runtime_error("could not get the monitor pointer");
+        // }
+        // auto mode = glfwGetVideoMode(monitor);
+        // width = mode->width;
+        // height = mode->height;
+        // glfwGetWindowSize(window, &width, &height);
+        // std::printf("w: %d h %d\n", width, height);
+        // glViewport(0, 0, width, height);
+        // m_gbuffer = Gbuffer(width, height);
+        // m_width = width;
+        // m_height = height;
     } else {
-        framebuffer_size_handler(window, m_width, m_height);
+        // framebuffer_size_handler(window, m_width, m_height);
+        // m_gbuffer = Gbuffer(m_width, m_height);
     }
 }
 
@@ -725,6 +748,15 @@ void Game::initialize_key_bindings() {
     m_keybinds.add_binding(GLFW_KEY_P, GLFW_PRESS, BindMode::Any, [this](){
         this->m_paused = !this->m_paused;
     }, "Pause the simulation");
+    // // [F]ullscreen
+    m_keybinds.add_binding(GLFW_KEY_F, GLFW_PRESS, BindMode::Any, [this](){
+        int maximized = glfwGetWindowAttrib(m_window_ptr, GLFW_MAXIMIZED);
+        if(maximized){
+            glfwRestoreWindow(m_window_ptr);
+        } else {
+            glfwMaximizeWindow(m_window_ptr);
+        }
+    }, "Fullscreen");
     // // Shift + S -> spawn object
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this](){
         auto front = this->m_camera.get_front();
@@ -750,7 +782,7 @@ void Game::initialize_key_bindings() {
         this->m_gui.debug_menu_enabled = !this->m_gui.debug_menu_enabled;
     }, "Open the debug menu", GLFW_MOD_SHIFT);
 #endif
-    // Editor mode specifyc keybinds
+    // Editor mode specific keybinds
     m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this](){
         this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled;
     }, "Open game settings");
