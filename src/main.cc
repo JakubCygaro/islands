@@ -5,11 +5,9 @@
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 800;
 
-const unsigned int INTERNAL_WIDTH = 1920;
-const unsigned int INTERNAL_HEIGHT = 1080;
 int main(void) {
     try{
-        Game game(SCR_WIDTH, SCR_HEIGHT, INTERNAL_WIDTH, INTERNAL_HEIGHT);
+        Game game(SCR_WIDTH, SCR_HEIGHT);
         game.run();
     } catch(const std::runtime_error& e){
         std::cerr << e.what() << std::endl;

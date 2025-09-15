@@ -116,6 +116,12 @@ void Game::initialize()
     };
     glfwSetWindowMaximizeCallback(m_window_ptr, window_maximize_callback);
 
+    auto window_refresh_callback = [](GLFWwindow* window) {
+        Game* instance = get_game_instance_ptr_from_window(window);
+        instance->window_refresh_handler(window);
+    };
+    glfwSetWindowRefreshCallback(m_window_ptr, window_refresh_callback);
+
     // tell GLFW to capture our mouse
     /*glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);*/
 
@@ -263,6 +269,28 @@ void Game::update()
     if (!m_paused) {
         update_bodies();
     }
+
+    if(m_maximize != MaximizeState::DoNothing){
+        glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
+    }
+    switch (m_maximize) {
+    case MaximizeState::Maximize:
+        glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwMaximizeWindow(m_window_ptr);
+        break;
+    case MaximizeState::Minimize:{
+        glfwRestoreWindow(m_window_ptr);
+        glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
+        auto resolution = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
+        glfwSetWindowSize(m_window_ptr, resolution.width, resolution.height);
+        glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height,m_width, m_height);
+    }break;
+    case MaximizeState::DoNothing:
+        break;
+    }
+
+
 }
 void Game::update_buffers() {
 
@@ -696,24 +724,8 @@ void Game::window_maximize_handler(GLFWwindow* window, int maximized) {
     glfwFocusWindow(window);
     if(maximized){
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
-        // auto width{0}, height{0};
-        // auto* monitor = glfwGetWindowMonitor(window);
-        // if(!monitor){
-        //     throw std::runtime_error("could not get the monitor pointer");
-        // }
-        // auto mode = glfwGetVideoMode(monitor);
-        // width = mode->width;
-        // height = mode->height;
-        // glfwGetWindowSize(window, &width, &height);
-        // std::printf("w: %d h %d\n", width, height);
-        // glViewport(0, 0, width, height);
-        // m_gbuffer = Gbuffer(width, height);
-        // m_width = width;
-        // m_height = height;
     } else {
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
-        // framebuffer_size_handler(window, m_width, m_height);
-        // m_gbuffer = Gbuffer(m_width, m_height);
     }
 }
 
@@ -788,18 +800,7 @@ void Game::initialize_key_bindings() {
     // // [F]ullscreen
     m_keybinds.add_binding(GLFW_KEY_F, GLFW_PRESS, BindMode::Any, [this](){
         int maximized = glfwGetWindowAttrib(m_window_ptr, GLFW_MAXIMIZED);
-        glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
-        glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
-        if(maximized){
-            glfwRestoreWindow(m_window_ptr);
-            glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
-            auto resolution = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
-            glfwSetWindowSize(m_window_ptr, resolution.width, resolution.height);
-            glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height,m_width, m_height);
-        } else {
-            glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
-            glfwMaximizeWindow(m_window_ptr);
-        }
+        this->m_maximize = maximized ? MaximizeState::Minimize : MaximizeState::Maximize;
     }, "Fullscreen (ON LINUX HAS TO BE PRESSED TWICE, I'VE GOT NO IDEA WHY)");
     // // Shift + S -> spawn object
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this](){
@@ -838,4 +839,7 @@ void Game::initialize_key_bindings() {
         this->m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
     }, "Deselect currently selected body");
     // Simulation mode specific keybinds
+}
+void Game::window_refresh_handler(GLFWwindow* window){
+    glfwSwapBuffers(window);
 }

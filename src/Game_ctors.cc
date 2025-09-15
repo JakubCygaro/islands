@@ -1,13 +1,10 @@
 #include <Game.hpp>
 #include "Font.hpp"
-#include "Object.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
 #include <Game.hpp>
-#include <cmath>
-#include <cstdio>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -16,7 +13,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-Game::Game(int32_t window_width, int32_t window_height, int32_t internal_width, int32_t internal_height)
+Game::Game(int32_t window_width, int32_t window_height)
     : m_width { window_width }
     , m_height { window_height }
     , m_fov { 70 }

@@ -181,6 +181,11 @@ public:
 
 class Game final {
 private:
+    enum struct MaximizeState {
+        Maximize,
+        Minimize,
+        DoNothing
+    };
     int32_t m_width;
     int32_t m_height;
     double m_delta_t {};
@@ -193,6 +198,7 @@ private:
     bool m_wireframe { false };
     bool m_gui_enabled { true };
     bool m_paused { false };
+    MaximizeState m_maximize { MaximizeState::DoNothing };
     size_t m_lightsources_cap {1};
     Gbuffer m_gbuffer{};
     GLFWwindow* m_window_ptr { nullptr };
@@ -219,6 +225,7 @@ private:
     void continuos_key_input();
     void framebuffer_size_handler(GLFWwindow* window, int width, int height);
     void window_maximize_handler(GLFWwindow* window, int maximized);
+    void window_refresh_handler(GLFWwindow* window);
     void draw_gui();
     void render_2d();
 
@@ -238,7 +245,7 @@ private:
 public:
     Game() = delete;
     ~Game();
-    Game(int32_t window_width, int32_t window_height, int32_t internal_width, int32_t internal_height);
+    Game(int32_t window_width, int32_t window_height);
     Game(const Game&) = delete;
     Game& operator=(const Game&) = delete;
     void run();
