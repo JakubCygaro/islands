@@ -197,27 +197,33 @@ void Game::initialize()
     glTexImage2D(
         GL_TEXTURE_2D,
         0,
-        GL_RGBA,
+        GL_RGB,
         m_internal_width,
         m_internal_height,
         0,
-        GL_RGBA,
+        GL_RGB,
         GL_UNSIGNED_BYTE,
         NULL
     );
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_internal_fbo.texture_id, 0);
+
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
 
     glGenRenderbuffers(1, &m_internal_fbo.depth_buffer_id);
     glBindRenderbuffer(GL_RENDERBUFFER, m_internal_fbo.depth_buffer_id);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_internal_width, m_internal_height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_internal_width, m_internal_height);
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_internal_fbo.depth_buffer_id);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_internal_fbo.depth_buffer_id);
+
+    // glGenRenderbuffers(1, &m_internal_fbo.stencil_buffer_id);
+    // glBindRenderbuffer(GL_RENDERBUFFER, m_internal_fbo.stencil_buffer_id);
+    // glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, m_internal_width, m_internal_height);
+    //
+    // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_internal_fbo.stencil_buffer_id);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
         throw std::runtime_error("Failed to complete the internal framebuffer");
@@ -227,6 +233,8 @@ void Game::initialize()
 
     initialize_uniforms();
     m_gbuffer = Gbuffer{ this->m_internal_width, this->m_internal_height };
+
+    (void)FullScreenQuadVAO::instance();
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
@@ -462,7 +470,6 @@ void Game::render_gbuffer(){
                 obj->shadow_render();
             }
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
             m_gbuffer.bind();
             m_light_data[i++].shadow_map_id = star->get_shadow_map_id();
             glCullFace(GL_BACK);
@@ -514,7 +521,7 @@ void Game::render_light_volumes(){
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_internal_fbo.fbo_id);
     glBlitFramebuffer(
-        0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
+        0, 0, m_internal_width, m_internal_height, 0, 0, m_internal_width, m_internal_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
     );
     //return to the internal framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, m_internal_fbo.fbo_id);
@@ -556,13 +563,15 @@ void Game::render()
     // now render everything to the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, m_width, m_height);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
     auto& vao = FullScreenQuadVAO::instance();
     vao.shader.use_shader();
     vao.shader.set_int("internal_buffer_texture", 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_internal_fbo.texture_id);
     vao.draw();
+    glEnable(GL_DEPTH_TEST);
 }
 void Game::render_2d() {
     glDisable(GL_CULL_FACE);

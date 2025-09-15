@@ -185,6 +185,7 @@ private:
         uint32_t fbo_id{};
         uint32_t texture_id{};
         uint32_t depth_buffer_id{};
+        uint32_t stencil_buffer_id{};
         inline InternalFBO(){}
         InternalFBO(const InternalFBO&) = delete;
         InternalFBO& operator=(const InternalFBO&) = delete;
@@ -192,6 +193,7 @@ private:
             glDeleteFramebuffers(1, &fbo_id);
             glDeleteTextures(1, &texture_id);
             glDeleteRenderbuffers(1, &depth_buffer_id);
+            glDeleteRenderbuffers(1, &stencil_buffer_id);
         }
     };
     int32_t m_width, m_internal_width;
