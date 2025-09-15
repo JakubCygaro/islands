@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstdio>
 #include <functional>
+#include <glm/common.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -69,15 +70,21 @@ void Game::initialize()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    // glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    // glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
+    // glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
 
     m_window_ptr = glfwCreateWindow(m_width, m_height, "Islands", NULL, NULL);
     if (m_window_ptr == NULL) {
         throw std::runtime_error("Failed to create the window");
         glfwTerminate();
     }
+    // glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
+    // glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_FALSE);
     glfwMakeContextCurrent(m_window_ptr);
     glfwSetWindowUserPointer(m_window_ptr, this);
+    glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height, m_width, m_height);
     auto framebuffer_size_callback = [](GLFWwindow* window, int w, int h) {
         Game* instance = get_game_instance_ptr_from_window(window);
         instance->framebuffer_size_handler(window, w, h);
@@ -665,7 +672,9 @@ void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset)
     m_camera.set_speed(std::max(m_camera.get_speed() + yoffset, 0.0));
 }
 void Game::window_maximize_handler(GLFWwindow* window, int maximized) {
+    glfwFocusWindow(window);
     if(maximized){
+        glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
         // auto width{0}, height{0};
         // auto* monitor = glfwGetWindowMonitor(window);
         // if(!monitor){
@@ -681,6 +690,7 @@ void Game::window_maximize_handler(GLFWwindow* window, int maximized) {
         // m_width = width;
         // m_height = height;
     } else {
+        glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
         // framebuffer_size_handler(window, m_width, m_height);
         // m_gbuffer = Gbuffer(m_width, m_height);
     }
@@ -751,12 +761,19 @@ void Game::initialize_key_bindings() {
     // // [F]ullscreen
     m_keybinds.add_binding(GLFW_KEY_F, GLFW_PRESS, BindMode::Any, [this](){
         int maximized = glfwGetWindowAttrib(m_window_ptr, GLFW_MAXIMIZED);
+        glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
         if(maximized){
             glfwRestoreWindow(m_window_ptr);
+            glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
+            auto resolution = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
+            glfwSetWindowSize(m_window_ptr, resolution.width, resolution.height);
+            glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height,m_width, m_height);
         } else {
+            glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
             glfwMaximizeWindow(m_window_ptr);
         }
-    }, "Fullscreen");
+    }, "Fullscreen (ON LINUX HAS TO BE PRESSED TWICE, I'VE GOT NO IDEA WHY)");
     // // Shift + S -> spawn object
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this](){
         auto front = this->m_camera.get_front();
