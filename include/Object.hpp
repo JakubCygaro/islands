@@ -264,7 +264,7 @@ public:
 };
 class Star : public CelestialBody {
 public:
-    inline static const float s_shadow_far_plane = 25.0f;
+    inline static const float s_shadow_far_plane = 100.0f;
 private:
 private:
     inline static std::shared_ptr<Shader> shader_instance() {

@@ -2,8 +2,8 @@
 #include <iostream>
 #include <stdexcept>
 
-const unsigned int SCR_WIDTH = 1200;
-const unsigned int SCR_HEIGHT = 900;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 800;
 
 const unsigned int INTERNAL_WIDTH = 1920;
 const unsigned int INTERNAL_HEIGHT = 1080;

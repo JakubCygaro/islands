@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <functional>
+#include <glm/common.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -30,76 +32,6 @@ namespace {
         Game* instance = static_cast<Game*>(glfwGetWindowUserPointer(window));
         return instance;
     }
-    struct FullScreenQuadVAO {
-        uint32_t vao{}, vbo{}, ebo{};
-        Shader shader;
-
-    private:
-        FullScreenQuadVAO(){
-            glGenVertexArrays(1, &vao);
-            glGenBuffers(1, &vbo);
-            glGenBuffers(1, &ebo);
-            glBindVertexArray(vao);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-            glm::vec2 vbo_data[] = {
-                // position   texture coord
-                { -1, 1 }, { 0, 1 }, // top left
-                { -1, -1 }, { 0, 0 }, // bottom left
-                { 1, -1 }, { 1, 0 }, // bottom right
-                { 1, 1 }, { 1, 1 }, // top right
-            };
-
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vbo_data), vbo_data, GL_STATIC_DRAW);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-
-            int32_t ebo_data[] = {
-                0, 1, 2,
-                2, 3, 0
-            };
-
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ebo_data), ebo_data, GL_STATIC_DRAW);
-
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec2), (void*)0);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec2), (void*)sizeof(glm::vec2));
-            glEnableVertexAttribArray(1);
-
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            shader = Shader(
-                        std::string(files::src::shaders::INTERNAL_VERT),
-                        std::string(files::src::shaders::INTERNAL_FRAG)
-                        );
-#else
-            shader = Shader(
-                        shaders::INTERNAL_VERT,
-                        shaders::INTERNAL_FRAG
-                        );
-#endif
-
-            glBindVertexArray(0);
-        }
-        FullScreenQuadVAO(const FullScreenQuadVAO&) = delete;
-        FullScreenQuadVAO& operator=(const FullScreenQuadVAO&) = delete;
-    public:
-        ~FullScreenQuadVAO(){
-            glDeleteVertexArrays(1, &vao);
-            glDeleteBuffers(1, &vbo);
-            glDeleteBuffers(1, &ebo);
-        }
-        static FullScreenQuadVAO& instance(){
-            static FullScreenQuadVAO instance;
-            return instance;
-        }
-
-        void draw() const {
-            glBindVertexArray(vao);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-            glBindVertexArray(0);
-        }
-    };
 }
 
 void Game::collect_light_sources(){
@@ -137,14 +69,22 @@ void Game::initialize()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
+    // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    // glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    // glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
+    // glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
 
     m_window_ptr = glfwCreateWindow(m_width, m_height, "Islands", NULL, NULL);
     if (m_window_ptr == NULL) {
         throw std::runtime_error("Failed to create the window");
         glfwTerminate();
     }
+    // glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
+    // glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_FALSE);
     glfwMakeContextCurrent(m_window_ptr);
     glfwSetWindowUserPointer(m_window_ptr, this);
+    glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height, m_width, m_height);
     auto framebuffer_size_callback = [](GLFWwindow* window, int w, int h) {
         Game* instance = get_game_instance_ptr_from_window(window);
         instance->framebuffer_size_handler(window, w, h);
@@ -184,46 +124,6 @@ void Game::initialize()
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_FRAMEBUFFER_SRGB);
-
-    glGenFramebuffers(1, &m_internal_fbo.fbo_id);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_internal_fbo.fbo_id);
-    glViewport(0, 0, m_internal_width, m_internal_height);
-    glGenTextures(1, &m_internal_fbo.texture_id);
-
-    glBindTexture(GL_TEXTURE_2D, m_internal_fbo.texture_id);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RGB,
-        m_internal_width,
-        m_internal_height,
-        0,
-        GL_RGB,
-        GL_UNSIGNED_BYTE,
-        NULL
-    );
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_internal_fbo.texture_id, 0);
-
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-    glGenRenderbuffers(1, &m_internal_fbo.depth_buffer_id);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_internal_fbo.depth_buffer_id);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_internal_width, m_internal_height);
-
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_internal_fbo.depth_buffer_id);
-
-    // glGenRenderbuffers(1, &m_internal_fbo.stencil_buffer_id);
-    // glBindRenderbuffer(GL_RENDERBUFFER, m_internal_fbo.stencil_buffer_id);
-    // glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, m_internal_width, m_internal_height);
-    //
-    // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_internal_fbo.stencil_buffer_id);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
         throw std::runtime_error("Failed to complete the internal framebuffer");
@@ -232,9 +132,8 @@ void Game::initialize()
     glViewport(0, 0, m_width, m_height);
 
     initialize_uniforms();
-    m_gbuffer = Gbuffer{ this->m_internal_width, this->m_internal_height };
+    m_gbuffer = Gbuffer{ this->m_width, this->m_height };
 
-    (void)FullScreenQuadVAO::instance();
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
@@ -276,21 +175,21 @@ void Game::initialize()
 
     m_gui.paused = font::Text2D(font, font_shader, "PAUSED");
     m_gui.paused.set_color({ 1.0, .0, .0 });
-    m_gui.paused.set_pos({ 0, m_internal_height - m_gui.paused.get_text_height() });
+    m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
 
     m_gui.game_version = font::Text2D(font, font_shader, global_decl::GAME_VERSION);
     m_gui.game_version.set_color({ 1.0, 1.0, 1.0 });
     m_gui.game_version.set_scale(.5f);
-    m_gui.game_version.set_pos({ m_internal_width - m_gui.game_version.get_text_width(), m_internal_height - m_gui.game_version.get_text_height() });
+    m_gui.game_version.set_pos({ m_width - m_gui.game_version.get_text_width(), m_height - m_gui.game_version.get_text_height() });
 }
 void Game::initialize_uniforms(){
     m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
-        (float)m_internal_width / (float)m_internal_height, 0.1f, 1000.0f);
+        (float)m_width / (float)m_height, 0.1f, 1000.0f);
 
     m_ubos.matrices.text_projection = glm::ortho(
             0.0f,
-            static_cast<float>(m_internal_width),
-            static_cast<float>(m_internal_height),
+            static_cast<float>(m_width),
+            static_cast<float>(m_height),
             0.0f,
             0.0f,
             100.0f);
@@ -298,7 +197,6 @@ void Game::initialize_uniforms(){
     glGenBuffers(1, &m_ubos.matrices.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     glBufferData(GL_UNIFORM_BUFFER,
-        // view projection text_projection
         sizeof(MatricesUBO),
         NULL, GL_STATIC_DRAW);
 
@@ -457,7 +355,7 @@ void Game::render_gbuffer(){
             planet->deferred_render();
         }
         if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
-            m_gbuffer.unbind(m_internal_fbo.fbo_id);
+            m_gbuffer.unbind();
             glBindFramebuffer(GL_FRAMEBUFFER, star->get_shadow_map_fbo());
             auto [w, h] = obj::Star::get_shadow_map_size();
             glViewport(0, 0, w, h);
@@ -475,7 +373,7 @@ void Game::render_gbuffer(){
             glCullFace(GL_BACK);
         }
     }
-    m_gbuffer.unbind(m_internal_fbo.fbo_id);
+    m_gbuffer.unbind();
 
 }
 void Game::render_light_volumes(){
@@ -519,12 +417,11 @@ void Game::render_light_volumes(){
 
     //blit the depth buffer
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_internal_fbo.fbo_id);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(
-        0, 0, m_internal_width, m_internal_height, 0, 0, m_internal_width, m_internal_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
+        0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
     );
-    //return to the internal framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, m_internal_fbo.fbo_id);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glEnable(GL_FRAMEBUFFER_SRGB);
@@ -543,8 +440,6 @@ void Game::render()
 #else
         false;
 #endif
-    glBindFramebuffer(GL_FRAMEBUFFER, m_internal_fbo.fbo_id);
-    glViewport(0, 0, m_internal_width, m_internal_height);
     if(!wireframe_draw) render_gbuffer();
 
     if(!wireframe_draw)
@@ -559,19 +454,6 @@ void Game::render()
 
     glEnable(GL_BLEND);
     render_2d();
-
-    // now render everything to the default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, m_width, m_height);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
-    auto& vao = FullScreenQuadVAO::instance();
-    vao.shader.use_shader();
-    vao.shader.set_int("internal_buffer_texture", 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_internal_fbo.texture_id);
-    vao.draw();
-    glEnable(GL_DEPTH_TEST);
 }
 void Game::render_2d() {
     glDisable(GL_CULL_FACE);
@@ -618,6 +500,15 @@ void Game::draw_gui()
             m_fov = m_gui.game_options_menu.fov;
             m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
                 (float)m_width / (float)m_height, 0.1f, 1000.0f);
+        }
+        if(ImGui::Combo("Resolutions",
+                &m_gui.game_options_menu.current,
+                &m_gui.game_options_menu.get_resolution,
+                nullptr,
+                m_gui.game_options_menu.resolutions.size()))
+        {
+            auto& selected = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
+            glfwSetWindowSize(m_window_ptr, selected.width, selected.height);
         }
         ImGui::End();
     }
@@ -749,8 +640,7 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
     m_width = width;
     m_height = height;
-    // m_gbuffer = Gbuffer(width, height);
-
+    m_gbuffer = Gbuffer(width, height);
     m_ubos.matrices.text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
 
     m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
@@ -803,12 +693,27 @@ void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset)
     m_camera.set_speed(std::max(m_camera.get_speed() + yoffset, 0.0));
 }
 void Game::window_maximize_handler(GLFWwindow* window, int maximized) {
+    glfwFocusWindow(window);
     if(maximized){
-        auto width{0}, height{0};
-        glfwGetWindowSize(window, &width, &height);
-        glViewport(0, 0, width, height);
+        glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
+        // auto width{0}, height{0};
+        // auto* monitor = glfwGetWindowMonitor(window);
+        // if(!monitor){
+        //     throw std::runtime_error("could not get the monitor pointer");
+        // }
+        // auto mode = glfwGetVideoMode(monitor);
+        // width = mode->width;
+        // height = mode->height;
+        // glfwGetWindowSize(window, &width, &height);
+        // std::printf("w: %d h %d\n", width, height);
+        // glViewport(0, 0, width, height);
+        // m_gbuffer = Gbuffer(width, height);
+        // m_width = width;
+        // m_height = height;
     } else {
-        framebuffer_size_handler(window, m_width, m_height);
+        glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
+        // framebuffer_size_handler(window, m_width, m_height);
+        // m_gbuffer = Gbuffer(m_width, m_height);
     }
 }
 
@@ -880,6 +785,22 @@ void Game::initialize_key_bindings() {
     m_keybinds.add_binding(GLFW_KEY_P, GLFW_PRESS, BindMode::Any, [this](){
         this->m_paused = !this->m_paused;
     }, "Pause the simulation");
+    // // [F]ullscreen
+    m_keybinds.add_binding(GLFW_KEY_F, GLFW_PRESS, BindMode::Any, [this](){
+        int maximized = glfwGetWindowAttrib(m_window_ptr, GLFW_MAXIMIZED);
+        glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
+        if(maximized){
+            glfwRestoreWindow(m_window_ptr);
+            glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
+            auto resolution = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
+            glfwSetWindowSize(m_window_ptr, resolution.width, resolution.height);
+            glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height,m_width, m_height);
+        } else {
+            glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+            glfwMaximizeWindow(m_window_ptr);
+        }
+    }, "Fullscreen (ON LINUX HAS TO BE PRESSED TWICE, I'VE GOT NO IDEA WHY)");
     // // Shift + S -> spawn object
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this](){
         auto front = this->m_camera.get_front();
@@ -905,7 +826,7 @@ void Game::initialize_key_bindings() {
         this->m_gui.debug_menu_enabled = !this->m_gui.debug_menu_enabled;
     }, "Open the debug menu", GLFW_MOD_SHIFT);
 #endif
-    // Editor mode specifyc keybinds
+    // Editor mode specific keybinds
     m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this](){
         this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled;
     }, "Open game settings");

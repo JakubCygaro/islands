@@ -18,9 +18,7 @@
 
 Game::Game(int32_t window_width, int32_t window_height, int32_t internal_width, int32_t internal_height)
     : m_width { window_width }
-    , m_internal_width(internal_width)
     , m_height { window_height }
-    , m_internal_height(internal_height)
     , m_fov { 70 }
     , m_camera { Camera(glm::vec3(0, 0, 3), glm::vec3(0)) }
     , m_ubos {}

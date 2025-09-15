@@ -1,7 +1,9 @@
 #include "Font.hpp"
 #include "Object.hpp"
+#include <cstdint>
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
+#include <sstream>
 #ifndef GUI_HPP
 #define GUI_HPP
 
@@ -20,6 +22,35 @@ struct SpawnMenu {
 struct GameOptionsMenu {
     float camera_speed {};
     float fov { 70.0 };
+    struct Resolution {
+        uint32_t width{}, height{};
+        std::string str{};
+        inline Resolution( uint32_t w, uint32_t h ) : width(w), height(h) {
+            std::stringstream ss;
+            ss << w << 'x' << h;
+            str = ss.str();
+        }
+    };
+    int current = 5;
+    inline static const std::vector<Resolution> resolutions = {
+        { 640, 360 },
+        { 640, 480 },
+        { 800, 600 },
+        { 1024, 768 },
+        { 1280, 720 },
+        { 1280, 800 },
+        { 1280, 1024 },
+        { 1440, 900 },
+        { 1600, 900 },
+        { 1600, 1200 },
+        { 1680, 1050 },
+        { 1920, 1080 },
+        { 1920, 1200 },
+    };
+    inline static const char* get_resolution(void* data, int idx){
+        (void)data;
+        return resolutions[idx].str.c_str();
+    }
 };
 struct HelpMenu {
     std::string help_text{};
