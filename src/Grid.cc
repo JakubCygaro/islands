@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace {
-    std::vector<glm::vec2> gen_instance_offset_data(uint32_t additional_segments, float offset = 1.0) {
+    std::vector<glm::vec2> gen_instance_offset_data(int32_t additional_segments, float offset = 1.0) {
         std::vector<glm::vec2> ret;
         for(auto c = -additional_segments; c <= additional_segments; c++){
             for (auto r = -additional_segments; r <= additional_segments; r++){
@@ -69,7 +69,7 @@ Grid::Grid(uint32_t side_len) :
     auto [vbo_data, ebo_data] = gen_grid_vertices_and_indicies(m_side_len);
     m_v_count = vbo_data.size();
     m_i_count = ebo_data.size();
-    auto offset_buffer = gen_instance_offset_data(5);
+    auto offset_buffer = gen_instance_offset_data(1, side_len);
     m_instance_count = offset_buffer.size();
 
     ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
@@ -185,6 +185,7 @@ void Grid::forward_render(glm::vec3 camera_pos) {
     model = glm::translate(model, glm::vec3(grid_pos.x, 0.0, grid_pos.y));
     m_shader.set_mat4("model", model);
     ::glBindVertexArray(m_vao);
+    std::printf("m_instance_count %d\n", m_instance_count);
     // ::glDrawElements(GL_LINES, m_i_count, GL_UNSIGNED_INT, NULL);
     ::glDrawElementsInstanced(GL_LINES, m_i_count, GL_UNSIGNED_INT, NULL, m_instance_count);
     ::glBindVertexArray(0);
