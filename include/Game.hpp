@@ -2,6 +2,7 @@
 #define GAME_HPP
 #include <string>
 #include <vector>
+#include "Grid.hpp"
 #include "Gui.hpp"
 #include "Object.hpp"
 #include <Camera.hpp>
@@ -210,6 +211,8 @@ private:
     std::vector<LightSource> m_light_data{};
     gui::GameUI m_gui {};
     KeybindHandler m_keybinds {};
+
+    std::shared_ptr<Grid> m_grid = nullptr;
 
 private:
     void initialize();

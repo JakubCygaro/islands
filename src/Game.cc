@@ -140,6 +140,7 @@ void Game::initialize()
     initialize_uniforms();
     m_gbuffer = Gbuffer{ this->m_width, this->m_height };
 
+    m_grid = std::make_shared<Grid>(Grid(9));
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
@@ -479,6 +480,7 @@ void Game::render()
     for (auto& c_obj : m_bodies) {
         c_obj->forward_render(normals_draw, wireframe_draw);
     }
+    m_grid->forward_render(m_camera.get_pos());
 
     glEnable(GL_BLEND);
     render_2d();

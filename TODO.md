@@ -1,6 +1,5 @@
 # TODO LIST
 
-- FRAMEBUFFER SIZE CHANGE HANDLING FOR G BUFFER - maybe just draw everything to 1080x1920 and then scale for the final viewport?
 - add trails to objects
 - grid
 - planet predicted path
