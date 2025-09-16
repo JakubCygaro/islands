@@ -13,9 +13,9 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-Game::Game(int32_t window_width, int32_t window_height)
-    : m_width { window_width }
-    , m_height { window_height }
+Game::Game()
+    : m_width { m_gui.game_options_menu.get_default_resolution().width }
+    , m_height {  m_gui.game_options_menu.get_default_resolution().height  }
     , m_fov { 70 }
     , m_camera { Camera(glm::vec3(0, 0, 3), glm::vec3(0)) }
     , m_ubos {}

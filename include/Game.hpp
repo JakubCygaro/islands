@@ -243,9 +243,8 @@ private:
     void collect_light_sources();
     void buffer_light_data();
 public:
-    Game() = delete;
     ~Game();
-    Game(int32_t window_width, int32_t window_height);
+    Game();
     Game(const Game&) = delete;
     Game& operator=(const Game&) = delete;
     void run();

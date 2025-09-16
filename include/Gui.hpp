@@ -7,6 +7,8 @@
 #ifndef GUI_HPP
 #define GUI_HPP
 
+#define DEFAULT_RESOLUTION 5
+
 namespace gui {
 struct DebugMenu {
     bool do_face_culling {true};
@@ -23,7 +25,7 @@ struct GameOptionsMenu {
     float camera_speed {};
     float fov { 70.0 };
     struct Resolution {
-        uint32_t width{}, height{};
+        int32_t width{}, height{};
         std::string str{};
         inline Resolution( uint32_t w, uint32_t h ) : width(w), height(h) {
             std::stringstream ss;
@@ -31,7 +33,8 @@ struct GameOptionsMenu {
             str = ss.str();
         }
     };
-    int current = 5;
+    inline static Resolution get_default_resolution() { return resolutions[DEFAULT_RESOLUTION]; }
+    int current = DEFAULT_RESOLUTION;
     inline static const std::vector<Resolution> resolutions = {
         { 640, 360 },
         { 640, 480 },
