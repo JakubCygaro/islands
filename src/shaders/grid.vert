@@ -11,11 +11,20 @@ layout(std140, binding = 0) uniform Matrices {
     mat4 text_projection;
 };
 
+layout(std140, binding = 1) uniform LightingGlobals {
+    float ambient_strength;
+    vec3 camera_pos;
+};
+
+out VS_OUT {
+    float grid_alpha;
+};
+
 void main(){
     vec4 world_pos = model * vec4(pos, 1.0);
     world_pos.x += offset.x;
     world_pos.z += offset.y;
-    // world_pos.y = 0.0;
+    // grid_alpha = (length(vec3(world_pos) - camera_pos) / 4.0);
+    grid_alpha = 1.0;
     gl_Position = projection * view * world_pos;
-    // gl_Position = projection * view * model * vec4(pos, 1.0);
 }

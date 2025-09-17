@@ -120,6 +120,7 @@ Grid::Grid(Grid&& other):
     , m_v_count(other.m_v_count)
     , m_i_count(other.m_i_count)
     , m_instance_count(other.m_instance_count)
+    , m_color(other.m_color)
 {
     other.m_vao = 0;
     other.m_vbo = 0;
@@ -138,6 +139,7 @@ Grid& Grid::operator=(Grid&& other) {
     m_v_count = other.m_v_count;
     m_i_count = other.m_i_count;
     m_instance_count = other.m_instance_count;
+    m_color = other.m_color;
 
     other.m_vao = 0;
     other.m_vbo = 0;
@@ -178,7 +180,12 @@ glm::vec3 Grid::get_rotation() const{
 void Grid::set_rotation(glm::vec3 rotation){
     m_rotation = rotation;
 }
-
+glm::vec4 Grid::get_color() const {
+    return m_color;
+}
+void Grid::set_color(glm::vec4 color) {
+    m_color = color;
+}
 void Grid::forward_render(glm::vec3 camera_pos) {
     m_shader.use_shader();
     auto model = glm::mat4(1);
@@ -193,8 +200,8 @@ void Grid::forward_render(glm::vec3 camera_pos) {
     model = glm::scale(model, glm::vec3(m_scale, 1.0, m_scale));
     model = glm::translate(model, glm::vec3(grid_pos.x, 0.0, grid_pos.y));
     m_shader.set_mat4("model", model);
+    m_shader.set_vec4("color", m_color);
     ::glBindVertexArray(m_vao);
-    // ::glDrawElements(GL_LINES, m_i_count, GL_UNSIGNED_INT, NULL);
     ::glDrawElementsInstanced(GL_LINES, m_i_count, GL_UNSIGNED_INT, NULL, m_instance_count);
     ::glBindVertexArray(0);
 }

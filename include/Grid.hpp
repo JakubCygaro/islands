@@ -16,6 +16,8 @@ class Grid final {
     uint32_t m_i_count{};
     uint32_t m_instance_count{};
 
+    glm::vec4 m_color{ 1.0, 1.0, 1.0, 1.0 };
+
 public:
     Grid(uint32_t side_len);
     ~Grid();
@@ -30,6 +32,8 @@ public:
     void set_scale(float);
     glm::vec3 get_rotation() const;
     void set_rotation(glm::vec3);
+    glm::vec4 get_color() const;
+    void set_color(glm::vec4);
 };
 
 #endif
