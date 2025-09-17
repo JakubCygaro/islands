@@ -69,7 +69,7 @@ Grid::Grid(uint32_t side_len) :
     auto [vbo_data, ebo_data] = gen_grid_vertices_and_indicies(m_side_len);
     m_v_count = vbo_data.size();
     m_i_count = ebo_data.size();
-    auto offset_buffer = gen_instance_offset_data(1, side_len);
+    auto offset_buffer = gen_instance_offset_data(9, side_len - 1);
     m_instance_count = offset_buffer.size();
 
     ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
@@ -81,11 +81,13 @@ Grid::Grid(uint32_t side_len) :
     ::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
     ::glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof (decltype(ebo_data)::value_type) * ebo_data.size(), ebo_data.data(), GL_STATIC_DRAW);
 
+    ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     ::glEnableVertexAttribArray(0);
     ::glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+    ::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    ::glEnableVertexAttribArray(1);
     ::glBindBuffer(GL_ARRAY_BUFFER, m_offset);
+    ::glEnableVertexAttribArray(1);
     ::glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
     ::glBindBuffer(GL_ARRAY_BUFFER, 0);
     ::glVertexAttribDivisor(1, 1);
@@ -163,6 +165,12 @@ float Grid::get_scale() const{
 }
 void Grid::set_scale(float scale){
     m_scale = scale;
+    auto offset_buffer = gen_instance_offset_data(9, (m_side_len -1 ) * m_scale);
+    m_instance_count = offset_buffer.size();
+
+    ::glBindBuffer(GL_ARRAY_BUFFER, m_offset);
+    ::glBufferData(GL_ARRAY_BUFFER, sizeof (decltype(offset_buffer)::value_type) * offset_buffer.size(), offset_buffer.data(), GL_STATIC_DRAW);
+    ::glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 glm::vec3 Grid::get_rotation() const{
     return m_rotation;
@@ -175,17 +183,17 @@ void Grid::forward_render(glm::vec3 camera_pos) {
     m_shader.use_shader();
     auto model = glm::mat4(1);
 
-    const auto half_len = m_side_len / 2.0;
+    const auto half_len = (m_side_len * m_scale) / 2.0;
 
     auto grid_pos = glm::vec2(
                 static_cast<int>(camera_pos.x / half_len) * half_len,
                 static_cast<int>(camera_pos.z / half_len) * half_len
             );
 
+    model = glm::scale(model, glm::vec3(m_scale, 1.0, m_scale));
     model = glm::translate(model, glm::vec3(grid_pos.x, 0.0, grid_pos.y));
     m_shader.set_mat4("model", model);
     ::glBindVertexArray(m_vao);
-    std::printf("m_instance_count %d\n", m_instance_count);
     // ::glDrawElements(GL_LINES, m_i_count, GL_UNSIGNED_INT, NULL);
     ::glDrawElementsInstanced(GL_LINES, m_i_count, GL_UNSIGNED_INT, NULL, m_instance_count);
     ::glBindVertexArray(0);

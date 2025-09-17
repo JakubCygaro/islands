@@ -12,6 +12,10 @@ layout(std140, binding = 0) uniform Matrices {
 };
 
 void main(){
-    gl_Position = projection * view * model * vec4(pos.x + offset.y, pos.y, pos.z + offset.x, 1.0);
+    vec4 world_pos = model * vec4(pos, 1.0);
+    world_pos.x += offset.x;
+    world_pos.z += offset.y;
+    // world_pos.y = 0.0;
+    gl_Position = projection * view * world_pos;
     // gl_Position = projection * view * model * vec4(pos, 1.0);
 }

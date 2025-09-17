@@ -142,6 +142,8 @@ void Game::initialize()
 
     m_grid = std::make_shared<Grid>(Grid(9));
 
+    m_grid->set_scale(10.0);
+
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
     add_planet(c_body);
