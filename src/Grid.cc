@@ -167,7 +167,7 @@ float Grid::get_scale() const{
 }
 void Grid::set_scale(float scale){
     m_scale = scale;
-    auto offset_buffer = gen_instance_offset_data(9, (m_side_len -1 ) * m_scale);
+    auto offset_buffer = gen_instance_offset_data(9, m_side_len - 1);
     m_instance_count = offset_buffer.size();
 
     ::glBindBuffer(GL_ARRAY_BUFFER, m_offset);
@@ -190,15 +190,15 @@ void Grid::forward_render(glm::vec3 camera_pos) {
     m_shader.use_shader();
     auto model = glm::mat4(1);
 
-    const auto half_len = (m_side_len * m_scale) / 2.0;
+    const auto half_len = (m_side_len * m_scale);// / 2.0;
 
     auto grid_pos = glm::vec2(
                 static_cast<int>(camera_pos.x / half_len) * half_len,
                 static_cast<int>(camera_pos.z / half_len) * half_len
             );
 
-    model = glm::scale(model, glm::vec3(m_scale, 1.0, m_scale));
     model = glm::translate(model, glm::vec3(grid_pos.x, 0.0, grid_pos.y));
+    model = glm::scale(model, glm::vec3(m_scale, 1.0, m_scale));
     m_shader.set_mat4("model", model);
     m_shader.set_vec4("color", m_color);
     ::glBindVertexArray(m_vao);

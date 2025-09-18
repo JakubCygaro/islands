@@ -26,7 +26,7 @@ struct GameOptionsMenu {
     float fov { 70.0 };
     bool draw_grid { true };
     float grid_scale { 30.0 };
-    glm::vec4 grid_color { 1.0, 1.0, 1.0, 0.07 };
+    glm::vec4 grid_color { 1.0, 1.0, 1.0, 0.025 };
     struct Resolution {
         int32_t width{}, height{};
         std::string str{};
