@@ -1,5 +1,6 @@
 # TODO LIST
 
+- fix bug with lighting suddenly switching off (attenuation related?)
 - add trails to objects
 - planet predicted path
 - planet label 3d text
