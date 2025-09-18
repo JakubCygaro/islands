@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(islands VERSION 0.3.1.0)
+project(islands VERSION 0.3.2.0)
 
 set(FREETYPE_ROOT_PATHS "" CACHE FILEPATH "Where to search for the freetype library install directory")
 
@@ -56,6 +56,8 @@ set(SHADERS
     ${SHADERS_DIR}/selected.frag
     ${SHADERS_DIR}/internal.vert
     ${SHADERS_DIR}/internal.frag
+    ${SHADERS_DIR}/grid.vert
+    ${SHADERS_DIR}/grid.frag
 )
 
 add_custom_command(
@@ -99,6 +101,7 @@ add_executable(islands
     src/Star.cc
     src/Star_ctors.cc
     src/Gui.cc
+    src/Grid.cc
     src/KeyBind.cc
     src/Font.cc
     src/Font_ctors.cc

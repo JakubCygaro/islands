@@ -122,24 +122,18 @@ void Game::initialize()
     };
     glfwSetWindowRefreshCallback(m_window_ptr, window_refresh_callback);
 
-    // tell GLFW to capture our mouse
-    /*glfwSetInputMode(m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);*/
-
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){
-        throw std::runtime_error("Failed to complete the internal framebuffer");
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, m_width, m_height);
 
     initialize_uniforms();
     m_gbuffer = Gbuffer{ this->m_width, this->m_height };
 
+    m_grid = std::make_shared<Grid>(Grid(9));
+
+    m_grid->set_scale(m_gui.game_options_menu.grid_scale);
+    m_grid->set_color(m_gui.game_options_menu.grid_color);
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
@@ -225,19 +219,10 @@ void Game::initialize_uniforms(){
         sizeof(LightingGlobalsUBO),
         &m_ubos.lighting_globals, GL_STATIC_DRAW);
 
-    // glBufferSubData(GL_UNIFORM_BUFFER,
-    //     0,
-    //     sizeof(LightingGlobalsUBO::ambient_strength),
-    //     &m_ubos.lighting_globals.ambient_strength);
-
     glBufferSubData(GL_UNIFORM_BUFFER,
         sizeof(LightingGlobalsUBO::__ambient_s_pad),
         sizeof(LightingGlobalsUBO::camera_pos),
         m_camera.get_pos_ptr());
-
-    // glBindBufferBase(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.mount_point, m_ubos.lighting_globals.id);
-    // glGenBuffers(1, &m_ssbos.light_sources.id);
-    // glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.mount_point, m_ssbos.light_sources.id);
 }
 void Game::run()
 {
@@ -479,8 +464,13 @@ void Game::render()
     for (auto& c_obj : m_bodies) {
         c_obj->forward_render(normals_draw, wireframe_draw);
     }
+    if(m_gui.game_options_menu.draw_grid){
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        m_grid->forward_render(m_camera.get_pos());
+        glDisable(GL_BLEND);
+    }
 
-    glEnable(GL_BLEND);
     render_2d();
 }
 void Game::render_2d() {
@@ -537,6 +527,14 @@ void Game::draw_gui()
         {
             auto& selected = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
             glfwSetWindowSize(m_window_ptr, selected.width, selected.height);
+        }
+        ImGui::Checkbox("Draw grid", &m_gui.game_options_menu.draw_grid);
+        ImGui::SameLine();
+        if(ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)){
+            m_grid->set_scale(m_gui.game_options_menu.grid_scale);
+        };
+        if(ImGui::SliderFloat4("Grid color", glm::value_ptr(m_gui.game_options_menu.grid_color), 0.0, 1.0)){
+            m_grid->set_color(m_gui.game_options_menu.grid_color);
         }
         ImGui::End();
     }

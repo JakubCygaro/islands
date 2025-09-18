@@ -25,6 +25,7 @@ public:
     static Shader from_shader_dir(const std::string& name);
     void use_shader() const;
     void set_vec3(const char* uniform_name, const glm::vec3& v);
+    void set_vec4(const char* uniform_name, const glm::vec4& v);
     void set_mat4(const char* uniform_name, glm::mat4 m);
     void set_mat3(const char* uniform_name, glm::mat3 m);
     void set_int(const char* uniform_name, int i);

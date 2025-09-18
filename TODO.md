@@ -1,8 +1,7 @@
 # TODO LIST
 
-- FRAMEBUFFER SIZE CHANGE HANDLING FOR G BUFFER - maybe just draw everything to 1080x1920 and then scale for the final viewport?
+- fix bug with lighting suddenly switching off (attenuation related?)
 - add trails to objects
-- grid
 - planet predicted path
 - planet label 3d text
 - skybox
