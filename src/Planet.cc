@@ -1,8 +1,8 @@
 #include <Object.hpp>
 
 namespace obj {
-    void Planet::forward_render(bool render_normals, bool render_wireframe){
-        CelestialBody::forward_render(render_normals, render_wireframe);
+    void Planet::forward_render(bool render_normals, bool render_wireframe, bool dt){
+        CelestialBody::forward_render(render_normals, render_wireframe, dt);
         if(!render_wireframe && !render_normals) return;
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);

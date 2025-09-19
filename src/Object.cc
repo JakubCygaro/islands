@@ -13,7 +13,7 @@ namespace obj {
         sh->set_mat4("model", model);
         m_sphere->draw();
     }
-    void CelestialBody::forward_render(bool, bool){
+    void CelestialBody::forward_render(bool, bool, bool render_trails){
         if(m_selected){
             auto model = glm::mat4(1.0);
             model = glm::translate(model, m_pos);
@@ -24,9 +24,15 @@ namespace obj {
             s_sh->set_float(name_of(radius), m_radius);
             MoveVectorVAO::get_instance().draw();
         }
+        if(render_trails)
+            m_trail.forward_render();
+    }
+    void CelestialBody::fixed_update(){
+        m_trail.push_point(m_pos);
     }
     void CelestialBody::update(double& delta_t){
         m_speed += m_acceleration;
+        m_acceleration = glm::vec3(0);
         auto tmp_speed = m_speed;
         tmp_speed *= delta_t;
         m_pos += tmp_speed;
@@ -45,6 +51,12 @@ namespace obj {
     }
     void CelestialBody::set_color(glm::vec3 color){
         m_color = color;
+    }
+    glm::vec3 CelestialBody::get_trail_color() const {
+        return m_trail.get_color();
+    }
+    void CelestialBody::set_trail_color(glm::vec3 color) {
+        m_trail.set_color(color);
     }
     void UnitSphere::draw() const {
         glBindVertexArray(m_vao);

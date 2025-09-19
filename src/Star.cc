@@ -2,8 +2,8 @@
 #include <cstddef>
 
 namespace obj {
-    void Star::forward_render(bool render_normals, bool rw) {
-        CelestialBody::forward_render(render_normals, rw);
+    void Star::forward_render(bool render_normals, bool rw, bool dt) {
+        CelestialBody::forward_render(render_normals, rw, dt);
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);
         model = glm::scale(model, glm::vec3(1) * m_radius);

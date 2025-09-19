@@ -58,6 +58,8 @@ set(SHADERS
     ${SHADERS_DIR}/internal.frag
     ${SHADERS_DIR}/grid.vert
     ${SHADERS_DIR}/grid.frag
+    ${SHADERS_DIR}/trail.vert
+    ${SHADERS_DIR}/trail.frag
 )
 
 add_custom_command(
@@ -100,6 +102,8 @@ add_executable(islands
     src/Planet_ctors.cc
     src/Star.cc
     src/Star_ctors.cc
+    src/Trail.cc
+    src/Trail_ctors.cc
     src/Gui.cc
     src/Grid.cc
     src/KeyBind.cc

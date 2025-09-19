@@ -25,6 +25,7 @@ struct GameOptionsMenu {
     float camera_speed {};
     float fov { 70.0 };
     bool draw_grid { true };
+    bool draw_trails { true };
     float grid_scale { 30.0 };
     glm::vec4 grid_color { 1.0, 1.0, 1.0, 0.025 };
     struct Resolution {
@@ -66,6 +67,7 @@ struct SelectedBodyMenu {
     float mass;
     glm::vec3 velocity;
     float speed;
+    glm::vec3 trail_color;
 };
 struct GameUI {
     inline static const glm::vec3 EDIT_MODE_TEXT_COLOR = { .0, .7, .0 };
@@ -86,6 +88,7 @@ struct GameUI {
     font::Text2D mode{};
     font::Text2D paused{};
     font::Text2D game_version{};
+    font::Text2D fps_count{};
     GameUI();
 };
 }
