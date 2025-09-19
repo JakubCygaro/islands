@@ -181,6 +181,11 @@ void Game::initialize()
     m_gui.game_version.set_color({ 1.0, 1.0, 1.0 });
     m_gui.game_version.set_scale(.5f);
     m_gui.game_version.set_pos({ m_width - m_gui.game_version.get_text_width(), m_height - m_gui.game_version.get_text_height() });
+
+    m_gui.fps_count = font::Text2D(font, font_shader, "0");
+    m_gui.fps_count.set_color({ 1.0, 1.0, 1.0 });
+    m_gui.fps_count.set_scale(.5f);
+    m_gui.fps_count.set_pos({ m_width - m_gui.game_version.get_text_width(), m_gui.game_version.get_text_height() });
 }
 void Game::initialize_uniforms(){
     m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
@@ -228,8 +233,20 @@ void Game::run()
 {
     while (!glfwWindowShouldClose(m_window_ptr)) {
         m_current_frame_t = glfwGetTime();
+        m_fps++;
         m_delta_t = m_current_frame_t - m_last_frame_t;
+        // a fixed update happens every 0.2 second
+        if(m_current_frame_t - m_last_fixed_update_t >= 0.2){
+            m_last_fixed_update_t = m_current_frame_t;
+            m_fixed_update = true;
+        }
+        if(m_current_frame_t - m_last_fps_update_t >= 1.0){
+            m_last_fps_update_t = m_current_frame_t;
+            m_gui.fps_count.set_text(std::to_string(m_fps));
+            m_fps = 0;
+        }
         m_last_frame_t = m_current_frame_t;
+
         update_buffers();
         update();
         render();
@@ -238,6 +255,7 @@ void Game::run()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glEnable(GL_FRAMEBUFFER_SRGB);
         glfwSwapBuffers(m_window_ptr);
+        m_fixed_update = false;
     }
 }
 void Game::update()
@@ -338,10 +356,12 @@ void Game::update_bodies()
             auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (distance * distance)) * r_21_hat;
             auto f_12 = -f_21;
 
-            b_1->set_speed(b_1->get_speed() + f_12);
-            b_2->set_speed(b_2->get_speed() + f_21);
+            b_1->set_acceleration(b_1->get_acceleration() + f_12);
+            b_2->set_acceleration(b_2->get_acceleration() + f_21);
         }
         m_bodies[body]->update(m_delta_t);
+        if(m_fixed_update)
+            m_bodies[body]->fixed_update();
     }
     for (auto [ptr, idx] : to_delete){
         remove_body(ptr.get());
@@ -461,15 +481,15 @@ void Game::render()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     for (auto& c_obj : m_bodies) {
-        c_obj->forward_render(normals_draw, wireframe_draw);
+        c_obj->forward_render(normals_draw, wireframe_draw, m_gui.game_options_menu.draw_trails);
     }
     if(m_gui.game_options_menu.draw_grid){
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         m_grid->forward_render(m_camera.get_pos());
-        glDisable(GL_BLEND);
     }
+    glDisable(GL_BLEND);
 
     render_2d();
 }
@@ -485,6 +505,7 @@ void Game::render_2d() {
         m_gui.paused.draw();
     }
     m_gui.game_version.draw();
+    m_gui.fps_count.draw();
 #ifdef DEBUG
     if(m_gui.debug_menu.draw_wireframe){
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -529,6 +550,7 @@ void Game::draw_gui()
             glfwSetWindowSize(m_window_ptr, selected.width, selected.height);
         }
         ImGui::Checkbox("Draw grid", &m_gui.game_options_menu.draw_grid);
+        ImGui::Checkbox("Draw trails", &m_gui.game_options_menu.draw_trails);
         ImGui::SameLine();
         if(ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)){
             m_grid->set_scale(m_gui.game_options_menu.grid_scale);
@@ -570,6 +592,9 @@ void Game::draw_gui()
             m_gui.selected_body.lock()->set_speed(
                     glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
             m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
+        }
+        if(ImGui::SliderFloat3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color), 0.0, 1.0)){
+            m_gui.selected_body.lock()->set_trail_color(m_gui.selected_body_menu.trail_color);
         }
         if(ImGui::Button("Deselect")){
             m_gui.selected_body.lock()->set_selected(false);
@@ -767,6 +792,7 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
                 m_gui.selected_body_menu.color = obj->get_color();
                 m_gui.selected_body_menu.velocity = obj->get_speed();
                 m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
+                m_gui.selected_body_menu.trail_color = obj->get_trail_color();
             }
         }
     }

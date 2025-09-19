@@ -18,6 +18,8 @@ namespace obj{
         if (!m_normals_shader){
             m_normals_shader = get_normals_shader_instance();
         }
+        m_trail = Trail(CelestialBody::DEFAULT_TRAIL_POINT_N);
+        m_trail.fill(m_pos);
     }
 
     // copy constructor
@@ -26,8 +28,12 @@ namespace obj{
           m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius},
           m_color(other.m_color),
           m_normals_shader(other.m_normals_shader),
-          m_selected(other.m_selected)
-    {}
+          m_selected(other.m_selected),
+          m_trail(Trail(CelestialBody::DEFAULT_TRAIL_POINT_N))
+    {
+        m_trail.fill(m_pos);
+    }
+
     // copy assign
     CelestialBody &CelestialBody::operator=(const CelestialBody &other) {
       m_pos = other.m_pos;
@@ -39,6 +45,8 @@ namespace obj{
       m_color = other.m_color;
       m_normals_shader = other.m_normals_shader;
       m_selected = other.m_selected;
+      m_trail = Trail(CelestialBody::DEFAULT_TRAIL_POINT_N);
+      m_trail.fill(m_pos);
       return *this;
     }
     //move constructor
@@ -47,11 +55,13 @@ namespace obj{
           m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius},
           m_color(other.m_color),
           m_normals_shader(other.m_normals_shader),
-          m_selected(other.m_selected)
+          m_selected(other.m_selected),
+          m_trail(std::move(other.m_trail))
     {
       other.m_sphere = nullptr;
       other.m_normals_shader = nullptr;
       other.m_selected = false;
+      other.m_trail = Trail();
     }
     // move assign
     CelestialBody &CelestialBody::operator=(CelestialBody &&other) {
@@ -64,9 +74,11 @@ namespace obj{
       m_color = other.m_color;
       m_normals_shader = other.m_normals_shader;
       m_selected = other.m_selected;
+      m_trail = std::move(other.m_trail);
       other.m_selected = false;
       other.m_sphere = nullptr;
       other.m_normals_shader = nullptr;
+      other.m_trail = Trail();
       return *this;
     }
     CelestialBody::~CelestialBody() {}

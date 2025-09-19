@@ -214,6 +214,11 @@ private:
 
     std::shared_ptr<Grid> m_grid = nullptr;
 
+    int32_t m_fps{};
+    double m_last_fixed_update_t {};
+    double m_last_fps_update_t {};
+    bool m_fixed_update = false;
+
 private:
     void initialize();
     void initialize_uniforms();

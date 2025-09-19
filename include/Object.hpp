@@ -25,6 +25,53 @@
 #include <shader_files.hpp>
 #endif
 namespace obj {
+
+class Trail {
+private:
+    inline static std::shared_ptr<Shader> s_shader_instance = nullptr;
+    inline static std::shared_ptr<Shader> shader_instance(){
+        if(s_shader_instance){
+            return s_shader_instance;
+        } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            s_shader_instance = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::TRAIL_VERT),
+                        std::string(files::src::shaders::TRAIL_FRAG)
+                        ));
+#else
+            s_shader_instance = std::make_shared<Shader>(Shader(
+                        shaders::TRAIL_VERT,
+                        shaders::TRAIL_FRAG
+                        ));
+#endif
+            return s_shader_instance;
+        }
+    }
+
+    uint32_t m_vao{}, m_vbo{}, m_ebo{};
+    std::size_t m_size{};
+    std::vector<glm::vec3> m_data{};
+    glm::vec3 m_color{1.0};
+
+public:
+    Trail();
+    Trail(uint32_t points);
+    Trail(const Trail&) = delete;
+    Trail& operator=(const Trail&) = delete;
+    Trail(Trail&&);
+    Trail& operator=(Trail&&);
+    ~Trail();
+
+    void push_point(glm::vec3 point);
+    void fill(glm::vec3 point);
+    void forward_render();
+
+    glm::vec3 get_color() const;
+    void set_color(glm::vec3);
+};
+
+
 // Wrapper around a sphere mesh stored in the GPU
 class UnitSphere {
 private:
@@ -71,6 +118,8 @@ protected:
     float m_mass {};
     float m_radius {};
     glm::vec3 m_color;
+    Trail m_trail{};
+    inline static constexpr uint32_t DEFAULT_TRAIL_POINT_N = 36;
 
 private:
     inline static std::shared_ptr<Shader> s_normals_shader = nullptr;
@@ -194,7 +243,8 @@ public:
     CelestialBody& operator=(CelestialBody&&);
     virtual ~CelestialBody();
     virtual void update(double& delta_t);
-    virtual void forward_render(bool render_normals = false, bool render_wireframe = false);
+    virtual void fixed_update();
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false, bool render_trails = true);
     virtual void deferred_render() = 0;
     virtual void shadow_render();
     virtual float get_mass() const;
@@ -202,6 +252,8 @@ public:
     virtual float get_radius() const;
     virtual glm::vec3 get_color() const;
     virtual void set_color(glm::vec3 color);
+    virtual glm::vec3 get_trail_color() const;
+    virtual void set_trail_color(glm::vec3 color);
 };
 
 class Planet : public CelestialBody {
@@ -258,7 +310,7 @@ public:
     Planet& operator=(Planet&&);
     virtual ~Planet();
 public:
-    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) override;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false, bool render_trails = false) override;
     virtual void deferred_render() override;
     virtual void set_mass(float) override;
 };
@@ -326,7 +378,7 @@ public:
     Star& operator=(Star&&);
     virtual ~Star();
 public:
-    virtual void forward_render(bool render_normals = false, bool render_wireframe = false) override;
+    virtual void forward_render(bool render_normals = false, bool render_wireframe = false, bool render_trails = false) override;
     virtual void deferred_render() override;
     virtual void update(double& delta_t) override;
     virtual void set_mass(float) override;
