@@ -42,7 +42,8 @@ for key, value in files.items():
     vars: str = ''
     for path in value:
         base_path = os.path.basename(path)
-        name = os.fsdecode(base_path.upper()).replace("/", "_").replace(".", "_")
+        name = os.fsdecode(base_path.upper()).replace(
+            "\\", "/").replace("/", "_").replace(".", "_")
 
         with open(path) as sh:
             shader_contents = ''

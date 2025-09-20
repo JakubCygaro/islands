@@ -44,7 +44,8 @@ source: list[str] = []
 for key, value in files.items():
     vars: str = ''
     for path in value:
-        name = os.fsdecode(path.upper()).replace("/", "_").replace(".", "_")
+        name = os.fsdecode(path.upper()).replace(
+            "\\", "/").replace("/", "_").replace(".", "_")
         variable_def = """
             inline constexpr const char* {var_name} = "{var_value}";
         """.format(var_name=name, var_value=os.path.join(os.fsdecode(key),
