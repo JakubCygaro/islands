@@ -30,7 +30,8 @@ def get_paths(dir):
             if entry.is_file():
                 if dir not in files:
                     files[dir] = []
-                deps.append(os.fsdecode(entry.path))
+                deps.append(os.fsdecode(entry.path).replace(
+            "\\", "/"))
                 files[dir].append(os.path.basename(entry.path))
             elif entry.is_dir():
                 get_paths(os.fsencode(entry.path))
@@ -48,13 +49,16 @@ for key, value in files.items():
             "\\", "/").replace("/", "_").replace(".", "_")
         variable_def = """
             inline constexpr const char* {var_name} = "{var_value}";
-        """.format(var_name=name, var_value=os.path.join(os.fsdecode(key),
-                                                         os.fsdecode(path)))
+        """.format(var_name=name, var_value=os.path.join(os.fsdecode(key).replace(
+            "\\", "/"),
+            os.fsdecode(path).replace(
+            "\\", "/")))
         vars = vars + variable_def
         # print(vars)
 
     base = os.path.relpath(key, cwd)
-    ns = os.fsdecode(base).replace("/", "::")
+    ns = os.fsdecode(base).replace(
+        "\\", "/").replace("/", "::")
     namespace = """
         namespace {ns} {{
             {variable_def}
