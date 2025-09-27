@@ -44,35 +44,35 @@ namespace {
     };
     // step through one frame of gravity simulation
     void gravity_step(std::vector<Gravdata>& gravdata, double delta_t, const gui::CancelationToken& cancel){
-        // for(auto i = 0; i < 60; i++) {
-        // }
-        for (size_t body = 0; body < gravdata.size() && !cancel.is_cancelled(); body++) {
-            for (size_t next_body = body + 1; next_body < gravdata.size() && !cancel.is_cancelled(); next_body++) {
-                auto& b_1 = gravdata[body];
-                auto& b_2 = gravdata[next_body];
+        for(auto i = 0; i < 5 && !cancel.is_cancelled(); i++) {
+            for (size_t body = 0; body < gravdata.size() && !cancel.is_cancelled(); body++) {
+                for (size_t next_body = body + 1; next_body < gravdata.size() && !cancel.is_cancelled(); next_body++) {
+                    auto& b_1 = gravdata[body];
+                    auto& b_2 = gravdata[next_body];
 
-                // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
-                auto m_1 = b_1.mass * obj::CelestialBody::MASS_BOOST_FACTOR;
-                auto m_2 = b_2.mass * obj::CelestialBody::MASS_BOOST_FACTOR;;
+                    // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
+                    auto m_1 = b_1.mass * obj::CelestialBody::MASS_BOOST_FACTOR;
+                    auto m_2 = b_2.mass * obj::CelestialBody::MASS_BOOST_FACTOR;;
 
-                auto r_21 = b_2.pos - b_1.pos;
-                auto r_21_hat = glm::normalize(r_21);
-                auto distance = glm::distance(b_1.pos, b_2.pos);
-                // attraction force
-                auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (distance * distance)) * r_21_hat;
-                auto f_12 = -f_21;
+                    auto r_21 = b_2.pos - b_1.pos;
+                    auto r_21_hat = glm::normalize(r_21);
+                    auto distance = glm::distance(b_1.pos, b_2.pos);
+                    // attraction force
+                    auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (distance * distance)) * r_21_hat;
+                    auto f_12 = -f_21;
 
-                b_1.acc += f_12;
-                b_2.acc += f_21;
+                    b_1.acc += f_12;
+                    b_2.acc += f_21;
+                }
             }
-        }
-        for(auto& b : gravdata){
-            if(cancel.is_cancelled()) break;
-            b.vel += b.acc;
-            b.acc = glm::vec3(0);
-            auto tmp_speed = b.vel;
-            tmp_speed *= delta_t;
-            b.pos += b.vel;
+            for(auto& b : gravdata){
+                if(cancel.is_cancelled()) break;
+                b.vel += b.acc;
+                b.acc = glm::vec3(0);
+                auto tmp_speed = b.vel;
+                tmp_speed *= delta_t;
+                b.pos += tmp_speed;
+            }
         }
     }
 }
@@ -230,7 +230,7 @@ void Game::initialize()
     m_gui.fps_count.set_scale(.5f);
     m_gui.fps_count.set_pos({ m_width - m_gui.game_version.get_text_width(), m_gui.game_version.get_text_height() });
 
-    m_gui.selected_body_menu.trail = obj::Trail(256);
+    m_gui.selected_body_menu.trail = obj::Trail(1024);
     m_gui.selected_body_menu.trail_data.resize(m_gui.selected_body_menu.trail.size());
 }
 void Game::initialize_uniforms(){
@@ -342,9 +342,9 @@ void Game::update()
     auto status = m_gui.selected_body_menu.trail_status.load();
     if(status == gui::TrailCompStatus::Finished){
         m_gui.selected_body_menu.trail.copy_from_vector(m_gui.selected_body_menu.trail_data);
-        for(auto v : m_gui.selected_body_menu.trail_data){
-            std::cout << glm::to_string(v) << std::endl;
-        }
+        // for(auto v : m_gui.selected_body_menu.trail_data){
+        //     // std::cout << glm::to_string(v) << std::endl;
+        // }
         m_gui.selected_body_menu.trail_status.store(gui::TrailCompStatus::Idle);
     }
     if(status == gui::TrailCompStatus::Terminated){
@@ -895,6 +895,7 @@ void Game::schedule_selected_body_trajectory_calc(){
                 auto& cancel = m_gui.selected_body_menu.calc_cancellation;
                 m_gui.selected_body_menu.trail_status.store(gui::TrailCompStatus::Running);
                 auto clock = std::chrono::steady_clock{};
+                auto dt = m_delta_t;
                 auto last_frame_t = clock.now();
                 auto gravd = std::move(gd);
                 auto& res = m_gui.selected_body_menu.trail_data;
@@ -903,7 +904,7 @@ void Game::schedule_selected_body_trajectory_calc(){
                     auto current_frame_t = clock.now();
                     std::chrono::duration<double> delta_t = current_frame_t - last_frame_t;
                     m_last_frame_t = m_current_frame_t;
-                    gravity_step(gravd, delta_t.count(), cancel);
+                    gravity_step(gravd, dt, cancel);
                     res[i] = gravd[s_idx].pos;
                 }
                 if(cancel.is_cancelled()){
