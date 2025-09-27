@@ -37,6 +37,13 @@ namespace obj {
         tmp_speed *= delta_t;
         m_pos += tmp_speed;
     }
+    void CelestialBody::set_pos(glm::vec3 pos){
+        m_pos = pos;
+        m_trail.fill(m_pos);
+    }
+    glm::vec3 CelestialBody::get_pos() const{
+        return m_pos;
+    }
     float CelestialBody::get_mass() const {
         return m_mass;
     }

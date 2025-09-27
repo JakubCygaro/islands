@@ -1,4 +1,5 @@
 #include "Font.hpp"
+#include <chrono>
 #include <cstring>
 #include <files.hpp>
 #include "Object.hpp"
@@ -19,6 +20,7 @@
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <optional>
+#include <thread>
 #include <tuple>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
@@ -27,10 +29,51 @@
 
 namespace {
     const float GRAV_CONST = 6.674e-11;
+    const float PROJECTION_FAR_PLANE = 500.0f;
     Game* get_game_instance_ptr_from_window(GLFWwindow* window)
     {
         Game* instance = static_cast<Game*>(glfwGetWindowUserPointer(window));
         return instance;
+    }
+    //for path prediction
+    struct Gravdata {
+        float mass{};
+        glm::vec3 pos{};
+        glm::vec3 vel{};
+        glm::vec3 acc{};
+    };
+    // step through one frame of gravity simulation
+    void gravity_step(std::vector<Gravdata>& gravdata, double delta_t, const gui::CancelationToken& cancel){
+        // for(auto i = 0; i < 60; i++) {
+        // }
+        for (size_t body = 0; body < gravdata.size() && !cancel.is_cancelled(); body++) {
+            for (size_t next_body = body + 1; next_body < gravdata.size() && !cancel.is_cancelled(); next_body++) {
+                auto& b_1 = gravdata[body];
+                auto& b_2 = gravdata[next_body];
+
+                // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
+                auto m_1 = b_1.mass * obj::CelestialBody::MASS_BOOST_FACTOR;
+                auto m_2 = b_2.mass * obj::CelestialBody::MASS_BOOST_FACTOR;;
+
+                auto r_21 = b_2.pos - b_1.pos;
+                auto r_21_hat = glm::normalize(r_21);
+                auto distance = glm::distance(b_1.pos, b_2.pos);
+                // attraction force
+                auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (distance * distance)) * r_21_hat;
+                auto f_12 = -f_21;
+
+                b_1.acc += f_12;
+                b_2.acc += f_21;
+            }
+        }
+        for(auto& b : gravdata){
+            if(cancel.is_cancelled()) break;
+            b.vel += b.acc;
+            b.acc = glm::vec3(0);
+            auto tmp_speed = b.vel;
+            tmp_speed *= delta_t;
+            b.pos += b.vel;
+        }
     }
 }
 
@@ -186,10 +229,13 @@ void Game::initialize()
     m_gui.fps_count.set_color({ 1.0, 1.0, 1.0 });
     m_gui.fps_count.set_scale(.5f);
     m_gui.fps_count.set_pos({ m_width - m_gui.game_version.get_text_width(), m_gui.game_version.get_text_height() });
+
+    m_gui.selected_body_menu.trail = obj::Trail(256);
+    m_gui.selected_body_menu.trail_data.resize(m_gui.selected_body_menu.trail.size());
 }
 void Game::initialize_uniforms(){
     m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
-        (float)m_width / (float)m_height, 0.1f, 1000.0f);
+        (float)m_width / (float)m_height, 0.1f, PROJECTION_FAR_PLANE);
 
     m_ubos.matrices.text_projection = glm::ortho(
             0.0f,
@@ -293,7 +339,17 @@ void Game::update()
         break;
     }
 
-
+    auto status = m_gui.selected_body_menu.trail_status.load();
+    if(status == gui::TrailCompStatus::Finished){
+        m_gui.selected_body_menu.trail.copy_from_vector(m_gui.selected_body_menu.trail_data);
+        for(auto v : m_gui.selected_body_menu.trail_data){
+            std::cout << glm::to_string(v) << std::endl;
+        }
+        m_gui.selected_body_menu.trail_status.store(gui::TrailCompStatus::Idle);
+    }
+    if(status == gui::TrailCompStatus::Terminated){
+        schedule_selected_body_trajectory_calc();
+    }
 }
 void Game::update_buffers() {
 
@@ -489,6 +545,9 @@ void Game::render()
     if(m_gui.game_options_menu.draw_grid){
         m_grid->forward_render(m_camera.get_pos());
     }
+    if(m_paused && m_gui.selected_body_menu.trail_status.load() == gui::TrailCompStatus::Idle && !m_gui.selected_body.expired()){
+        m_gui.selected_body_menu.trail.forward_render();
+    }
     glDisable(GL_BLEND);
 
     render_2d();
@@ -538,7 +597,7 @@ void Game::draw_gui()
         if (ImGui::SliderFloat("Camera FOV", &m_gui.game_options_menu.fov, 30, 120, NULL, ImGuiSliderFlags_AlwaysClamp)) {
             m_fov = m_gui.game_options_menu.fov;
             m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
-                (float)m_width / (float)m_height, 0.1f, 1000.0f);
+                (float)m_width / (float)m_height, 0.1f, PROJECTION_FAR_PLANE);
         }
         if(ImGui::Combo("Resolutions",
                 &m_gui.game_options_menu.current,
@@ -593,8 +652,12 @@ void Game::draw_gui()
                     glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
             m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
         }
-        if(ImGui::SliderFloat3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color), 0.0, 1.0)){
+        if(ImGui::ColorEdit3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color))){
             m_gui.selected_body.lock()->set_trail_color(m_gui.selected_body_menu.trail_color);
+        }
+        m_gui.selected_body_menu.position = m_gui.selected_body.lock()->get_pos();
+        if(ImGui::InputFloat3("Object position", glm::value_ptr(m_gui.selected_body_menu.position))){
+            m_gui.selected_body.lock()->set_pos(m_gui.selected_body_menu.position);
         }
         if(ImGui::Button("Deselect")){
             m_gui.selected_body.lock()->set_selected(false);
@@ -695,7 +758,7 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
     m_ubos.matrices.text_projection = glm::ortho(0.0f, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 0.0f, 100.0f);
 
     m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
-        (float)m_width / (float)m_height, 0.1f, 1000.0f);
+        (float)m_width / (float)m_height, 0.1f, PROJECTION_FAR_PLANE);
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     //projection
@@ -793,8 +856,64 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
                 m_gui.selected_body_menu.velocity = obj->get_speed();
                 m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
                 m_gui.selected_body_menu.trail_color = obj->get_trail_color();
+                schedule_selected_body_trajectory_calc();
             }
         }
+    }
+}
+void Game::schedule_selected_body_trajectory_calc(){
+    auto status = static_cast<gui::TrailCompStatus>(m_gui.selected_body_menu.trail_status.load());
+    if(status == gui::TrailCompStatus::Running){
+        m_gui.selected_body_menu.calc_cancellation.cancel();
+        // m_gui.selected_body_menu.trail_status.wait(gui::TrailCompStatus::Running);
+        // status = static_cast<gui::TrailCompStatus>(m_gui.selected_body_menu.trail_status.load());
+    }
+    if(status == gui::TrailCompStatus::Terminated){
+        m_gui.selected_body_menu.trail_status.store(gui::TrailCompStatus::Idle);
+        m_gui.selected_body_menu.calc_cancellation = gui::CancelationToken();
+    }
+    if(status == gui::TrailCompStatus::Finished){
+        m_gui.selected_body_menu.trail_status.store(gui::TrailCompStatus::Idle);
+        status = static_cast<gui::TrailCompStatus>(m_gui.selected_body_menu.trail_status.load());
+    }
+    // collect bodies into gravdata and schedule the simulation
+    if(status == gui::TrailCompStatus::Idle){
+        auto gravdata = std::vector<Gravdata>(m_bodies.size());
+        auto selected = m_gui.selected_body.lock().get();
+        size_t selected_idx{};
+        for(size_t i = 0; i < m_bodies.size(); i++){
+            gravdata[i] = Gravdata {
+                .mass = m_bodies[i]->get_mass(),
+                .pos = m_bodies[i]->get_pos(),
+                .vel = m_bodies[i]->get_speed(),
+                .acc = m_bodies[i]->get_acceleration(),
+            };
+            selected_idx = m_bodies[i].get() == selected ? i : selected_idx;
+        }
+
+        std::thread([this](std::vector<Gravdata> gd, size_t s_idx){
+                auto& cancel = m_gui.selected_body_menu.calc_cancellation;
+                m_gui.selected_body_menu.trail_status.store(gui::TrailCompStatus::Running);
+                auto clock = std::chrono::steady_clock{};
+                auto last_frame_t = clock.now();
+                auto gravd = std::move(gd);
+                auto& res = m_gui.selected_body_menu.trail_data;
+                const auto sz = res.size();
+                for(size_t i = 0; i < sz && !cancel.is_cancelled(); i++){
+                    auto current_frame_t = clock.now();
+                    std::chrono::duration<double> delta_t = current_frame_t - last_frame_t;
+                    m_last_frame_t = m_current_frame_t;
+                    gravity_step(gravd, delta_t.count(), cancel);
+                    res[i] = gravd[s_idx].pos;
+                }
+                if(cancel.is_cancelled()){
+                    m_gui.selected_body_menu.trail_status.store(gui::TrailCompStatus::Terminated);
+                } else {
+                    m_gui.selected_body_menu.trail_status.store(gui::TrailCompStatus::Finished);
+                }
+
+            },
+            std::move(gravdata), selected_idx).detach();
     }
 }
 void Game::initialize_key_bindings() {
@@ -820,12 +939,15 @@ void Game::initialize_key_bindings() {
     // // [P]ause the game
     m_keybinds.add_binding(GLFW_KEY_P, GLFW_PRESS, BindMode::Any, [this](){
         this->m_paused = !this->m_paused;
+        if(m_paused && !m_gui.selected_body.expired()){
+            schedule_selected_body_trajectory_calc();
+        }
     }, "Pause the simulation");
     // // [F]ullscreen
     m_keybinds.add_binding(GLFW_KEY_F, GLFW_PRESS, BindMode::Any, [this](){
         int maximized = glfwGetWindowAttrib(m_window_ptr, GLFW_MAXIMIZED);
         this->m_maximize = maximized ? MaximizeState::Minimize : MaximizeState::Maximize;
-    }, "Fullscreen (ON LINUX HAS TO BE PRESSED TWICE, I'VE GOT NO IDEA WHY)");
+    }, "Fullscreen");
     // // Shift + S -> spawn object
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this](){
         auto front = this->m_camera.get_front();

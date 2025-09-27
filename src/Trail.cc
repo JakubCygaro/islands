@@ -32,4 +32,25 @@ namespace obj{
     void Trail::set_color(glm::vec3 color){
         m_color = color;
     }
+    void Trail::copy_from_vector(const std::vector<glm::vec3>& vec){
+        m_size = vec.size();
+        ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+        ::glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * m_size, vec.data(), GL_STATIC_DRAW);
+
+        ::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+
+        std::vector<uint32_t> ebo_data;
+
+        for(size_t i = 0; i < m_size - 1; i++){
+            ebo_data.push_back(i);
+            ebo_data.push_back(i + 1);
+        }
+
+        ::glBufferData(GL_ELEMENT_ARRAY_BUFFER, ebo_data.size() * sizeof(uint32_t), ebo_data.data(), GL_STATIC_DRAW);
+    }
+
+    std::size_t Trail::size() const {
+        return m_size;
+    };
 }

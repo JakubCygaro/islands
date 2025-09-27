@@ -66,6 +66,9 @@ public:
     void push_point(glm::vec3 point);
     void fill(glm::vec3 point);
     void forward_render();
+    void copy_from_vector(const std::vector<glm::vec3>&);
+
+    std::size_t size() const;
 
     glm::vec3 get_color() const;
     void set_color(glm::vec3);
@@ -108,7 +111,7 @@ public:
 
 class CelestialBody {
 protected:
-    PROTECTED_PROPERTY(glm::vec3, pos)
+    glm::vec3 m_pos{};
     PROTECTED_PROPERTY(glm::vec3, speed)
     PROTECTED_PROPERTY(glm::vec3, acceleration)
     PROTECTED_PROPERTY(bool, selected)
@@ -247,6 +250,8 @@ public:
     virtual void forward_render(bool render_normals = false, bool render_wireframe = false, bool render_trails = true);
     virtual void deferred_render() = 0;
     virtual void shadow_render();
+    virtual glm::vec3 get_pos() const;
+    virtual void set_pos(glm::vec3 pos);
     virtual float get_mass() const;
     virtual void set_mass(float m);
     virtual float get_radius() const;
