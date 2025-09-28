@@ -52,7 +52,7 @@ private:
     uint32_t m_vao{}, m_vbo{}, m_ebo{};
     std::size_t m_size{};
     std::vector<glm::vec3> m_data{};
-    glm::vec3 m_color{1.0};
+    glm::vec4 m_color{1.0};
 
 public:
     Trail();
@@ -70,8 +70,8 @@ public:
 
     std::size_t size() const;
 
-    glm::vec3 get_color() const;
-    void set_color(glm::vec3);
+    glm::vec4 get_color() const;
+    void set_color(glm::vec4);
 };
 
 
@@ -232,8 +232,8 @@ protected:
         }
     };
 public:
-    // one unit of mass in the simulation is equal to 1 kg
-    inline static const float MASS_BOOST_FACTOR = 1e3;
+    // one unit of mass in the simulation is equal to 10 kg
+    inline static const float MASS_BOOST_FACTOR = 1e4;
     CelestialBody();
     CelestialBody(std::shared_ptr<UnitSphere> sphere = nullptr,
         glm::vec3 pos = glm::vec3(0),
@@ -257,8 +257,8 @@ public:
     virtual float get_radius() const;
     virtual glm::vec3 get_color() const;
     virtual void set_color(glm::vec3 color);
-    virtual glm::vec3 get_trail_color() const;
-    virtual void set_trail_color(glm::vec3 color);
+    virtual glm::vec4 get_trail_color() const;
+    virtual void set_trail_color(glm::vec4 color);
 };
 
 class Planet : public CelestialBody {

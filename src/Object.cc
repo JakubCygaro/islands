@@ -58,11 +58,12 @@ namespace obj {
     }
     void CelestialBody::set_color(glm::vec3 color){
         m_color = color;
+        m_trail.set_color({m_color, 0.5});
     }
-    glm::vec3 CelestialBody::get_trail_color() const {
+    glm::vec4 CelestialBody::get_trail_color() const {
         return m_trail.get_color();
     }
-    void CelestialBody::set_trail_color(glm::vec3 color) {
+    void CelestialBody::set_trail_color(glm::vec4 color) {
         m_trail.set_color(color);
     }
     void UnitSphere::draw() const {

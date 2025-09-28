@@ -54,7 +54,7 @@ namespace obj {
         m_light_source_radius = calc_light_source_radius(m_attenuation_linear, m_attenuation_quadratic, m_color);
     }
     void Star::set_color(glm::vec3 color) {
-        m_color = color;
+        CelestialBody::set_color(color);
         m_light_source_radius = calc_light_source_radius(m_attenuation_linear, m_attenuation_quadratic, m_color);
     }
     float Star::get_attenuation_linear() const {

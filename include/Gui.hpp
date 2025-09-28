@@ -102,11 +102,12 @@ struct SelectedBodyMenu {
     float mass;
     glm::vec3 velocity;
     float speed;
-    glm::vec3 trail_color;
+    glm::vec4 trail_color;
     glm::vec3 position;
-    obj::Trail trail;
-    std::atomic<TrailCompStatus> trail_status { TrailCompStatus::Idle };
-    std::vector<glm::vec3> trail_data {};
+    glm::vec4 trajectory_color;
+    obj::Trail trajectory_trail;
+    std::atomic<TrailCompStatus> trajectory_status { TrailCompStatus::Idle };
+    std::vector<glm::vec3> trajectory_data {};
     CancelationToken calc_cancellation {};
 };
 struct GameUI {
