@@ -1,5 +1,6 @@
 #include "Font.hpp"
 #include "Object.hpp"
+#include <atomic>
 #include <cstdint>
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
@@ -10,16 +11,46 @@
 #define DEFAULT_RESOLUTION 5
 
 namespace gui {
+
+enum class TrailCompStatus : int {
+    Idle,
+    Running,
+    Finished,
+    Terminated
+};
+class CancelationToken {
+    std::atomic<bool> m_is_cancelled = false;
+
+public:
+    inline CancelationToken() { }
+    inline CancelationToken(CancelationToken&& other)
+        : m_is_cancelled(other.m_is_cancelled.load())
+    {
+    }
+    inline CancelationToken& operator=(CancelationToken&& other)
+    {
+        m_is_cancelled.store(other.m_is_cancelled.load());
+        return *this;
+    }
+    inline void cancel()
+    {
+        m_is_cancelled.store(true);
+    }
+    inline bool is_cancelled() const
+    {
+        return m_is_cancelled.load();
+    }
+};
 struct DebugMenu {
-    bool do_face_culling {true};
-    bool draw_wireframe {false};
-    bool draw_normals {false};
+    bool do_face_culling { true };
+    bool draw_wireframe { false };
+    bool draw_normals { false };
 };
 struct SpawnMenu {
     float mass {};
     float initial_velocity {};
     glm::vec3 color { glm::vec3(0.5, 0.5, 0.5) };
-    bool is_star {false};
+    bool is_star { false };
 };
 struct GameOptionsMenu {
     float camera_speed {};
@@ -29,9 +60,12 @@ struct GameOptionsMenu {
     float grid_scale { 30.0 };
     glm::vec4 grid_color { 1.0, 1.0, 1.0, 0.025 };
     struct Resolution {
-        int32_t width{}, height{};
-        std::string str{};
-        inline Resolution( uint32_t w, uint32_t h ) : width(w), height(h) {
+        int32_t width {}, height {};
+        std::string str {};
+        inline Resolution(uint32_t w, uint32_t h)
+            : width(w)
+            , height(h)
+        {
             std::stringstream ss;
             ss << w << 'x' << h;
             str = ss.str();
@@ -54,27 +88,34 @@ struct GameOptionsMenu {
         { 1920, 1080 },
         { 1920, 1200 },
     };
-    inline static const char* get_resolution(void* data, int idx){
+    inline static const char* get_resolution(void* data, int idx)
+    {
         (void)data;
         return resolutions[idx].str.c_str();
     }
 };
 struct HelpMenu {
-    std::string help_text{};
+    std::string help_text {};
 };
 struct SelectedBodyMenu {
     glm::vec3 color;
     float mass;
     glm::vec3 velocity;
     float speed;
-    glm::vec3 trail_color;
+    glm::vec4 trail_color;
+    glm::vec3 position;
+    glm::vec4 trajectory_color;
+    obj::Trail trajectory_trail;
+    std::atomic<TrailCompStatus> trajectory_status { TrailCompStatus::Idle };
+    std::vector<glm::vec3> trajectory_data {};
+    CancelationToken calc_cancellation {};
 };
 struct GameUI {
     inline static const glm::vec3 EDIT_MODE_TEXT_COLOR = { .0, .7, .0 };
     inline static const glm::vec3 NORMAL_MODE_TEXT_COLOR = { .0, .5, .8 };
 
     std::weak_ptr<obj::CelestialBody> selected_body {};
-    SelectedBodyMenu selected_body_menu{};
+    SelectedBodyMenu selected_body_menu {};
     bool spawn_menu_enabled { false };
     SpawnMenu spawn_menu {};
     bool game_options_menu_enabled { false };
@@ -85,10 +126,10 @@ struct GameUI {
     bool debug_menu_enabled { false };
     DebugMenu debug_menu {};
 #endif
-    font::Text2D mode{};
-    font::Text2D paused{};
-    font::Text2D game_version{};
-    font::Text2D fps_count{};
+    font::Text2D mode {};
+    font::Text2D paused {};
+    font::Text2D game_version {};
+    font::Text2D fps_count {};
     GameUI();
 };
 }

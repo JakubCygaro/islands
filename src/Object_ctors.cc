@@ -24,11 +24,16 @@ namespace obj{
 
     // copy constructor
     CelestialBody::CelestialBody(const CelestialBody &other)
-        : m_pos{other.m_pos}, m_sphere{other.m_sphere},
-          m_speed{other.m_speed}, m_acceleration{other.m_acceleration}, m_mass{other.m_mass}, m_radius{other.m_radius},
-          m_color(other.m_color),
-          m_normals_shader(other.m_normals_shader),
+        :
+            m_pos{other.m_pos},
+          m_speed{other.m_speed},
+          m_acceleration{other.m_acceleration},
           m_selected(other.m_selected),
+          m_sphere{other.m_sphere},
+          m_normals_shader(other.m_normals_shader),
+          m_mass{other.m_mass},
+          m_radius{other.m_radius},
+          m_color(other.m_color),
           m_trail(Trail(CelestialBody::DEFAULT_TRAIL_POINT_N))
     {
         m_trail.fill(m_pos);

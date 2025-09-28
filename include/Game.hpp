@@ -250,6 +250,7 @@ private:
     void remove_star(obj::Star* star);
     void collect_light_sources();
     void buffer_light_data();
+    void schedule_selected_body_trajectory_calc();
 public:
     ~Game();
     Game();

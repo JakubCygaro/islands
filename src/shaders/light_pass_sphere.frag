@@ -34,6 +34,9 @@ vec3 sample_offset_directions[20] = vec3[]
 float calculate_shadow(vec3 frag_pos, vec3 normal, vec3 light_dir){
     vec3 frag_to_light = frag_pos - light_source_pos;
     float current_depth = length(frag_to_light);
+    //in case we are too far from the lightsource
+    if(current_depth > far_plane)
+        return 0.0;
     int samples = 20;
     float bias = max(0.05 * (1.0 - dot(normal, light_dir)), 0.005);
     float view_distance = length(camera_pos - frag_pos);

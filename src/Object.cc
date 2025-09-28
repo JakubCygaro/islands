@@ -37,6 +37,13 @@ namespace obj {
         tmp_speed *= delta_t;
         m_pos += tmp_speed;
     }
+    void CelestialBody::set_pos(glm::vec3 pos){
+        m_pos = pos;
+        m_trail.fill(m_pos);
+    }
+    glm::vec3 CelestialBody::get_pos() const{
+        return m_pos;
+    }
     float CelestialBody::get_mass() const {
         return m_mass;
     }
@@ -51,11 +58,12 @@ namespace obj {
     }
     void CelestialBody::set_color(glm::vec3 color){
         m_color = color;
+        m_trail.set_color({m_color, 0.5});
     }
-    glm::vec3 CelestialBody::get_trail_color() const {
+    glm::vec4 CelestialBody::get_trail_color() const {
         return m_trail.get_color();
     }
-    void CelestialBody::set_trail_color(glm::vec3 color) {
+    void CelestialBody::set_trail_color(glm::vec4 color) {
         m_trail.set_color(color);
     }
     void UnitSphere::draw() const {
