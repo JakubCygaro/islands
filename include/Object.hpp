@@ -162,7 +162,7 @@ protected:
 #else
             s_shadow_map_shader = std::make_shared<Shader>(Shader(
                         shaders::SHADOW_MAP_VERT,
-                        shaders::SHADOW_MAP_FRAG
+                        shaders::SHADOW_MAP_FRAG,
                         shaders::SHADOW_MAP_GEOM));
 #endif
             return s_shadow_map_shader;
@@ -186,7 +186,7 @@ protected:
 #else
             s_selected_shader = std::make_shared<Shader>(Shader(
                         shaders::SELECTED_VERT,
-                        shaders::SELECTED_FRAG
+                        shaders::SELECTED_FRAG,
                         shaders::SELECTED_GEOM));
 #endif
             return s_selected_shader;
@@ -272,7 +272,7 @@ private:
             s_planet_shader_deferred = std::make_shared<Shader>(Shader(std::string(files::src::shaders::PLANET_VERT),
                         std::string(files::src::shaders::PLANET_FRAG)));
 #else
-            s_planet_shader = std::make_shared<Shader>(Shader(shaders::PLANET_VERT, shaders::PLANET_FRAG));
+            s_planet_shader_deferred = std::make_shared<Shader>(Shader(shaders::PLANET_VERT, shaders::PLANET_FRAG));
 #endif
             return s_planet_shader_deferred;
         }
@@ -294,7 +294,7 @@ private:
                         std::string(files::src::shaders::PLANET_FORWARD_VERT),
                         std::string(files::src::shaders::PLANET_FORWARD_FRAG)));
 #else
-            s_planet_shader = std::make_shared<Shader>(Shader(
+            s_planet_shader_forward  = std::make_shared<Shader>(Shader(
                         shaders::PLANET_FORWARD_VERT,
                         shaders::PLANET_FORWARD_FRAG));
 #endif

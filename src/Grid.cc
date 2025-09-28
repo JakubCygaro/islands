@@ -6,6 +6,7 @@
 #endif
 #include <utility>
 #include <vector>
+#include <shaders.hpp>
 
 namespace {
     std::vector<glm::vec2> gen_instance_offset_data(int32_t additional_segments, float offset = 1.0) {
