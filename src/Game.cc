@@ -19,6 +19,7 @@
 #include <glm/ext/vector_float4.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <numeric>
 #include <optional>
 #include <thread>
 #include <tuple>
@@ -293,6 +294,11 @@ void Game::run()
         m_current_frame_t = glfwGetTime();
         m_fps++;
         m_delta_t = m_current_frame_t - m_last_frame_t;
+
+        if(m_delta_t_record.size() >= DELTA_T_MEAN_SAMPLE_SIZE){
+            m_delta_t_record.pop_front();
+        }
+        m_delta_t_record.push_back(m_delta_t);
         // a fixed update happens every 0.2 second
         if(m_current_frame_t - m_last_fixed_update_t >= 0.2){
             m_last_fixed_update_t = m_current_frame_t;
@@ -912,11 +918,13 @@ void Game::schedule_selected_body_trajectory_calc(){
             selected_idx = m_bodies[i].get() == selected ? i : selected_idx;
         }
 
-        std::thread([this](std::vector<Gravdata> gd, size_t s_idx){
+        auto mean_delta_t = std::accumulate(m_delta_t_record.begin(), m_delta_t_record.end(), 0.0) / m_delta_t_record.size();
+
+        std::thread([this](std::vector<Gravdata> gd, size_t s_idx, double mean_dt){
                 auto& cancel = m_gui.selected_body_menu.calc_cancellation;
                 m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Running);
                 auto clock = std::chrono::steady_clock{};
-                auto dt = m_delta_t;
+                auto dt = mean_dt;
                 auto last_frame_t = clock.now();
                 auto gravd = std::move(gd);
                 auto& res = m_gui.selected_body_menu.trajectory_data;
@@ -937,7 +945,7 @@ void Game::schedule_selected_body_trajectory_calc(){
                 }
 
             },
-            std::move(gravdata), selected_idx).detach();
+            std::move(gravdata), selected_idx, mean_delta_t).detach();
     }
 }
 void Game::initialize_key_bindings() {

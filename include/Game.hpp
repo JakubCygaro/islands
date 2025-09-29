@@ -1,5 +1,6 @@
 #ifndef GAME_HPP
 #define GAME_HPP
+#include <deque>
 #include <string>
 #include <vector>
 #include "Grid.hpp"
@@ -182,6 +183,7 @@ public:
 
 class Game final {
 private:
+    inline static const int DELTA_T_MEAN_SAMPLE_SIZE = 60;
     enum struct MaximizeState {
         Maximize,
         Minimize,
@@ -218,6 +220,8 @@ private:
     double m_last_fixed_update_t {};
     double m_last_fps_update_t {};
     bool m_fixed_update = false;
+
+    std::deque<double> m_delta_t_record{};
 
 private:
     void initialize();
