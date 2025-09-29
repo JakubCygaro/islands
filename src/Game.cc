@@ -330,6 +330,14 @@ void Game::update()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     continuos_key_input();
+
+    auto selected_pos_before_update = glm::vec3(0);
+    auto selected_pos_after_update = glm::vec3(0);
+    if(!m_gui.selected_body.expired() && m_gui.selected_body_menu.track)
+    {
+        auto selected = m_gui.selected_body.lock();
+        selected_pos_before_update = selected->get_pos();
+    }
     if (m_gui_enabled){
         draw_gui();
     }
@@ -360,13 +368,17 @@ void Game::update()
     auto status = m_gui.selected_body_menu.trajectory_status.load();
     if(status == gui::TrailCompStatus::Finished){
         m_gui.selected_body_menu.trajectory_trail.copy_from_vector(m_gui.selected_body_menu.trajectory_data);
-        // for(auto v : m_gui.selected_body_menu.trail_data){
-        //     // std::cout << glm::to_string(v) << std::endl;
-        // }
         m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Idle);
     }
     if(status == gui::TrailCompStatus::Terminated){
         schedule_selected_body_trajectory_calc();
+    }
+
+    if(!m_gui.selected_body.expired() && m_gui.selected_body_menu.track)
+    {
+        auto selected = m_gui.selected_body.lock();
+        selected_pos_after_update = selected->get_pos() - selected_pos_before_update;
+        m_camera.set_pos(m_camera.get_pos() + selected_pos_after_update);
     }
 }
 void Game::update_buffers() {
@@ -684,6 +696,9 @@ void Game::draw_gui()
             m_gui.selected_body.lock()->set_pos(m_gui.selected_body_menu.position);
             schedule_selected_body_trajectory_calc();
         }
+        if(ImGui::Checkbox("Track", &m_gui.selected_body_menu.track)){
+
+        }
         if(ImGui::Button("Deselect")){
             m_gui.selected_body.lock()->set_selected(false);
             m_gui.selected_body.reset();
@@ -871,20 +886,24 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
             }
             if (distance < smallest_distance.value_or(1000) && distance >= 0){
                 smallest_distance = distance;
-                if(!m_gui.selected_body.expired()){
-                    m_gui.selected_body.lock()->set_selected(false);
-                }
-                obj->set_selected(true);
-                m_gui.selected_body = obj;
-                m_gui.selected_body_menu.mass = obj->get_mass();
-                m_gui.selected_body_menu.color = obj->get_color();
-                m_gui.selected_body_menu.velocity = obj->get_speed();
-                m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
-                m_gui.selected_body_menu.trail_color = obj->get_trail_color();
-                schedule_selected_body_trajectory_calc();
+                on_body_selected(obj);
             }
         }
     }
+}
+void Game::on_body_selected(std::shared_ptr<obj::CelestialBody> obj){
+    if(!m_gui.selected_body.expired()){
+        m_gui.selected_body.lock()->set_selected(false);
+    }
+    obj->set_selected(true);
+    m_gui.selected_body = obj;
+    m_gui.selected_body_menu.mass = obj->get_mass();
+    m_gui.selected_body_menu.color = obj->get_color();
+    m_gui.selected_body_menu.velocity = obj->get_speed();
+    m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
+    m_gui.selected_body_menu.trail_color = obj->get_trail_color();
+    m_gui.selected_body_menu.track = false;
+    schedule_selected_body_trajectory_calc();
 }
 void Game::schedule_selected_body_trajectory_calc(){
     auto status = static_cast<gui::TrailCompStatus>(m_gui.selected_body_menu.trajectory_status.load());

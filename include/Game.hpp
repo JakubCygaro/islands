@@ -255,6 +255,7 @@ private:
     void collect_light_sources();
     void buffer_light_data();
     void schedule_selected_body_trajectory_calc();
+    void on_body_selected(std::shared_ptr<obj::CelestialBody> body);
 public:
     ~Game();
     Game();

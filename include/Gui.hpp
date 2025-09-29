@@ -98,10 +98,11 @@ struct HelpMenu {
     std::string help_text {};
 };
 struct SelectedBodyMenu {
-    glm::vec3 color;
-    float mass;
-    glm::vec3 velocity;
-    float speed;
+    bool track{false};
+    glm::vec3 color{};
+    float mass{};
+    glm::vec3 velocity{};
+    float speed{};
     glm::vec4 trail_color;
     glm::vec3 position;
     glm::vec4 trajectory_color;

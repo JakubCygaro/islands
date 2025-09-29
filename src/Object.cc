@@ -23,6 +23,8 @@ namespace obj {
             s_sh->set_vec3("move_vector", m_speed);
             s_sh->set_float(name_of(radius), m_radius);
             MoveVectorVAO::get_instance().draw();
+
+            SelectedMarker::instance().forward_render(m_pos, m_radius);
         }
         if(render_trails)
             m_trail.forward_render();

@@ -26,6 +26,56 @@
 #endif
 namespace obj {
 
+class SelectedMarker {
+    inline static std::shared_ptr<Shader> s_shader_instance = nullptr;
+    inline static std::shared_ptr<Shader> shader_instance(){
+        if(s_shader_instance){
+            return s_shader_instance;
+        } else {
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            s_shader_instance = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::MARKER_VERT),
+                        std::string(files::src::shaders::MARKER_FRAG)
+                        ));
+#else
+            s_shader_instance = std::make_shared<Shader>(Shader(
+                        shaders::MARKER_VERT,
+                        shaders::MARKER_FRAG
+                        ));
+#endif
+            return s_shader_instance;
+        }
+    }
+
+    struct VAO {
+        uint32_t id{}, vbo{}, ebo{};
+    private:
+        VAO();
+        ~VAO();
+        VAO(const VAO&) = delete;
+        VAO& operator=(const VAO&) = delete;
+
+    public:
+        static inline VAO& instance(){
+            static VAO instance;
+            return instance;
+        }
+    };
+private:
+    SelectedMarker();
+    // SelectedMarker(SelectedMarker&&);
+    // SelectedMarker& operator=(SelectedMarker&&);
+    SelectedMarker(const SelectedMarker&) = delete;
+    SelectedMarker& operator=(const SelectedMarker&) = delete;
+public:
+    inline static SelectedMarker& instance(){
+        static SelectedMarker instance;
+        return instance;
+    }
+    void forward_render(glm::vec3 pos, float radius) const;
+};
+
 class Trail {
 private:
     inline static std::shared_ptr<Shader> s_shader_instance = nullptr;

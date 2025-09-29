@@ -1,6 +1,6 @@
 # TODO LIST
 
-- planet predicted path
+- selected planet marker
 - planet label 3d text
 - skybox
 - custom textures for planets
