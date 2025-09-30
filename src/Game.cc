@@ -620,12 +620,13 @@ void Game::draw_gui()
         draw_game_options_gui();
     if (m_gui.help_menu_enabled)
         draw_help_menu_gui();
+    if (m_gui.bodies_list_enabled)
+        draw_body_list_gui();
     if (!m_gui.selected_body.expired())
         draw_selected_body_gui();
 #ifdef DEBUG
     if (m_gui.debug_menu_enabled)
         draw_debug_menu_gui();
-
 #endif
 }
 void Game::draw_game_options_gui() {
@@ -668,6 +669,9 @@ void Game::draw_spawn_menu_gui() {
     if (m_gui.spawn_menu.mass <= 0)
         m_gui.spawn_menu.mass = 0.001;
     ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
+    static char buf[128] = "";
+    m_typing = ImGui::InputText("Name:", buf, IM_ARRAYSIZE(buf));
+    std::cout << "typing: " << m_typing << std::endl;
     ImGui::Checkbox("Star", &m_gui.spawn_menu.is_star);
     ImGui::End();
 }
@@ -762,6 +766,29 @@ void Game::draw_selected_body_gui() {
         m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
     }
 }
+void Game::draw_body_list_gui() {
+    ImGui::Begin("Celestial bodies list", &m_gui.bodies_list_enabled);
+
+    ImGui::BeginListBox("Celestial bodies");
+
+    for(size_t i = 0; i < m_bodies.size(); i++){
+        auto body = m_bodies[i];
+        auto& name = body->get_name();
+        ImGui::PushID(i);
+        if(ImGui::Selectable(name.c_str())){
+            on_body_selected(body);
+        }
+        ImGui::PopID();
+    }
+    ImGui::EndListBox();
+    if(ImGui::Button("DELETE ALL")){
+        m_bodies.clear();
+        collect_light_sources();
+        buffer_light_data();
+    }
+
+    ImGui::End();
+}
 void Game::add_planet(obj::Planet new_planet){
     auto planet = std::make_shared<obj::Planet>(new_planet);
     m_bodies.push_back(planet);
@@ -796,8 +823,10 @@ void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, in
 {
     (void)window;
     (void)scancode;
-    m_keybinds.handle(key, action, m_gui_enabled ? BindMode::Editor : BindMode::Normal, mods);
-    m_keybinds.handle(key, action, BindMode::Any, mods);
+    if(!m_typing){
+        m_keybinds.handle(key, action, m_gui_enabled ? BindMode::Editor : BindMode::Normal, mods);
+        m_keybinds.handle(key, action, BindMode::Any, mods);
+    }
 }
 
 void Game::continuos_key_input()
@@ -1055,9 +1084,14 @@ void Game::initialize_key_bindings() {
         this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled;
     }, "Open spawn menu");
     m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Editor, [this](){
-        this->m_gui.selected_body.lock()->set_selected(false);
-        this->m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
+        if(!m_gui.selected_body.expired()){
+            this->m_gui.selected_body.lock()->set_selected(false);
+            this->m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
+        }
     }, "Deselect currently selected body");
+    m_keybinds.add_binding(GLFW_KEY_L, GLFW_PRESS, BindMode::Editor, [this](){
+        this->m_gui.bodies_list_enabled = !this->m_gui.bodies_list_enabled;
+    }, "Open celestial bodies list");
     // Simulation mode specific keybinds
 }
 void Game::window_refresh_handler(GLFWwindow* window){

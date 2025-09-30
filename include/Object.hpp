@@ -165,6 +165,7 @@ protected:
     PROTECTED_PROPERTY(glm::vec3, speed)
     PROTECTED_PROPERTY(glm::vec3, acceleration)
     PROTECTED_PROPERTY(bool, selected)
+    std::string m_name{"Unnamed"};
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
     std::shared_ptr<Shader> m_normals_shader = nullptr;
@@ -309,6 +310,8 @@ public:
     virtual void set_color(glm::vec3 color);
     virtual glm::vec4 get_trail_color() const;
     virtual void set_trail_color(glm::vec4 color);
+    virtual void set_name(std::string&& name);
+    virtual const std::string& get_name() const;
 };
 
 class Planet : public CelestialBody {

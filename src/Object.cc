@@ -67,6 +67,12 @@ namespace obj {
     void CelestialBody::set_trail_color(glm::vec4 color) {
         m_trail.set_color(color);
     }
+    void CelestialBody::set_name(std::string&& name) {
+        m_name = name;
+    }
+    const std::string& CelestialBody::get_name() const {
+        return m_name;
+    }
     void UnitSphere::draw() const {
         glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);

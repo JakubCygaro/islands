@@ -124,6 +124,7 @@ struct GameUI {
     GameOptionsMenu game_options_menu {};
     bool help_menu_enabled { false };
     HelpMenu help_menu {};
+    bool bodies_list_enabled { false };
 #ifdef DEBUG
     bool debug_menu_enabled { false };
     DebugMenu debug_menu {};

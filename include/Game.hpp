@@ -220,6 +220,7 @@ private:
     double m_last_fixed_update_t {};
     double m_last_fps_update_t {};
     bool m_fixed_update = false;
+    bool m_typing = false;
 
     std::deque<double> m_delta_t_record{};
 
@@ -244,6 +245,7 @@ private:
     void draw_spawn_menu_gui();
     void draw_help_menu_gui();
     void draw_debug_menu_gui();
+    void draw_body_list_gui();
     void render_2d();
 
     void key_handler(GLFWwindow* window, int key, int scancode, int action,
