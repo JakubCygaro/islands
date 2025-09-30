@@ -1,6 +1,6 @@
 # TODO LIST
 
-- selected planet marker
+- list of all celestial bodies
 - planet label 3d text
 - skybox
 - custom textures for planets

@@ -49,7 +49,7 @@ class SelectedMarker {
     }
 
     struct VAO {
-        uint32_t id{}, vbo{}, ebo{};
+        uint32_t id{}, vbo{};
     private:
         VAO();
         ~VAO();

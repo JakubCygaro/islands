@@ -580,7 +580,7 @@ void Game::render()
     if(m_paused && m_gui.selected_body_menu.trajectory_status.load() == gui::TrailCompStatus::Idle && !m_gui.selected_body.expired()){
         m_gui.selected_body_menu.trajectory_trail.forward_render();
     }
-    if(!m_gui.selected_body.expired()){
+    if(!m_gui.selected_body.expired() && m_gui.game_options_menu.draw_selection_marker){
         auto slc = m_gui.selected_body.lock();
         obj::SelectedMarker::instance().forward_render(m_camera.get_pos(), slc->get_pos(), slc->get_radius());
     }
@@ -614,136 +614,153 @@ void Game::render_2d() {
 }
 void Game::draw_gui()
 {
-    if (m_gui.spawn_menu_enabled) {
-        ImGui::Begin("Spawn menu", &m_gui.spawn_menu_enabled);
-        ImGui::ColorEdit3("Color", glm::value_ptr(m_gui.spawn_menu.color));
-        ImGui::SliderFloat("Mass", &m_gui.spawn_menu.mass, 0.001, 100, NULL, 0);
-        if (m_gui.spawn_menu.mass <= 0)
-            m_gui.spawn_menu.mass = 0.001;
-        ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
-        ImGui::Checkbox("Star", &m_gui.spawn_menu.is_star);
-        ImGui::End();
-    }
+    if (m_gui.spawn_menu_enabled)
+        draw_spawn_menu_gui();
+    if (m_gui.game_options_menu_enabled)
+        draw_game_options_gui();
+    if (m_gui.help_menu_enabled)
+        draw_help_menu_gui();
+    if (!m_gui.selected_body.expired())
+        draw_selected_body_gui();
+#ifdef DEBUG
+    if (m_gui.debug_menu_enabled)
+        draw_debug_menu_gui();
 
-    if (m_gui.game_options_menu_enabled) {
-        ImGui::Begin("Game Options", &m_gui.game_options_menu_enabled, 0);
-        if (ImGui::SliderFloat("Camera speed", &m_gui.game_options_menu.camera_speed, 0, 100, NULL, ImGuiSliderFlags_AlwaysClamp)) {
-            m_camera.set_speed(m_gui.game_options_menu.camera_speed);
-        }
-        if (ImGui::SliderFloat("Camera FOV", &m_gui.game_options_menu.fov, 30, 120, NULL, ImGuiSliderFlags_AlwaysClamp)) {
-            m_fov = m_gui.game_options_menu.fov;
-            m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
+#endif
+}
+void Game::draw_game_options_gui() {
+    ImGui::Begin("Game Options", &m_gui.game_options_menu_enabled, 0);
+    if (ImGui::SliderFloat("Camera speed", &m_gui.game_options_menu.camera_speed, 0, 100, NULL, ImGuiSliderFlags_AlwaysClamp)) {
+        m_camera.set_speed(m_gui.game_options_menu.camera_speed);
+    }
+    if (ImGui::SliderFloat("Camera FOV", &m_gui.game_options_menu.fov, 30, 120, NULL, ImGuiSliderFlags_AlwaysClamp)) {
+        m_fov = m_gui.game_options_menu.fov;
+        m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
                 (float)m_width / (float)m_height, 0.1f, PROJECTION_FAR_PLANE);
-        }
-        if(ImGui::Combo("Resolutions",
+    }
+    if(ImGui::Combo("Resolutions",
                 &m_gui.game_options_menu.current,
                 &m_gui.game_options_menu.get_resolution,
                 nullptr,
                 m_gui.game_options_menu.resolutions.size()))
-        {
-            auto& selected = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
-            glfwSetWindowSize(m_window_ptr, selected.width, selected.height);
-        }
-        ImGui::Checkbox("Draw grid", &m_gui.game_options_menu.draw_grid);
-        ImGui::Checkbox("Draw trails", &m_gui.game_options_menu.draw_trails);
-        ImGui::SameLine();
-        if(ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)){
-            m_grid->set_scale(m_gui.game_options_menu.grid_scale);
-        };
-        if(ImGui::SliderFloat4("Grid color", glm::value_ptr(m_gui.game_options_menu.grid_color), 0.0, 1.0)){
-            m_grid->set_color(m_gui.game_options_menu.grid_color);
-        }
-        if(ImGui::ColorEdit3("Predicted trajectory color", glm::value_ptr(m_gui.selected_body_menu.trajectory_color))){
-            m_gui.selected_body_menu.trajectory_trail.set_color(m_gui.selected_body_menu.trajectory_color);
-        }
-        ImGui::End();
+    {
+        auto& selected = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
+        glfwSetWindowSize(m_window_ptr, selected.width, selected.height);
     }
-    if (m_gui.help_menu_enabled) {
-        ImGui::Begin("Help", &m_gui.help_menu_enabled);
-        ImGui::Text("Hello! Islands is a simple 3D gravity simulation.\n");
-        ImGui::Text("%s", m_gui.help_menu.help_text.c_str());
-        ImGui::End();
+    ImGui::Checkbox("Draw grid", &m_gui.game_options_menu.draw_grid);
+    ImGui::Checkbox("Draw trails", &m_gui.game_options_menu.draw_trails);
+    ImGui::Checkbox("Draw selection marker", &m_gui.game_options_menu.draw_selection_marker);
+    if(ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)){
+        m_grid->set_scale(m_gui.game_options_menu.grid_scale);
+    };
+    if(ImGui::SliderFloat4("Grid color", glm::value_ptr(m_gui.game_options_menu.grid_color), 0.0, 1.0)){
+        m_grid->set_color(m_gui.game_options_menu.grid_color);
     }
-    if (!m_gui.selected_body.expired()){
-        bool discarded = true;
-        auto star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
-        ImGui::Begin("Selected Celestial Body", &discarded);
-        if(ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))){
-            m_gui.selected_body.lock()->set_color(m_gui.selected_body_menu.color);
-            if(star){
-                collect_light_sources();
-            }
+    if(ImGui::ColorEdit3("Predicted trajectory color", glm::value_ptr(m_gui.selected_body_menu.trajectory_color))){
+        m_gui.selected_body_menu.trajectory_trail.set_color(m_gui.selected_body_menu.trajectory_color);
+    }
+    ImGui::End();
+}
+void Game::draw_spawn_menu_gui() {
+    ImGui::Begin("Spawn menu", &m_gui.spawn_menu_enabled);
+    ImGui::ColorEdit3("Color", glm::value_ptr(m_gui.spawn_menu.color));
+    ImGui::SliderFloat("Mass", &m_gui.spawn_menu.mass, 0.001, 100, NULL, 0);
+    if (m_gui.spawn_menu.mass <= 0)
+        m_gui.spawn_menu.mass = 0.001;
+    ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
+    ImGui::Checkbox("Star", &m_gui.spawn_menu.is_star);
+    ImGui::End();
+}
+void Game::draw_help_menu_gui() {
+    ImGui::Begin("Help", &m_gui.help_menu_enabled);
+    ImGui::Text("Hello! Islands is a simple 3D gravity simulation.\n");
+    ImGui::Text("%s", m_gui.help_menu.help_text.c_str());
+    ImGui::End();
+}
+void Game::draw_debug_menu_gui() {
+    ImGui::Begin("Debug menu", &m_gui.debug_menu_enabled);
+    if(ImGui::Checkbox("Do face culling", &m_gui.debug_menu.do_face_culling)) {
+        if(m_gui.debug_menu.do_face_culling){
+            glEnable(GL_CULL_FACE);
+        } else {
+            glDisable(GL_CULL_FACE);
         }
-        if(ImGui::SliderFloat("Object mass", &m_gui.selected_body_menu.mass, 0.001, 1000)) {
-            if (m_gui.selected_body_menu.mass <= 0)
-                m_gui.selected_body_menu.mass = 0.001;
-            m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
-            schedule_selected_body_trajectory_calc();
-            if(star){
-                collect_light_sources();
-            }
+    }
+    if(ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.draw_wireframe)) {
+        if(m_gui.debug_menu.draw_wireframe){
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        } else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
-        if(ImGui::SliderFloat3("Object velocity vector components", glm::value_ptr(m_gui.selected_body_menu.velocity), -50, 50)){
-            m_gui.selected_body.lock()->set_speed(m_gui.selected_body_menu.velocity);
-            m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
-            schedule_selected_body_trajectory_calc();
+    }
+    if(ImGui::Checkbox("Draw normals", &m_gui.debug_menu.draw_normals)) {}
+    ImGui::End();
+}
+void Game::draw_selected_body_gui() {
+    bool discarded = true;
+    auto star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
+    ImGui::Begin("Selected Celestial Body", &discarded);
+    if(ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))){
+        m_gui.selected_body.lock()->set_color(m_gui.selected_body_menu.color);
+        if(star){
+            collect_light_sources();
         }
-        if(ImGui::SliderFloat("Object speed", &m_gui.selected_body_menu.speed, 0, 50)){
-            m_gui.selected_body.lock()->set_speed(
-                    glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
-            m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
-            schedule_selected_body_trajectory_calc();
+    }
+    if(ImGui::SliderFloat("Object mass", &m_gui.selected_body_menu.mass, 0.001, 1000)) {
+        if (m_gui.selected_body_menu.mass <= 0)
+            m_gui.selected_body_menu.mass = 0.001;
+        m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
+        schedule_selected_body_trajectory_calc();
+        if(star){
+            collect_light_sources();
         }
-        if(ImGui::ColorEdit3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color))){
-            m_gui.selected_body.lock()->set_trail_color(m_gui.selected_body_menu.trail_color);
-        }
-        m_gui.selected_body_menu.position = m_gui.selected_body.lock()->get_pos();
-        if(ImGui::InputFloat3("Object position", glm::value_ptr(m_gui.selected_body_menu.position))){
-            m_gui.selected_body.lock()->set_pos(m_gui.selected_body_menu.position);
-            schedule_selected_body_trajectory_calc();
-        }
-        if(ImGui::Checkbox("Track", &m_gui.selected_body_menu.track)){
+    }
+    if(ImGui::SliderFloat3("Object velocity vector components", glm::value_ptr(m_gui.selected_body_menu.velocity), -50, 50)){
+        m_gui.selected_body.lock()->set_speed(m_gui.selected_body_menu.velocity);
+        m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
+        schedule_selected_body_trajectory_calc();
+    }
+    if(ImGui::SliderFloat("Object speed", &m_gui.selected_body_menu.speed, 0, 50)){
+        m_gui.selected_body.lock()->set_speed(
+                glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
+        m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
+        schedule_selected_body_trajectory_calc();
+    }
+    if(ImGui::ColorEdit3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color))){
+        m_gui.selected_body.lock()->set_trail_color(m_gui.selected_body_menu.trail_color);
+    }
+    m_gui.selected_body_menu.position = m_gui.selected_body.lock()->get_pos();
+    if(ImGui::InputFloat3("Object position", glm::value_ptr(m_gui.selected_body_menu.position))){
+        m_gui.selected_body.lock()->set_pos(m_gui.selected_body_menu.position);
+        schedule_selected_body_trajectory_calc();
+    }
+    if(ImGui::Checkbox("Track", &m_gui.selected_body_menu.track)){
 
-        }
-        if(ImGui::Button("Deselect")){
-            m_gui.selected_body.lock()->set_selected(false);
-            m_gui.selected_body.reset();
-        }
-        if(ImGui::Button("Delete body")){
-            auto body_as_star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
-            if(body_as_star){
-                remove_star(body_as_star);
-            } else {
-                remove_planet(dynamic_cast<obj::Planet*>(m_gui.selected_body.lock().get()));
-            }
-            m_gui.selected_body.reset();
-        }
-        ImGui::End();
-        if (!discarded){
-            m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
-        }
     }
-#ifdef DEBUG
-    if (m_gui.debug_menu_enabled) {
-        ImGui::Begin("Debug menu", &m_gui.debug_menu_enabled);
-        if(ImGui::Checkbox("Do face culling", &m_gui.debug_menu.do_face_culling)) {
-            if(m_gui.debug_menu.do_face_culling){
-                glEnable(GL_CULL_FACE);
-            } else {
-                glDisable(GL_CULL_FACE);
-            }
-        }
-        if(ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.draw_wireframe)) {
-            if(m_gui.debug_menu.draw_wireframe){
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            } else {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
-        }
-        if(ImGui::Checkbox("Draw normals", &m_gui.debug_menu.draw_normals)) {}
-        ImGui::End();
+    if(ImGui::Button("Jump to")){
+        auto slc = m_gui.selected_body.lock();
+        auto pos = slc->get_pos();
+        auto camera_front = m_camera.get_front();
+        auto new_camera_pos = pos + (-camera_front * (slc->get_radius() * 2));
+        m_camera.set_pos(new_camera_pos);
     }
-#endif
+    if(ImGui::Button("Deselect")){
+        m_gui.selected_body.lock()->set_selected(false);
+        m_gui.selected_body.reset();
+    }
+    if(ImGui::Button("Delete body")){
+        auto body_as_star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
+        if(body_as_star){
+            remove_star(body_as_star);
+        } else {
+            remove_planet(dynamic_cast<obj::Planet*>(m_gui.selected_body.lock().get()));
+        }
+        m_gui.selected_body.reset();
+    }
+    ImGui::End();
+    if (!discarded){
+        m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
+    }
 }
 void Game::add_planet(obj::Planet new_planet){
     auto planet = std::make_shared<obj::Planet>(new_planet);

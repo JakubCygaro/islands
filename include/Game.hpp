@@ -239,6 +239,11 @@ private:
     void window_maximize_handler(GLFWwindow* window, int maximized);
     void window_refresh_handler(GLFWwindow* window);
     void draw_gui();
+    void draw_game_options_gui();
+    void draw_selected_body_gui();
+    void draw_spawn_menu_gui();
+    void draw_help_menu_gui();
+    void draw_debug_menu_gui();
     void render_2d();
 
     void key_handler(GLFWwindow* window, int key, int scancode, int action,
