@@ -681,6 +681,7 @@ void Game::draw_help_menu_gui() {
     ImGui::Text("%s", m_gui.help_menu.help_text.c_str());
     ImGui::End();
 }
+#ifdef DEBUG
 void Game::draw_debug_menu_gui() {
     ImGui::Begin("Debug menu", &m_gui.debug_menu_enabled);
     if(ImGui::Checkbox("Do face culling", &m_gui.debug_menu.do_face_culling)) {
@@ -700,6 +701,7 @@ void Game::draw_debug_menu_gui() {
     if(ImGui::Checkbox("Draw normals", &m_gui.debug_menu.draw_normals)) {}
     ImGui::End();
 }
+#endif
 void Game::draw_selected_body_gui() {
     bool discarded = true;
     auto star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());

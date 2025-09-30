@@ -244,7 +244,9 @@ private:
     void draw_selected_body_gui();
     void draw_spawn_menu_gui();
     void draw_help_menu_gui();
+#ifdef DEBUG
     void draw_debug_menu_gui();
+#endif
     void draw_body_list_gui();
     void render_2d();
 
