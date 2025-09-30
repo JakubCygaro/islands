@@ -73,7 +73,7 @@ public:
         static SelectedMarker instance;
         return instance;
     }
-    void forward_render(glm::vec3 pos, float radius) const;
+    void forward_render(const glm::vec3& camera_pos, glm::vec3 pos, float radius) const;
 };
 
 class Trail {

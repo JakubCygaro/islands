@@ -230,6 +230,10 @@ Shader Shader::from_shader_dir(const std::string& name) {
 void Shader::use_shader() const {
     glUseProgram(m_shader_id);
 }
+void Shader::set_vec2(const char* uniform_name, const glm::vec2& v) {
+    int loc = glGetUniformLocation(m_shader_id, uniform_name);
+    glUniform2fv(loc, 1, glm::value_ptr(v));
+}
 void Shader::set_vec3(const char* uniform_name, const glm::vec3& v) {
     int loc = glGetUniformLocation(m_shader_id, uniform_name);
     glUniform3fv(loc, 1, glm::value_ptr(v));

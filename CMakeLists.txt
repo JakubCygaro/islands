@@ -15,6 +15,12 @@ find_package(Freetype REQUIRED
     PATHS ${FREETYPE_ROOT_PATHS}
 )
 
+find_program(HAS_PYTHON "python")
+
+if(NOT HAS_PYTHON)
+    message(FATAL_ERROR "-- python installation not detected")
+endif()
+
 set(SCRIPTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
 file(GLOB_RECURSE GAME_DATA LIST_DIRECTORIES YES ${CMAKE_SOURCE_DIR}/game_data/*)

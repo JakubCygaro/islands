@@ -12,21 +12,21 @@ namespace obj {
 
         glm::vec3 vbo_data[] = {
             // top triangle
-            { 0, 1, 0 },
-            { -0.2, 1.5, 0 },
-            { 0.2, 1.5, 0 },
+            { 0, 1.05, 0 },
+            { 0.2, 1.2, 0 },
+            { -0.2, 1.2, 0 },
             // right triangle
-            { 1, 0, 0 },
-            { 1.5, -0.2, 0 },
-            { 1.5, 0.2, 0 },
+            { 1.05, 0, 0 },
+            { 1.2, -0.2, 0 },
+            { 1.2, 0.2, 0 },
             // bottom triangle
-            { 0, -1, 0 },
-            { -0.2, -1.5, 0 },
-            { 0.2, -1.5, 0 },
+            { 0, -1.05, 0 },
+            { -0.2, -1.2, 0 },
+            { 0.2, -1.2, 0 },
             // left triangle
-            { -1, 0, 0 },
-            { -1.5, -0.2, 0 },
-            { -1.5, 0.2, 0 },
+            { -1.05, 0, 0 },
+            { -1.2, 0.2, 0 },
+            { -1.2, -0.2, 0 },
         };
         uint32_t ebo_data[] = {
             0, 1, 2,
@@ -39,7 +39,7 @@ namespace obj {
         ::glBufferData(GL_ARRAY_BUFFER, sizeof(vbo_data), vbo_data, GL_STATIC_DRAW);
 
         ::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        ::glBufferData(GL_ARRAY_BUFFER, sizeof(ebo_data), ebo_data, GL_STATIC_DRAW);
+        ::glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ebo_data), ebo_data, GL_STATIC_DRAW);
 
         ::glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
         ::glEnableVertexAttribArray(0);
@@ -50,12 +50,15 @@ namespace obj {
     SelectedMarker::VAO ::~VAO() {
         if(id){
             ::glDeleteVertexArrays(1, &id);
+            id = 0;
         }
         if(vbo){
             ::glDeleteBuffers(1, &vbo);
+            vbo = 0;
         }
         if(ebo){
             ::glDeleteBuffers(1, &ebo);
+            ebo = 0;
         }
 
     }

@@ -24,6 +24,7 @@ public:
     Shader(const char* vert, const char* frag, const char* geom = nullptr);
     static Shader from_shader_dir(const std::string& name);
     void use_shader() const;
+    void set_vec2(const char* uniform_name, const glm::vec2& v);
     void set_vec3(const char* uniform_name, const glm::vec3& v);
     void set_vec4(const char* uniform_name, const glm::vec4& v);
     void set_mat4(const char* uniform_name, glm::mat4 m);

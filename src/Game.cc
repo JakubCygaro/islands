@@ -333,7 +333,9 @@ void Game::update()
 
     auto selected_pos_before_update = glm::vec3(0);
     auto selected_pos_after_update = glm::vec3(0);
-    if(!m_gui.selected_body.expired() && m_gui.selected_body_menu.track)
+    // in case the body was selected during the update loop, so the initial camera offset is not equal to the bodies position
+    auto had_selected = !m_gui.selected_body.expired();
+    if(had_selected && m_gui.selected_body_menu.track)
     {
         auto selected = m_gui.selected_body.lock();
         selected_pos_before_update = selected->get_pos();
@@ -374,7 +376,7 @@ void Game::update()
         schedule_selected_body_trajectory_calc();
     }
 
-    if(!m_gui.selected_body.expired() && m_gui.selected_body_menu.track)
+    if(had_selected && !m_gui.selected_body.expired() && m_gui.selected_body_menu.track)
     {
         auto selected = m_gui.selected_body.lock();
         selected_pos_after_update = selected->get_pos() - selected_pos_before_update;
@@ -577,6 +579,10 @@ void Game::render()
     }
     if(m_paused && m_gui.selected_body_menu.trajectory_status.load() == gui::TrailCompStatus::Idle && !m_gui.selected_body.expired()){
         m_gui.selected_body_menu.trajectory_trail.forward_render();
+    }
+    if(!m_gui.selected_body.expired()){
+        auto slc = m_gui.selected_body.lock();
+        obj::SelectedMarker::instance().forward_render(m_camera.get_pos(), slc->get_pos(), slc->get_radius());
     }
     glDisable(GL_BLEND);
 
