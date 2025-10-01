@@ -220,7 +220,7 @@ private:
     double m_last_fixed_update_t {};
     double m_last_fps_update_t {};
     bool m_fixed_update = false;
-    bool m_typing = false;
+    unsigned char m_typing = 0;
 
     std::deque<double> m_delta_t_record{};
 

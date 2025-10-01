@@ -324,13 +324,6 @@ void Game::run()
 }
 void Game::update()
 {
-    glfwPollEvents();
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    continuos_key_input();
-
     auto selected_pos_before_update = glm::vec3(0);
     auto selected_pos_after_update = glm::vec3(0);
     // in case the body was selected during the update loop, so the initial camera offset is not equal to the bodies position
@@ -340,13 +333,19 @@ void Game::update()
         auto selected = m_gui.selected_body.lock();
         selected_pos_before_update = selected->get_pos();
     }
+
+    glfwPollEvents();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    continuos_key_input();
+
     if (m_gui_enabled){
         draw_gui();
     }
     if (!m_paused) {
         update_bodies();
     }
-
     if(m_maximize != MaximizeState::DoNothing){
         glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
@@ -382,6 +381,7 @@ void Game::update()
         selected_pos_after_update = selected->get_pos() - selected_pos_before_update;
         m_camera.set_pos(m_camera.get_pos() + selected_pos_after_update);
     }
+
 }
 void Game::update_buffers() {
 
@@ -670,9 +670,8 @@ void Game::draw_spawn_menu_gui() {
         m_gui.spawn_menu.mass = 0.001;
     ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
     static char buf[128] = "";
-    m_typing = ImGui::InputText("Name:", buf, IM_ARRAYSIZE(buf));
-    std::cout << "typing: " << m_typing << std::endl;
-    ImGui::Checkbox("Star", &m_gui.spawn_menu.is_star);
+    m_typing = ImGui::InputText("Name:", buf, IM_ARRAYSIZE(buf)) ? 10 : m_typing;
+    ImGui::Checkbox("Is star", &m_gui.spawn_menu.is_star);
     ImGui::End();
 }
 void Game::draw_help_menu_gui() {
@@ -828,6 +827,10 @@ void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, in
     if(!m_typing){
         m_keybinds.handle(key, action, m_gui_enabled ? BindMode::Editor : BindMode::Normal, mods);
         m_keybinds.handle(key, action, BindMode::Any, mods);
+    }
+    else {
+        std::cout << "was typing" << std::endl;
+        m_typing = m_typing > 0 ? m_typing - 1 : m_typing;
     }
 }
 
