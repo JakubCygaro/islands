@@ -338,6 +338,17 @@ void Game::update()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    if(!m_typing){
+        while(!m_key_events.empty()){
+            auto [key, sc, act, mds] = m_key_events.front();
+            m_keybinds.handle(key, act, m_gui_enabled ? BindMode::Editor : BindMode::Normal, mds);
+            m_keybinds.handle(key, act, BindMode::Any, mds);
+            m_key_events.pop();
+        }
+    }
+    else {
+        m_typing = false;
+    }
     continuos_key_input();
 
     if (m_gui_enabled){
@@ -670,7 +681,7 @@ void Game::draw_spawn_menu_gui() {
         m_gui.spawn_menu.mass = 0.001;
     ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
     static char buf[128] = "";
-    m_typing = ImGui::InputText("Name:", buf, IM_ARRAYSIZE(buf)) ? 10 : m_typing;
+    m_typing |= ImGui::InputText("Name:", buf, IM_ARRAYSIZE(buf));
     ImGui::Checkbox("Is star", &m_gui.spawn_menu.is_star);
     ImGui::End();
 }
@@ -823,15 +834,12 @@ void Game::remove_star(obj::Star* star){
 void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     (void)window;
-    (void)scancode;
-    if(!m_typing){
-        m_keybinds.handle(key, action, m_gui_enabled ? BindMode::Editor : BindMode::Normal, mods);
-        m_keybinds.handle(key, action, BindMode::Any, mods);
-    }
-    else {
-        std::cout << "was typing" << std::endl;
-        m_typing = m_typing > 0 ? m_typing - 1 : m_typing;
-    }
+    m_key_events.push(KeyEvent {
+            .key = key,
+            .scancode = scancode,
+            .action = action,
+            .mods = mods,
+        });
 }
 
 void Game::continuos_key_input()

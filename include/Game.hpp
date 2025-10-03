@@ -1,6 +1,7 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 #include <deque>
+#include <queue>
 #include <string>
 #include <vector>
 #include "Grid.hpp"
@@ -220,9 +221,16 @@ private:
     double m_last_fixed_update_t {};
     double m_last_fps_update_t {};
     bool m_fixed_update = false;
-    unsigned char m_typing = 0;
+    bool m_typing = false;
 
     std::deque<double> m_delta_t_record{};
+    struct KeyEvent {
+        int key;
+        int scancode;
+        int action;
+        int mods;
+    };
+    std::queue<KeyEvent> m_key_events{};
 
 private:
     void initialize();
