@@ -51,6 +51,7 @@ struct SpawnMenu {
     float initial_velocity {};
     glm::vec3 color { glm::vec3(0.5, 0.5, 0.5) };
     bool is_star { false };
+    char name[256] = "";
 };
 struct GameOptionsMenu {
     bool draw_selection_marker {true};

@@ -338,6 +338,7 @@ void Game::update()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    //this has to happen before the while loop
     if (m_gui_enabled){
         draw_gui();
     }
@@ -680,8 +681,7 @@ void Game::draw_spawn_menu_gui() {
     if (m_gui.spawn_menu.mass <= 0)
         m_gui.spawn_menu.mass = 0.001;
     ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
-    static char buf[128] = "";
-    m_typing |= ImGui::InputText("Name:", buf, IM_ARRAYSIZE(buf));
+    m_typing |= ImGui::InputText("Name:", m_gui.spawn_menu.name, IM_ARRAYSIZE(m_gui.spawn_menu.name));
     ImGui::Checkbox("Is star", &m_gui.spawn_menu.is_star);
     ImGui::End();
 }
@@ -1071,15 +1071,18 @@ void Game::initialize_key_bindings() {
         auto vel = glm::normalize(front) * this->m_gui.spawn_menu.initial_velocity;
         auto color = this->m_gui.spawn_menu.color;
         auto mass = this->m_gui.spawn_menu.mass;
+        auto name = std::string(this->m_gui.spawn_menu.name);
         // auto obj = std::make_shared<obj::Planet>(obj::Planet(nullptr, pos, vel, glm::vec3(0), this->m_gui.spawn_menu.mass));
         // obj->set_color(this->m_gui.spawn_menu.color);
         if(m_gui.spawn_menu.is_star){
             auto star = obj::Star(nullptr, pos, vel, {}, mass);
             star.set_color(color);
+            star.set_name(std::move(name));
             add_star(std::move(star));
         } else {
             auto planet = obj::Planet(nullptr, pos, vel, {}, mass);
             planet.set_color(color);
+            planet.set_name(std::move(name));
             add_planet(planet);
         }
     }, "Spawn a new celestial body in front of the camera", GLFW_MOD_SHIFT);
