@@ -338,22 +338,22 @@ void Game::update()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    if(!m_typing){
-        while(!m_key_events.empty()){
-            auto [key, sc, act, mds] = m_key_events.front();
+    if (m_gui_enabled){
+        draw_gui();
+    }
+    while(!m_key_events.empty()){
+        auto [key, sc, act, mds] = m_key_events.front();
+        if(!m_typing){
             m_keybinds.handle(key, act, m_gui_enabled ? BindMode::Editor : BindMode::Normal, mds);
             m_keybinds.handle(key, act, BindMode::Any, mds);
-            m_key_events.pop();
         }
+        m_key_events.pop();
     }
-    else {
+    if(m_typing) {
         m_typing = false;
     }
     continuos_key_input();
 
-    if (m_gui_enabled){
-        draw_gui();
-    }
     if (!m_paused) {
         update_bodies();
     }
