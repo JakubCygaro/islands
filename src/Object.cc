@@ -27,6 +27,7 @@ namespace obj {
         }
         if(render_trails)
             m_trail.forward_render();
+        // m_label.draw();
     }
     void CelestialBody::fixed_update(){
         m_trail.push_point(m_pos);

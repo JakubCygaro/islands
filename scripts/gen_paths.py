@@ -59,10 +59,13 @@ for key, value in files.items():
     ns = os.fsdecode(base).replace(
         "\\", "/").replace("/", "::")
     namespace = """
+        #ifndef {guard}_HPP
+        #define {guard}_HPP
         namespace {ns} {{
             {variable_def}
         }}
-    """.format(ns=ns, variable_def=vars)
+        #endif
+    """.format(guard=ns.replace("::", "_").upper(), ns=ns, variable_def=vars)
     source.append(namespace)
 
 out_template = Template(

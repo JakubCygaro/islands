@@ -1,3 +1,5 @@
+#ifndef GUI_HPP
+#define GUI_HPP
 #include "Font.hpp"
 #include "Object.hpp"
 #include <atomic>
@@ -5,8 +7,6 @@
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
 #include <sstream>
-#ifndef GUI_HPP
-#define GUI_HPP
 
 #define DEFAULT_RESOLUTION 5
 
@@ -112,6 +112,7 @@ struct SelectedBodyMenu {
     std::atomic<TrailCompStatus> trajectory_status { TrailCompStatus::Idle };
     std::vector<glm::vec3> trajectory_data {};
     CancelationToken calc_cancellation {};
+    char name[sizeof(SpawnMenu::name)] = "";
 };
 struct GameUI {
     inline static const glm::vec3 EDIT_MODE_TEXT_COLOR = { .0, .7, .0 };
@@ -130,10 +131,10 @@ struct GameUI {
     bool debug_menu_enabled { false };
     DebugMenu debug_menu {};
 #endif
-    font::Text2D mode {};
-    font::Text2D paused {};
-    font::Text2D game_version {};
-    font::Text2D fps_count {};
+    font::Text2D mode;
+    font::Text2D paused;
+    font::Text2D game_version;
+    font::Text2D fps_count;
     GameUI();
 };
 }

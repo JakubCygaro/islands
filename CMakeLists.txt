@@ -48,6 +48,8 @@ set(SHADERS
     ${SHADERS_DIR}/star.vert
     ${SHADERS_DIR}/text.frag
     ${SHADERS_DIR}/text.vert
+    ${SHADERS_DIR}/text3d.frag
+    ${SHADERS_DIR}/text3d.vert
     ${SHADERS_DIR}/light_pass.frag
     ${SHADERS_DIR}/light_pass.vert
     ${SHADERS_DIR}/light_pass_sphere.frag

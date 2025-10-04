@@ -271,39 +271,24 @@ namespace font{
     uint32_t FontBitmap::get_glyph_height() const {
         return glyph_height;
     }
-    const glm::vec2& Text2D::get_pos() const {
+    const glm::vec3& Text2D::get_pos() const {
         return this->m_pos;
     }
     void Text2D::set_pos(glm::vec2&& new_pos) {
-        this->m_pos = new_pos;
+        this->m_pos = glm::vec3(new_pos, 0.0);
         update_position();
     }
     void Text2D::set_text(std::string&& new_text) {
-        this->m_str = new_text;
+        TextBase::set_text(std::move(new_text));
         update();
     }
-    const std::string& Text2D::get_text() const {
-        return this->m_str;
-    }
-    void Text2D::set_color(glm::vec3 new_col) {
-        m_color = new_col;
-    }
-    const glm::vec3& Text2D::get_color() const {
-        return m_color;
-    }
     void Text2D::set_rotation(float r) {
-        m_rotation = r;
+        TextBase::set_rotation(r);
         update_position();
-    }
-    const float& Text2D::get_rotation() const {
-        return m_rotation;
     }
     void Text2D::set_scale(float s) {
-        m_scale = s;
+        TextBase::set_scale(s);
         update_position();
-    }
-    const float& Text2D::get_scale() const {
-        return m_scale;
     }
     float Text2D::get_text_height() const {
         return m_height * m_scale;
@@ -313,7 +298,7 @@ namespace font{
     }
     void Text2D::update_position() {
         auto m = glm::mat4(1.0f);
-        m = glm::translate(m, glm::vec3(m_pos, 0.0));
+        m = glm::translate(m, glm::vec3(m_pos));
         m = glm::scale(m, { m_scale, m_scale, 1.0 });
         m = glm::rotate(m, glm::radians(m_rotation), { 0.0f, 0.0f, 1.0f });
         m_model = m;
@@ -357,7 +342,7 @@ namespace font{
 
     }
     void Text2D::draw() const {
-        if (m_str.length() == 0) return;
+        if (m_str.length() == 0) assert (false);
 
         ::glDisable(GL_DEPTH_TEST);
         ::glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -428,5 +413,29 @@ namespace font{
         glPixelStorei(GL_PACK_ALIGNMENT, 4);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
+    }
+    void TextBase::set_text(std::string&& new_text){
+        m_str = new_text;
+    }
+    const std::string& TextBase::get_text() const{
+        return this->m_str;
+    }
+    void TextBase::set_color(glm::vec3 new_col){
+        m_color = new_col;
+    }
+    const glm::vec3& TextBase::get_color() const{
+        return this->m_color;
+    }
+    void TextBase::set_rotation(float r){
+        m_rotation = r;
+    }
+    const float& TextBase::get_rotation() const{
+        return this->m_rotation;
+    }
+    void TextBase::set_scale(float s){
+        m_scale = s;
+    }
+    const float& TextBase::get_scale() const{
+        return this->m_scale;
     }
 }

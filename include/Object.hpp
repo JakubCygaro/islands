@@ -1,8 +1,8 @@
 #ifndef OBJECT_HPP
 #define OBJECT_HPP
+#include "Font.hpp"
 #include "shader/Shader.hpp"
 #include "Util.hpp"
-#include <shaders.hpp>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <memory>
@@ -23,8 +23,43 @@
 #include <cstdint>
 #ifdef DEBUG
 #include <shader_files.hpp>
+#else
+#include <shaders.hpp>
 #endif
+
 namespace obj {
+
+class Text3DShader {
+    std::shared_ptr<Shader> m_shader;
+
+    inline Text3DShader(){
+#ifdef DEBUG
+            //load directly from source tree -> works without whole project rebuild
+            auto shader = Shader(
+                        std::string(files::src::shaders::TEXT3D_VERT),
+                        std::string(files::src::shaders::TEXT3D_FRAG)
+                        );
+#else
+            auto shader = Shader(
+                        shaders::TEXT3D_VERT,
+                        shaders::TEXT3D_FRAG
+                        );
+#endif
+            m_shader = std::make_shared<Shader>(std::move(shader));
+    };
+
+    Text3DShader(const Text3DShader&) = delete;
+    Text3DShader& operator=(const Text3DShader&) = delete;
+
+public:
+    inline std::shared_ptr<Shader> shader() {
+        return m_shader;
+    }
+    inline static Text3DShader& get_instance() {
+        static Text3DShader instance;
+        return instance;
+    }
+};
 
 class SelectedMarker {
     inline static std::shared_ptr<Shader> s_shader_instance = nullptr;
@@ -173,6 +208,7 @@ protected:
     float m_radius {};
     glm::vec3 m_color;
     Trail m_trail{};
+    // font::Text2D m_label;
     inline static constexpr uint32_t DEFAULT_TRAIL_POINT_N = 36;
 
 private:

@@ -28,7 +28,7 @@ def get_paths(dir):
                 if dir not in files:
                     files[dir] = []
                 deps.append(os.fsdecode(entry.path).replace(
-            "\\", "/"))
+                    "\\", "/"))
                 files[dir].append(entry.path)
             elif entry.is_dir():
                 get_paths(os.fsencode(entry.path))
@@ -65,13 +65,16 @@ for key, value in files.items():
     base = os.path.commonpath([source_dir, path])
     base = os.path.relpath(path, base)
     ns = os.fsdecode(os.path.dirname(base)).replace(
-            "\\", "/").replace("/", "::")
+        "\\", "/").replace("/", "::")
     if ns != '':
         namespace = """
+            #ifndef {guard}_HPP
+            #define {guard}_HPP
             namespace {ns} {{
                 {variable_def}
             }}
-        """.format(ns=ns, variable_def=vars)
+            #endif
+        """.format(guard=ns.replace("::", "_").upper(), ns=ns, variable_def=vars)
         source.append(namespace)
     else:
         source.append(vars)

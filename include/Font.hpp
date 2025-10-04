@@ -13,6 +13,12 @@
 #include <sstream>
 #include <vector>
 #include "shader/Shader.hpp"
+#include <files.hpp>
+#ifdef DEBUG
+#include <shader_files.hpp>
+#else
+#include <shaders.hpp>
+#endif
 namespace font{
     struct Character {
         uint32_t texture_id{};
@@ -54,45 +60,113 @@ namespace font{
         glm::vec2 pos;
         glm::vec2 tex;
     };
-    class Text2D {
-    private:
-        std::string m_str{};
-        std::shared_ptr<Shader> m_text_shader{};
-        std::shared_ptr<FontBitmap> m_font_bitmap{};
+    class TextBase {
+        protected:
+            std::string m_str{};
+            std::shared_ptr<Shader> m_text_shader{};
+            std::shared_ptr<FontBitmap> m_font_bitmap{};
 
-        glm::vec2 m_pos{};
-        glm::mat4 m_model{};
-        float m_rotation{0.0f};
-        float m_scale{1.0f};
-        glm::vec3 m_color{1.0};
+            glm::vec3 m_pos{};
+            glm::mat4 m_model{};
+            float m_rotation{0.0f};
+            float m_scale{1.0f};
+            glm::vec3 m_color{1.0};
+
+        public:
+            virtual ~TextBase();
+            TextBase();
+            TextBase(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text = "");
+            TextBase(const TextBase& other);
+            TextBase& operator=(const TextBase& other);
+            TextBase(TextBase&& other);
+            TextBase& operator=(TextBase&& other);
+
+            virtual void draw() const = 0;
+            virtual void debug_draw() const = 0;
+            virtual void set_text(std::string&& new_text);
+            virtual const std::string& get_text() const;
+            virtual void set_color(glm::vec3 new_col);
+            virtual const glm::vec3& get_color() const;
+            virtual void set_rotation(float r);
+            virtual const float& get_rotation() const;
+            virtual void set_scale(float s);
+            virtual const float& get_scale() const;
+            virtual float get_text_height() const = 0;
+            virtual float get_text_width() const = 0;
+    };
+    class Text2D : public TextBase {
+    private:
+        class DefaultShader {
+            std::shared_ptr<Shader> m_shader;
+
+            inline DefaultShader() {
+#ifdef DEBUG
+            m_shader = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::TEXT_VERT),
+                        std::string(files::src::shaders::TEXT_FRAG)
+                        ));
+#else
+            m_shader = std::make_shared<Shader>(Shader(
+                        shaders::TEXT_VERT,
+                        shaders::TEXT_FRAG,
+                        ));
+#endif
+            }
+            DefaultShader(const DefaultShader&) = delete;
+            DefaultShader operator=(const DefaultShader&) = delete;
+        public:
+            inline static DefaultShader& get_instance() {
+                static DefaultShader instance;
+                return instance;
+            }
+            inline std::shared_ptr<Shader> get_shader() {
+                return m_shader;
+            }
+
+        };
+
 
         uint32_t m_vao{}, m_vbo{};
         float m_height{}, m_width{};
     public:
-        ~Text2D();
+        virtual ~Text2D();
         Text2D();
-        Text2D(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text = "");
+        Text2D(std::string text);
         Text2D(const Text2D& other);
         Text2D& operator=(const Text2D& other);
         Text2D(Text2D&& other);
         Text2D& operator=(Text2D&& other);
-        void draw() const;
-        void debug_draw() const;
-        const glm::vec2& get_pos() const;
+        virtual void draw() const override;
+        virtual void debug_draw() const override;
+        const glm::vec3& get_pos() const;
         void set_pos(glm::vec2&& new_pos);
-        void set_text(std::string&& new_text);
-        const std::string& get_text() const;
-        void set_color(glm::vec3 new_col);
-        const glm::vec3& get_color() const;
-        void set_rotation(float r);
-        const float& get_rotation() const;
-        void set_scale(float s);
-        const float& get_scale() const;
-        float get_text_height() const;
-        float get_text_width() const;
+        virtual void set_text(std::string&& new_text) override;
+        virtual void set_rotation(float r) override;
+        virtual void set_scale(float s) override;
+        virtual float get_text_height() const override;
+        virtual float get_text_width() const override;
     private:
         void update();
         void update_position();
+    };
+
+    class DefaultFont {
+        std::shared_ptr<FontBitmap> m_font;
+
+        inline DefaultFont(){
+            m_font = std::make_shared<font::FontBitmap>(font::load_font(files::game_data::fonts::ARCADE_TTF, 48));
+        }
+        DefaultFont(const DefaultFont&) = delete;
+        DefaultFont& operator=(const DefaultFont&) = delete;
+
+    public:
+        inline static DefaultFont& get_instance() {
+            static DefaultFont instance;
+            return instance;
+        }
+        inline std::shared_ptr<FontBitmap> get_font_bitmap() {
+            return m_font;
+        }
     };
 }
 #endif

@@ -1,4 +1,5 @@
 #include <Font.hpp>
+#include <cstdio>
 
 namespace font {
     FontBitmap::FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y,
@@ -80,11 +81,77 @@ namespace font {
         if(bitmap_id)
             glDeleteTextures(1, &bitmap_id);
     }
-    Text2D::Text2D(){}
-    Text2D::Text2D(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text):
+
+    TextBase::TextBase():
+        m_str{},
+        m_text_shader{nullptr},
+        m_font_bitmap{nullptr}
+    {
+
+    }
+    TextBase::TextBase(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text):
         m_str{text},
         m_text_shader{text_shader},
         m_font_bitmap{font_bitmap}
+    {
+    }
+    TextBase::TextBase(const TextBase& other):
+        m_str{other.m_str},
+        m_text_shader{other.m_text_shader},
+        m_font_bitmap{other.m_font_bitmap},
+        m_pos{other.m_pos},
+        m_model{other.m_model},
+        m_rotation{other.m_rotation},
+        m_scale{other.m_scale},
+        m_color{other.m_color}
+    {
+
+    }
+    TextBase& TextBase::operator=(const TextBase& other){
+        m_str = other.m_str;
+        m_text_shader = other.m_text_shader;
+        m_font_bitmap = other.m_font_bitmap;
+        m_pos = other.m_pos;
+        m_model = other.m_model;
+        m_rotation = other.m_rotation;
+        m_scale = other.m_scale;
+        m_color = other.m_color;
+        return *this;
+    }
+    TextBase::TextBase(TextBase&& other):
+        m_str{std::move(other.m_str)},
+        m_text_shader{other.m_text_shader},
+        m_font_bitmap{other.m_font_bitmap},
+        m_pos{other.m_pos},
+        m_model{other.m_model},
+        m_rotation{other.m_rotation},
+        m_scale{other.m_scale},
+        m_color{other.m_color}    {
+        other.m_text_shader = nullptr;
+        other.m_font_bitmap = nullptr;
+    }
+    TextBase& TextBase::operator=(TextBase&& other){
+        m_str = std::move(other.m_str);
+        m_text_shader = other.m_text_shader;
+        m_font_bitmap = other.m_font_bitmap;
+        m_pos = other.m_pos;
+        m_model = other.m_model;
+        m_rotation = other.m_rotation;
+        m_scale = other.m_scale;
+        m_color = other.m_color;
+
+        other.m_text_shader = nullptr;
+        other.m_font_bitmap = nullptr;
+
+        return *this;
+    }
+    TextBase::~TextBase() {}
+
+
+    Text2D::Text2D(): TextBase() {
+    }
+    Text2D::Text2D(std::string text) : TextBase(font::DefaultFont::get_instance().get_font_bitmap(),
+            DefaultShader::get_instance().get_shader(), text)
     {
         ::glGenVertexArrays(1, &m_vao);
         ::glGenBuffers(1, &m_vbo);
@@ -105,15 +172,8 @@ namespace font {
         update();
         update_position();
     }
-    Text2D::Text2D(const Text2D& other):
-        m_str{other.m_str},
-        m_text_shader{other.m_text_shader},
-        m_font_bitmap{other.m_font_bitmap},
-        m_pos{other.m_pos},
-        m_model{other.m_model},
-        m_rotation{other.m_rotation},
-        m_scale{other.m_scale},
-        m_color{other.m_color},
+    Text2D::Text2D(const Text2D& other) :
+        TextBase(other),
         m_vao{other.m_vao},
         m_vbo{other.m_vbo},
         m_height(other.m_height),
@@ -122,62 +182,42 @@ namespace font {
 
     }
     Text2D& Text2D::operator=(const Text2D& other){
-        m_str = other.m_str;
-        m_text_shader = other.m_text_shader;
-        m_font_bitmap = other.m_font_bitmap;
-        m_pos = other.m_pos;
+        TextBase::operator=(other);
         m_vao = other.m_vao;
         m_vbo = other.m_vbo;
-        m_model = other.m_model;
-        m_rotation = other.m_rotation;
-        m_scale = other.m_scale;
-        m_color = other.m_color;
         m_width = other.m_width;
         m_height = other.m_height;
         return *this;
     }
-    Text2D::Text2D(Text2D&& other):
-        m_str{std::move(other.m_str)},
-        m_text_shader{other.m_text_shader},
-        m_font_bitmap{other.m_font_bitmap},
-        m_pos{other.m_pos},
-        m_model{other.m_model},
-        m_rotation{other.m_rotation},
-        m_scale{other.m_scale},
-        m_color{other.m_color},
+    Text2D::Text2D(Text2D&& other) :
+        TextBase(other),
         m_vao{other.m_vao},
         m_vbo{other.m_vbo},
         m_height(other.m_height),
         m_width(other.m_width)
+
     {
-        other.m_text_shader = nullptr;
-        other.m_font_bitmap = nullptr;
         other.m_vao = 0;
         other.m_vbo = 0;
     }
     Text2D& Text2D::operator=(Text2D&& other){
-        m_str = std::move(other.m_str);
-        m_text_shader = other.m_text_shader;
-        m_font_bitmap = other.m_font_bitmap;
-        m_pos = other.m_pos;
-        m_model = other.m_model;
+        TextBase::operator=(other);
         m_vao = other.m_vao;
         m_vbo = other.m_vbo;
-        m_rotation = other.m_rotation;
-        m_scale = other.m_scale;
-        m_color = other.m_color;
         m_width = other.m_width;
         m_height = other.m_height;
-
-        other.m_text_shader = nullptr;
-        other.m_font_bitmap = nullptr;
         other.m_vao = 0;
         other.m_vbo = 0;
-
         return *this;
     }
-    Text2D::~Text2D() {
-        if(m_vbo) ::glDeleteBuffers(1, &m_vbo);
-        if(m_vao) ::glDeleteVertexArrays(1, &m_vao);
+    Text2D::~Text2D(){
+        if(m_vao){
+            ::glDeleteVertexArrays(1, &m_vao);
+            m_vao = 0;
+        }
+        if(m_vbo){
+            ::glDeleteBuffers(1, &m_vbo);
+            m_vbo = 0;
+        }
     }
 }

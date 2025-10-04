@@ -24,6 +24,7 @@ CelestialBody::CelestialBody(std::shared_ptr<UnitSphere> sphere,
     }
     m_trail = Trail(CelestialBody::DEFAULT_TRAIL_POINT_N);
     m_trail.fill(m_pos);
+    // m_label = font::Text2D(m_name);
 }
 
 // copy constructor
@@ -39,6 +40,7 @@ CelestialBody::CelestialBody(const CelestialBody& other)
     , m_radius { other.m_radius }
     , m_color(other.m_color)
     , m_trail(Trail(CelestialBody::DEFAULT_TRAIL_POINT_N))
+    // , m_label(other.m_label)
 {
     m_trail.fill(m_pos);
 }
@@ -58,6 +60,7 @@ CelestialBody& CelestialBody::operator=(const CelestialBody& other)
     m_trail = Trail(CelestialBody::DEFAULT_TRAIL_POINT_N);
     m_trail.fill(m_pos);
     m_name = other.m_name;
+    // m_label = other.m_label;
     return *this;
 }
 // move constructor
@@ -73,6 +76,7 @@ CelestialBody::CelestialBody(CelestialBody&& other)
     , m_radius { other.m_radius }
     , m_color(other.m_color)
     , m_trail(std::move(other.m_trail))
+    // , m_label(std::move(other.m_label))
 {
     other.m_sphere = nullptr;
     other.m_normals_shader = nullptr;
@@ -93,6 +97,7 @@ CelestialBody& CelestialBody::operator=(CelestialBody&& other)
     m_selected = other.m_selected;
     m_trail = std::move(other.m_trail);
     m_name = std::move(other.m_name);
+    // m_label = std::move(other.m_label);
     other.m_selected = false;
     other.m_sphere = nullptr;
     other.m_normals_shader = nullptr;

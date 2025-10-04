@@ -1,7 +1,4 @@
 #include "Font.hpp"
-#include <chrono>
-#include <cstring>
-#include <files.hpp>
 #include "Object.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -10,8 +7,11 @@
 #include <GLFW/glfw3.h>
 #include <Game.hpp>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
+#include <files.hpp>
 #include <functional>
 #include <glm/common.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
@@ -24,78 +24,81 @@
 #include <thread>
 #include <tuple>
 #define GLM_ENABLE_EXPERIMENTAL
+#include "global_declarations.hpp"
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
-#include "global_declarations.hpp"
 
 namespace {
-    const float GRAV_CONST = 6.674e-11;
-    const float PROJECTION_FAR_PLANE = 500.0f;
-    Game* get_game_instance_ptr_from_window(GLFWwindow* window)
-    {
-        Game* instance = static_cast<Game*>(glfwGetWindowUserPointer(window));
-        return instance;
-    }
-    //for path prediction
-    struct Gravdata {
-        float mass{};
-        glm::vec3 pos{};
-        glm::vec3 vel{};
-        glm::vec3 acc{};
-        float radius{};
-        bool is_star{};
-    };
-    // step through one frame of gravity simulation
-    void gravity_step(std::vector<Gravdata>& gravdata, double delta_t, const gui::CancelationToken& cancel){
-        for (size_t body = 0; body < gravdata.size() && !cancel.is_cancelled(); body++) {
-            for (size_t next_body = body + 1; next_body < gravdata.size() && !cancel.is_cancelled(); next_body++) {
-                auto& b_1 = gravdata[body];
-                auto& b_2 = gravdata[next_body];
+const float GRAV_CONST = 6.674e-11;
+const float PROJECTION_FAR_PLANE = 500.0f;
+Game* get_game_instance_ptr_from_window(GLFWwindow* window)
+{
+    Game* instance = static_cast<Game*>(glfwGetWindowUserPointer(window));
+    return instance;
+}
+// for path prediction
+struct Gravdata {
+    float mass {};
+    glm::vec3 pos {};
+    glm::vec3 vel {};
+    glm::vec3 acc {};
+    float radius {};
+    bool is_star {};
+};
+// step through one frame of gravity simulation
+void gravity_step(std::vector<Gravdata>& gravdata, double delta_t, const gui::CancelationToken& cancel)
+{
+    for (size_t body = 0; body < gravdata.size() && !cancel.is_cancelled(); body++) {
+        for (size_t next_body = body + 1; next_body < gravdata.size() && !cancel.is_cancelled(); next_body++) {
+            auto& b_1 = gravdata[body];
+            auto& b_2 = gravdata[next_body];
 
-                if(glm::distance(b_1.pos, b_2.pos) <= b_1.radius + b_2.radius){
-                    auto [eater, eaten] = b_1.mass > b_2.mass ? std::make_tuple(std::ref(b_1), std::ref(b_2)) :
-                        std::make_tuple(std::ref(b_2), std::ref(b_1));
-                    if (eaten.is_star){
-                        std::swap(eater, eaten);
-                    }
-                    eaten.mass = 0.0;
-                    eaten.radius = 0.0;
-                    eaten.vel = glm::vec3{0.0};
+            if (glm::distance(b_1.pos, b_2.pos) <= b_1.radius + b_2.radius) {
+                auto [eater, eaten] = b_1.mass > b_2.mass ? std::make_tuple(std::ref(b_1), std::ref(b_2)) : std::make_tuple(std::ref(b_2), std::ref(b_1));
+                if (eaten.is_star) {
+                    std::swap(eater, eaten);
                 }
-                // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
-                auto m_1 = b_1.mass * obj::CelestialBody::MASS_BOOST_FACTOR;
-                auto m_2 = b_2.mass * obj::CelestialBody::MASS_BOOST_FACTOR;;
-
-                auto r_21 = b_2.pos - b_1.pos;
-                auto r_21_hat = glm::normalize(r_21);
-                auto distance = glm::distance(b_1.pos, b_2.pos);
-                // attraction force
-                auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (distance * distance)) * r_21_hat;
-                auto f_12 = -f_21;
-
-                b_1.acc += f_12;
-                b_2.acc += f_21;
+                eaten.mass = 0.0;
+                eaten.radius = 0.0;
+                eaten.vel = glm::vec3 { 0.0 };
             }
+            // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
+            auto m_1 = b_1.mass * obj::CelestialBody::MASS_BOOST_FACTOR;
+            auto m_2 = b_2.mass * obj::CelestialBody::MASS_BOOST_FACTOR;
+            ;
+
+            auto r_21 = b_2.pos - b_1.pos;
+            auto r_21_hat = glm::normalize(r_21);
+            auto distance = glm::distance(b_1.pos, b_2.pos);
+            // attraction force
+            auto f_21 = -GRAV_CONST * ((m_1 * m_2) / (distance * distance)) * r_21_hat;
+            auto f_12 = -f_21;
+
+            b_1.acc += f_12;
+            b_2.acc += f_21;
         }
-        for(auto& b : gravdata){
-            if(cancel.is_cancelled()) break;
-            b.vel += b.acc;
-            b.acc = glm::vec3(0);
-            auto tmp_speed = b.vel;
-            tmp_speed *= delta_t;
-            b.pos += tmp_speed;
-        }
+    }
+    for (auto& b : gravdata) {
+        if (cancel.is_cancelled())
+            break;
+        b.vel += b.acc;
+        b.acc = glm::vec3(0);
+        auto tmp_speed = b.vel;
+        tmp_speed *= delta_t;
+        b.pos += tmp_speed;
     }
 }
+}
 
-void Game::collect_light_sources(){
+void Game::collect_light_sources()
+{
     auto offset = 0;
-    if(m_ssbos.light_sources.size != m_light_data.size()){
+    if (m_ssbos.light_sources.size != m_light_data.size()) {
         m_light_data.resize(m_ssbos.light_sources.size);
     }
     // std::vector<LightSource> ls(m_ssbos.light_sources.size);
-    std::for_each(m_bodies.begin(), m_bodies.end(), [&](auto b_ptr){
-        if(auto star = dynamic_cast<obj::Star*>(b_ptr.get()); star){
+    std::for_each(m_bodies.begin(), m_bodies.end(), [&](auto b_ptr) {
+        if (auto star = dynamic_cast<obj::Star*>(b_ptr.get()); star) {
             m_light_data[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
@@ -108,12 +111,13 @@ void Game::collect_light_sources(){
     // return ls;
 }
 
-void Game::buffer_light_data(){
+void Game::buffer_light_data()
+{
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ssbos.light_sources.id);
     glBufferData(GL_SHADER_STORAGE_BUFFER,
-            m_light_data.size() * sizeof(LightSource),
-            m_light_data.data(),
-            GL_DYNAMIC_DRAW);
+        m_light_data.size() * sizeof(LightSource),
+        m_light_data.data(),
+        GL_DYNAMIC_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
@@ -182,7 +186,7 @@ void Game::initialize()
     glViewport(0, 0, m_width, m_height);
 
     initialize_uniforms();
-    m_gbuffer = Gbuffer{ this->m_width, this->m_height };
+    m_gbuffer = Gbuffer { this->m_width, this->m_height };
 
     m_grid = std::make_shared<Grid>(Grid(9));
 
@@ -220,43 +224,41 @@ void Game::initialize()
     m_gui.game_options_menu.fov = m_fov;
     m_gui.help_menu_enabled = true;
 
-    auto font = std::make_shared<font::FontBitmap>(font::load_font(files::game_data::fonts::ARCADE_TTF, 48));
-    auto font_shader = std::make_shared<Shader>(Shader(shaders::TEXT_VERT, shaders::TEXT_FRAG));
-
-    m_gui.mode = font::Text2D(font, font_shader, "Edit");
+    m_gui.mode = font::Text2D("Edit");
     m_gui.mode.set_pos({ 0, 0 });
     m_gui.mode.set_color(gui::GameUI::EDIT_MODE_TEXT_COLOR);
 
-    m_gui.paused = font::Text2D(font, font_shader, "PAUSED");
+    m_gui.paused = font::Text2D("PAUSED");
     m_gui.paused.set_color({ 1.0, .0, .0 });
     m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
 
-    m_gui.game_version = font::Text2D(font, font_shader, global_decl::GAME_VERSION);
+    m_gui.game_version = font::Text2D(global_decl::GAME_VERSION);
     m_gui.game_version.set_color({ 1.0, 1.0, 1.0 });
     m_gui.game_version.set_scale(.5f);
     m_gui.game_version.set_pos({ m_width - m_gui.game_version.get_text_width(), m_height - m_gui.game_version.get_text_height() });
 
-    m_gui.fps_count = font::Text2D(font, font_shader, "0");
+    m_gui.fps_count = font::Text2D("0");
     m_gui.fps_count.set_color({ 1.0, 1.0, 1.0 });
     m_gui.fps_count.set_scale(.5f);
     m_gui.fps_count.set_pos({ m_width - m_gui.game_version.get_text_width(), m_gui.game_version.get_text_height() });
 
     m_gui.selected_body_menu.trajectory_trail = obj::Trail(1024);
     m_gui.selected_body_menu.trajectory_data.resize(m_gui.selected_body_menu.trajectory_trail.size());
-    m_gui.selected_body_menu.trajectory_color = { 0.1, 0.6, 0.4, 0.5};
+    m_gui.selected_body_menu.trajectory_color = { 0.1, 0.6, 0.4, 0.5 };
     m_gui.selected_body_menu.trajectory_trail.set_color(m_gui.selected_body_menu.trajectory_color);
 }
-void Game::initialize_uniforms(){
+void Game::initialize_uniforms()
+{
     m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
         (float)m_width / (float)m_height, 0.1f, PROJECTION_FAR_PLANE);
 
     m_ubos.matrices.text_projection = glm::ortho(
-            0.0f,
-            static_cast<float>(m_width),
-            static_cast<float>(m_height),
-            0.0f,
-            0.0f,
-            100.0f);
+        0.0f,
+        static_cast<float>(m_width),
+        static_cast<float>(m_height),
+        0.0f,
+        0.0f,
+        100.0f);
 
     glGenBuffers(1, &m_ubos.matrices.id);
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
@@ -264,11 +266,11 @@ void Game::initialize_uniforms(){
         sizeof(MatricesUBO),
         NULL, GL_STATIC_DRAW);
 
-    //buffer projection
+    // buffer projection
     glBufferSubData(GL_UNIFORM_BUFFER,
         sizeof(MatricesUBO::view), sizeof(MatricesUBO::projection), glm::value_ptr(m_ubos.matrices.projection));
 
-    //buffer text_projection
+    // buffer text_projection
     glBufferSubData(GL_UNIFORM_BUFFER,
         2 * sizeof(MatricesUBO::view), sizeof(MatricesUBO::text_projection), glm::value_ptr(m_ubos.matrices.text_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -295,16 +297,16 @@ void Game::run()
         m_fps++;
         m_delta_t = m_current_frame_t - m_last_frame_t;
 
-        if(m_delta_t_record.size() >= DELTA_T_MEAN_SAMPLE_SIZE){
+        if (m_delta_t_record.size() >= DELTA_T_MEAN_SAMPLE_SIZE) {
             m_delta_t_record.pop_front();
         }
         m_delta_t_record.push_back(m_delta_t);
         // a fixed update happens every 0.2 second
-        if(m_current_frame_t - m_last_fixed_update_t >= 0.2){
+        if (m_current_frame_t - m_last_fixed_update_t >= 0.2) {
             m_last_fixed_update_t = m_current_frame_t;
             m_fixed_update = true;
         }
-        if(m_current_frame_t - m_last_fps_update_t >= 1.0){
+        if (m_current_frame_t - m_last_fps_update_t >= 1.0) {
             m_last_fps_update_t = m_current_frame_t;
             m_gui.fps_count.set_text(std::to_string(m_fps));
             m_fps = 0;
@@ -328,8 +330,7 @@ void Game::update()
     auto selected_pos_after_update = glm::vec3(0);
     // in case the body was selected during the update loop, so the initial camera offset is not equal to the bodies position
     auto had_selected = !m_gui.selected_body.expired();
-    if(had_selected && m_gui.selected_body_menu.track)
-    {
+    if (had_selected && m_gui.selected_body_menu.track) {
         auto selected = m_gui.selected_body.lock();
         selected_pos_before_update = selected->get_pos();
     }
@@ -338,19 +339,19 @@ void Game::update()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    //this has to happen before the while loop
-    if (m_gui_enabled){
+    // this has to happen before the while loop
+    if (m_gui_enabled) {
         draw_gui();
     }
-    while(!m_key_events.empty()){
+    while (!m_key_events.empty()) {
         auto [key, sc, act, mds] = m_key_events.front();
-        if(!m_typing){
+        if (!m_typing) {
             m_keybinds.handle(key, act, m_gui_enabled ? BindMode::Editor : BindMode::Normal, mds);
             m_keybinds.handle(key, act, BindMode::Any, mds);
         }
         m_key_events.pop();
     }
-    if(m_typing) {
+    if (m_typing) {
         m_typing = false;
     }
     continuos_key_input();
@@ -358,7 +359,7 @@ void Game::update()
     if (!m_paused) {
         update_bodies();
     }
-    if(m_maximize != MaximizeState::DoNothing){
+    if (m_maximize != MaximizeState::DoNothing) {
         glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
     }
@@ -367,43 +368,42 @@ void Game::update()
         glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwMaximizeWindow(m_window_ptr);
         break;
-    case MaximizeState::Minimize:{
+    case MaximizeState::Minimize: {
         glfwRestoreWindow(m_window_ptr);
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
         auto resolution = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
         glfwSetWindowSize(m_window_ptr, resolution.width, resolution.height);
-        glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height,m_width, m_height);
-    }break;
+        glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height, m_width, m_height);
+    } break;
     case MaximizeState::DoNothing:
         break;
     }
 
     auto status = m_gui.selected_body_menu.trajectory_status.load();
-    if(status == gui::TrailCompStatus::Finished){
+    if (status == gui::TrailCompStatus::Finished) {
         m_gui.selected_body_menu.trajectory_trail.copy_from_vector(m_gui.selected_body_menu.trajectory_data);
         m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Idle);
     }
-    if(status == gui::TrailCompStatus::Terminated){
+    if (status == gui::TrailCompStatus::Terminated) {
         schedule_selected_body_trajectory_calc();
     }
 
-    if(had_selected && !m_gui.selected_body.expired() && m_gui.selected_body_menu.track)
-    {
+    if (had_selected && !m_gui.selected_body.expired() && m_gui.selected_body_menu.track) {
         auto selected = m_gui.selected_body.lock();
         selected_pos_after_update = selected->get_pos() - selected_pos_before_update;
         m_camera.set_pos(m_camera.get_pos() + selected_pos_after_update);
     }
-
 }
-void Game::update_buffers() {
+void Game::update_buffers()
+{
 
     m_ubos.matrices.view = m_camera.get_look_at();
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
     glBufferSubData(GL_UNIFORM_BUFFER,
-            0, sizeof(MatricesUBO::view), glm::value_ptr(m_ubos.matrices.view));
+        0, sizeof(MatricesUBO::view), glm::value_ptr(m_ubos.matrices.view));
 
     glBufferSubData(GL_UNIFORM_BUFFER,
-            sizeof(MatricesUBO::view), sizeof(MatricesUBO::projection), glm::value_ptr(m_ubos.matrices.projection));
+        sizeof(MatricesUBO::view), sizeof(MatricesUBO::projection), glm::value_ptr(m_ubos.matrices.projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.lighting_globals.id);
@@ -415,12 +415,12 @@ void Game::update_buffers() {
 }
 void Game::update_bodies()
 {
-    std::unordered_map<std::shared_ptr<obj::CelestialBody>, size_t> to_delete{};
+    std::unordered_map<std::shared_ptr<obj::CelestialBody>, size_t> to_delete {};
     // std::vector<std::shared_ptr<obj::CelestialBody>> to_delete{};
     auto offset = 0;
     for (size_t body = 0; body < m_bodies.size(); body++) {
-        //if this celestial body is a star, collect its light data
-        if(auto star = dynamic_cast<obj::Star*>(m_bodies[body].get()); star){
+        // if this celestial body is a star, collect its light data
+        if (auto star = dynamic_cast<obj::Star*>(m_bodies[body].get()); star) {
             m_light_data[offset++] = {
                 .position = star->get_pos(),
                 .color = star->get_color(),
@@ -433,13 +433,13 @@ void Game::update_bodies()
             auto b_1 = m_bodies[body];
             auto b_2 = m_bodies[next_body];
 
-            //check if collision first
-            if(glm::distance(b_1->get_pos(), b_2->get_pos()) <= b_1->get_radius() + b_2->get_radius()){
+            // check if collision first
+            if (glm::distance(b_1->get_pos(), b_2->get_pos()) <= b_1->get_radius() + b_2->get_radius()) {
                 auto [eater, eaten] = b_1->get_mass() > b_2->get_mass() ? std::make_tuple(b_1, b_2) : std::make_tuple(b_2, b_1);
-                if (dynamic_cast<obj::Star*>(eaten.get())){
+                if (dynamic_cast<obj::Star*>(eaten.get())) {
                     std::swap(eater, eaten);
                 }
-                if(!to_delete.contains(eaten)){
+                if (!to_delete.contains(eaten)) {
                     eater->set_mass(eater->get_mass() + eaten->get_mass());
                     to_delete.insert({ eaten, next_body });
                     break;
@@ -447,7 +447,8 @@ void Game::update_bodies()
             }
             // https://en.wikipedia.org/wiki/Newton%27s_law_of_universal_gravitation#Vector_form
             auto m_1 = b_1->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;
-            auto m_2 = b_2->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;;
+            auto m_2 = b_2->get_mass() * obj::CelestialBody::MASS_BOOST_FACTOR;
+            ;
 
             auto r_21 = b_2->get_pos() - b_1->get_pos();
             auto r_21_hat = glm::normalize(r_21);
@@ -460,22 +461,24 @@ void Game::update_bodies()
             b_2->set_acceleration(b_2->get_acceleration() + f_21);
         }
         m_bodies[body]->update(m_delta_t);
-        if(m_fixed_update)
+        if (m_fixed_update)
             m_bodies[body]->fixed_update();
     }
-    for (auto [ptr, idx] : to_delete){
+    for (auto [ptr, idx] : to_delete) {
         remove_body(ptr.get());
     }
     buffer_light_data();
 }
-void Game::remove_body(obj::CelestialBody* body){
-    if(auto star = dynamic_cast<obj::Star*>(body); star){
+void Game::remove_body(obj::CelestialBody* body)
+{
+    if (auto star = dynamic_cast<obj::Star*>(body); star) {
         remove_star(star);
     } else {
         remove_planet(dynamic_cast<obj::Planet*>(body));
     }
 }
-void Game::render_gbuffer(){
+void Game::render_gbuffer()
+{
     glClearColor(0, 0, 0, 0);
     m_gbuffer.bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -484,10 +487,10 @@ void Game::render_gbuffer(){
     // glDisable(GL_CULL_FACE);
     std::size_t i = 0;
     for (auto& c_obj : m_bodies) {
-        if(auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet){
+        if (auto planet = dynamic_cast<obj::Planet*>(c_obj.get()); planet) {
             planet->deferred_render();
         }
-        if(auto star = dynamic_cast<obj::Star*>(c_obj.get()); star){
+        if (auto star = dynamic_cast<obj::Star*>(c_obj.get()); star) {
             m_gbuffer.unbind();
             glBindFramebuffer(GL_FRAMEBUFFER, star->get_shadow_map_fbo());
             auto [w, h] = obj::Star::get_shadow_map_size();
@@ -496,8 +499,9 @@ void Game::render_gbuffer(){
             glCullFace(GL_FRONT);
 
             star->load_shadow_transforms_uniform();
-            for(auto& obj : m_bodies){
-                if(obj.get() == star) continue;
+            for (auto& obj : m_bodies) {
+                if (obj.get() == star)
+                    continue;
                 obj->shadow_render();
             }
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
@@ -507,9 +511,9 @@ void Game::render_gbuffer(){
         }
     }
     m_gbuffer.unbind();
-
 }
-void Game::render_light_volumes(){
+void Game::render_light_volumes()
+{
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -529,7 +533,7 @@ void Game::render_light_volumes(){
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_normal);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer.g_color_spec);
-    for(auto& ls : m_light_data){
+    for (auto& ls : m_light_data) {
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_CUBE_MAP, ls.shadow_map_id);
         lv_shader->set_int("shadow_map", 3);
@@ -548,12 +552,11 @@ void Game::render_light_volumes(){
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
-    //blit the depth buffer
+    // blit the depth buffer
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer.fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glBlitFramebuffer(
-        0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST
-    );
+        0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -573,9 +576,10 @@ void Game::render()
 #else
         false;
 #endif
-    if(!wireframe_draw) render_gbuffer();
+    if (!wireframe_draw)
+        render_gbuffer();
 
-    if(!wireframe_draw)
+    if (!wireframe_draw)
         render_light_volumes();
     else {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -586,13 +590,13 @@ void Game::render()
     for (auto& c_obj : m_bodies) {
         c_obj->forward_render(normals_draw, wireframe_draw, m_gui.game_options_menu.draw_trails);
     }
-    if(m_gui.game_options_menu.draw_grid){
+    if (m_gui.game_options_menu.draw_grid) {
         m_grid->forward_render(m_camera.get_pos());
     }
-    if(m_paused && m_gui.selected_body_menu.trajectory_status.load() == gui::TrailCompStatus::Idle && !m_gui.selected_body.expired()){
+    if (m_paused && m_gui.selected_body_menu.trajectory_status.load() == gui::TrailCompStatus::Idle && !m_gui.selected_body.expired()) {
         m_gui.selected_body_menu.trajectory_trail.forward_render();
     }
-    if(!m_gui.selected_body.expired() && m_gui.game_options_menu.draw_selection_marker){
+    if (!m_gui.selected_body.expired() && m_gui.game_options_menu.draw_selection_marker) {
         auto slc = m_gui.selected_body.lock();
         obj::SelectedMarker::instance().forward_render(m_camera.get_pos(), slc->get_pos(), slc->get_radius());
     }
@@ -600,24 +604,25 @@ void Game::render()
 
     render_2d();
 }
-void Game::render_2d() {
+void Game::render_2d()
+{
     glDisable(GL_CULL_FACE);
 #ifdef DEBUG
-    if(m_gui.debug_menu.draw_wireframe){
+    if (m_gui.debug_menu.draw_wireframe) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 #endif
     m_gui.mode.draw();
-    if(m_paused){
+    if (m_paused) {
         m_gui.paused.draw();
     }
     m_gui.game_version.draw();
     m_gui.fps_count.draw();
 #ifdef DEBUG
-    if(m_gui.debug_menu.draw_wireframe){
+    if (m_gui.debug_menu.draw_wireframe) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
-    if(m_gui.debug_menu.do_face_culling){
+    if (m_gui.debug_menu.do_face_culling) {
 #endif
         glEnable(GL_CULL_FACE);
 #ifdef DEBUG
@@ -641,7 +646,8 @@ void Game::draw_gui()
         draw_debug_menu_gui();
 #endif
 }
-void Game::draw_game_options_gui() {
+void Game::draw_game_options_gui()
+{
     ImGui::Begin("Game Options", &m_gui.game_options_menu_enabled, 0);
     if (ImGui::SliderFloat("Camera speed", &m_gui.game_options_menu.camera_speed, 0, 100, NULL, ImGuiSliderFlags_AlwaysClamp)) {
         m_camera.set_speed(m_gui.game_options_menu.camera_speed);
@@ -649,32 +655,32 @@ void Game::draw_game_options_gui() {
     if (ImGui::SliderFloat("Camera FOV", &m_gui.game_options_menu.fov, 30, 120, NULL, ImGuiSliderFlags_AlwaysClamp)) {
         m_fov = m_gui.game_options_menu.fov;
         m_ubos.matrices.projection = glm::perspective(glm::radians(m_fov),
-                (float)m_width / (float)m_height, 0.1f, PROJECTION_FAR_PLANE);
+            (float)m_width / (float)m_height, 0.1f, PROJECTION_FAR_PLANE);
     }
-    if(ImGui::Combo("Resolutions",
-                &m_gui.game_options_menu.current,
-                &m_gui.game_options_menu.get_resolution,
-                nullptr,
-                m_gui.game_options_menu.resolutions.size()))
-    {
+    if (ImGui::Combo("Resolutions",
+            &m_gui.game_options_menu.current,
+            &m_gui.game_options_menu.get_resolution,
+            nullptr,
+            m_gui.game_options_menu.resolutions.size())) {
         auto& selected = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
         glfwSetWindowSize(m_window_ptr, selected.width, selected.height);
     }
     ImGui::Checkbox("Draw grid", &m_gui.game_options_menu.draw_grid);
     ImGui::Checkbox("Draw trails", &m_gui.game_options_menu.draw_trails);
     ImGui::Checkbox("Draw selection marker", &m_gui.game_options_menu.draw_selection_marker);
-    if(ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)){
+    if (ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)) {
         m_grid->set_scale(m_gui.game_options_menu.grid_scale);
     };
-    if(ImGui::SliderFloat4("Grid color", glm::value_ptr(m_gui.game_options_menu.grid_color), 0.0, 1.0)){
+    if (ImGui::SliderFloat4("Grid color", glm::value_ptr(m_gui.game_options_menu.grid_color), 0.0, 1.0)) {
         m_grid->set_color(m_gui.game_options_menu.grid_color);
     }
-    if(ImGui::ColorEdit3("Predicted trajectory color", glm::value_ptr(m_gui.selected_body_menu.trajectory_color))){
+    if (ImGui::ColorEdit3("Predicted trajectory color", glm::value_ptr(m_gui.selected_body_menu.trajectory_color))) {
         m_gui.selected_body_menu.trajectory_trail.set_color(m_gui.selected_body_menu.trajectory_color);
     }
     ImGui::End();
 }
-void Game::draw_spawn_menu_gui() {
+void Game::draw_spawn_menu_gui()
+{
     ImGui::Begin("Spawn menu", &m_gui.spawn_menu_enabled);
     ImGui::ColorEdit3("Color", glm::value_ptr(m_gui.spawn_menu.color));
     ImGui::SliderFloat("Mass", &m_gui.spawn_menu.mass, 0.001, 100, NULL, 0);
@@ -685,88 +691,102 @@ void Game::draw_spawn_menu_gui() {
     ImGui::Checkbox("Is star", &m_gui.spawn_menu.is_star);
     ImGui::End();
 }
-void Game::draw_help_menu_gui() {
+void Game::draw_help_menu_gui()
+{
     ImGui::Begin("Help", &m_gui.help_menu_enabled);
     ImGui::Text("Hello! Islands is a simple 3D gravity simulation.\n");
     ImGui::Text("%s", m_gui.help_menu.help_text.c_str());
     ImGui::End();
 }
 #ifdef DEBUG
-void Game::draw_debug_menu_gui() {
+void Game::draw_debug_menu_gui()
+{
     ImGui::Begin("Debug menu", &m_gui.debug_menu_enabled);
-    if(ImGui::Checkbox("Do face culling", &m_gui.debug_menu.do_face_culling)) {
-        if(m_gui.debug_menu.do_face_culling){
+    if (ImGui::Checkbox("Do face culling", &m_gui.debug_menu.do_face_culling)) {
+        if (m_gui.debug_menu.do_face_culling) {
             glEnable(GL_CULL_FACE);
         } else {
             glDisable(GL_CULL_FACE);
         }
     }
-    if(ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.draw_wireframe)) {
-        if(m_gui.debug_menu.draw_wireframe){
+    if (ImGui::Checkbox("Do wireframe", &m_gui.debug_menu.draw_wireframe)) {
+        if (m_gui.debug_menu.draw_wireframe) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         } else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
-    if(ImGui::Checkbox("Draw normals", &m_gui.debug_menu.draw_normals)) {}
+    if (ImGui::Checkbox("Draw normals", &m_gui.debug_menu.draw_normals)) { }
     ImGui::End();
 }
 #endif
-void Game::draw_selected_body_gui() {
+void Game::draw_selected_body_gui()
+{
     bool discarded = true;
     auto star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
     ImGui::Begin("Selected Celestial Body", &discarded);
-    if(ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))){
+    ImGui::Text("%s", m_gui.selected_body.lock()->get_name().c_str());
+
+    auto slc = m_gui.selected_body.lock();
+
+    m_typing |= ImGui::InputText("Name: ", m_gui.selected_body_menu.name, IM_ARRAYSIZE(m_gui.selected_body_menu.name));
+
+    if (ImGui::Button("Save name change")) {
+        slc->set_name(std::string(m_gui.selected_body_menu.name));
+        std::copy(slc->get_name().c_str(), slc->get_name().c_str() + sizeof(m_gui.selected_body_menu.name),
+            m_gui.selected_body_menu.name);
+    }
+
+    if (ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))) {
         m_gui.selected_body.lock()->set_color(m_gui.selected_body_menu.color);
-        if(star){
+        if (star) {
             collect_light_sources();
         }
     }
-    if(ImGui::SliderFloat("Object mass", &m_gui.selected_body_menu.mass, 0.001, 1000)) {
+    if (ImGui::SliderFloat("Object mass", &m_gui.selected_body_menu.mass, 0.001, 1000)) {
         if (m_gui.selected_body_menu.mass <= 0)
             m_gui.selected_body_menu.mass = 0.001;
         m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
         schedule_selected_body_trajectory_calc();
-        if(star){
+        if (star) {
             collect_light_sources();
         }
     }
-    if(ImGui::SliderFloat3("Object velocity vector components", glm::value_ptr(m_gui.selected_body_menu.velocity), -50, 50)){
+    if (ImGui::SliderFloat3("Object velocity vector components", glm::value_ptr(m_gui.selected_body_menu.velocity), -50, 50)) {
         m_gui.selected_body.lock()->set_speed(m_gui.selected_body_menu.velocity);
         m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
         schedule_selected_body_trajectory_calc();
     }
-    if(ImGui::SliderFloat("Object speed", &m_gui.selected_body_menu.speed, 0, 50)){
+    if (ImGui::SliderFloat("Object speed", &m_gui.selected_body_menu.speed, 0, 50)) {
         m_gui.selected_body.lock()->set_speed(
-                glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
+            glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
         m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
         schedule_selected_body_trajectory_calc();
     }
-    if(ImGui::ColorEdit3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color))){
+    if (ImGui::ColorEdit3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color))) {
         m_gui.selected_body.lock()->set_trail_color(m_gui.selected_body_menu.trail_color);
     }
     m_gui.selected_body_menu.position = m_gui.selected_body.lock()->get_pos();
-    if(ImGui::InputFloat3("Object position", glm::value_ptr(m_gui.selected_body_menu.position))){
+    if (ImGui::InputFloat3("Object position", glm::value_ptr(m_gui.selected_body_menu.position))) {
         m_gui.selected_body.lock()->set_pos(m_gui.selected_body_menu.position);
         schedule_selected_body_trajectory_calc();
     }
-    if(ImGui::Checkbox("Track", &m_gui.selected_body_menu.track)){
-
+    if (ImGui::Checkbox("Track", &m_gui.selected_body_menu.track)) {
     }
-    if(ImGui::Button("Jump to")){
+    if (ImGui::Button("Jump to")) {
         auto slc = m_gui.selected_body.lock();
         auto pos = slc->get_pos();
         auto camera_front = m_camera.get_front();
         auto new_camera_pos = pos + (-camera_front * (slc->get_radius() * 2));
         m_camera.set_pos(new_camera_pos);
     }
-    if(ImGui::Button("Deselect")){
+    if (ImGui::Button("Deselect")) {
         m_gui.selected_body.lock()->set_selected(false);
         m_gui.selected_body.reset();
     }
-    if(ImGui::Button("Delete body")){
+    if (ImGui::Button("Delete body")) {
         auto body_as_star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
-        if(body_as_star){
+        if (body_as_star) {
             remove_star(body_as_star);
         } else {
             remove_planet(dynamic_cast<obj::Planet*>(m_gui.selected_body.lock().get()));
@@ -774,26 +794,27 @@ void Game::draw_selected_body_gui() {
         m_gui.selected_body.reset();
     }
     ImGui::End();
-    if (!discarded){
+    if (!discarded) {
         m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
     }
 }
-void Game::draw_body_list_gui() {
+void Game::draw_body_list_gui()
+{
     ImGui::Begin("Celestial bodies list", &m_gui.bodies_list_enabled);
 
     ImGui::BeginListBox("Celestial bodies");
 
-    for(size_t i = 0; i < m_bodies.size(); i++){
+    for (size_t i = 0; i < m_bodies.size(); i++) {
         auto body = m_bodies[i];
         auto& name = body->get_name();
         ImGui::PushID(i);
-        if(ImGui::Selectable(name.c_str())){
+        if (ImGui::Selectable(name.c_str())) {
             on_body_selected(body);
         }
         ImGui::PopID();
     }
     ImGui::EndListBox();
-    if(ImGui::Button("DELETE ALL")){
+    if (ImGui::Button("DELETE ALL")) {
         m_bodies.clear();
         collect_light_sources();
         buffer_light_data();
@@ -801,31 +822,35 @@ void Game::draw_body_list_gui() {
 
     ImGui::End();
 }
-void Game::add_planet(obj::Planet new_planet){
+void Game::add_planet(obj::Planet new_planet)
+{
     auto planet = std::make_shared<obj::Planet>(new_planet);
     m_bodies.push_back(planet);
     collect_light_sources();
 }
-void Game::remove_planet(obj::Planet* planet){
-    auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
-            return ptr.get() == planet;
+void Game::remove_planet(obj::Planet* planet)
+{
+    auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr) {
+        return ptr.get() == planet;
     });
-    if(f != m_bodies.end()){
+    if (f != m_bodies.end()) {
         m_bodies.erase(f);
         collect_light_sources();
     }
 }
-void Game::add_star(obj::Star&& new_star){
+void Game::add_star(obj::Star&& new_star)
+{
     auto star = std::make_shared<obj::Star>(std::move(new_star));
     m_bodies.emplace_back(std::move(star));
     m_ssbos.light_sources.size++;
     collect_light_sources();
 }
-void Game::remove_star(obj::Star* star){
-    auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr){
-            return ptr.get() == star;
+void Game::remove_star(obj::Star* star)
+{
+    auto f = std::remove_if(m_bodies.begin(), m_bodies.end(), [&](auto ptr) {
+        return ptr.get() == star;
     });
-    if(f != m_bodies.end()){
+    if (f != m_bodies.end()) {
         m_bodies.erase(f);
         m_ssbos.light_sources.size--;
         collect_light_sources();
@@ -835,11 +860,11 @@ void Game::key_handler(GLFWwindow* window, int key, int scancode, int action, in
 {
     (void)window;
     m_key_events.push(KeyEvent {
-            .key = key,
-            .scancode = scancode,
-            .action = action,
-            .mods = mods,
-        });
+        .key = key,
+        .scancode = scancode,
+        .action = action,
+        .mods = mods,
+    });
 }
 
 void Game::continuos_key_input()
@@ -866,11 +891,11 @@ void Game::framebuffer_size_handler(GLFWwindow* window, int width, int height)
         (float)m_width / (float)m_height, 0.1f, PROJECTION_FAR_PLANE);
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_ubos.matrices.id);
-    //projection
+    // projection
     glBufferSubData(GL_UNIFORM_BUFFER,
         sizeof(MatricesUBO::view), sizeof(MatricesUBO::projection), glm::value_ptr(m_ubos.matrices.projection));
 
-    //text_projection
+    // text_projection
     glBufferSubData(GL_UNIFORM_BUFFER,
         2 * sizeof(MatricesUBO::view), sizeof(MatricesUBO::text_projection), glm::value_ptr(m_ubos.matrices.text_projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -911,16 +936,18 @@ void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset)
     (void)xoffset;
     m_camera.set_speed(std::max(m_camera.get_speed() + yoffset, 0.0));
 }
-void Game::window_maximize_handler(GLFWwindow* window, int maximized) {
+void Game::window_maximize_handler(GLFWwindow* window, int maximized)
+{
     glfwFocusWindow(window);
-    if(maximized){
+    if (maximized) {
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
     } else {
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
     }
 }
 
-void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int mods) {
+void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int mods)
+{
     (void)mods;
     double xpos = 0, ypos = 0;
     glfwGetCursorPos(window, &xpos, &ypos);
@@ -943,21 +970,23 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
             auto c = glm::dot(l, l) - std::pow(obj->get_radius(), 2);
             auto discr = (b * b) - 4 * c;
             std::optional<float> distance;
-            if(discr < 0) continue;
-            else if(discr > 0){
+            if (discr < 0)
+                continue;
+            else if (discr > 0) {
                 distance = std::min(-b + std::sqrt(discr), -b - std::sqrt(discr)) / 2.0;
             } else {
                 distance = -b / 2.0;
             }
-            if (distance < smallest_distance.value_or(1000) && distance >= 0){
+            if (distance < smallest_distance.value_or(1000) && distance >= 0) {
                 smallest_distance = distance;
                 on_body_selected(obj);
             }
         }
     }
 }
-void Game::on_body_selected(std::shared_ptr<obj::CelestialBody> obj){
-    if(!m_gui.selected_body.expired()){
+void Game::on_body_selected(std::shared_ptr<obj::CelestialBody> obj)
+{
+    if (!m_gui.selected_body.expired()) {
         m_gui.selected_body.lock()->set_selected(false);
     }
     obj->set_selected(true);
@@ -968,29 +997,33 @@ void Game::on_body_selected(std::shared_ptr<obj::CelestialBody> obj){
     m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
     m_gui.selected_body_menu.trail_color = obj->get_trail_color();
     m_gui.selected_body_menu.track = false;
+    std::fill(m_gui.selected_body_menu.name, m_gui.selected_body_menu.name + sizeof(m_gui.selected_body_menu.name), '\0');
+    auto len = std::min(obj->get_name().length(), sizeof(m_gui.selected_body_menu.name));
+    std::copy(obj->get_name().c_str(), obj->get_name().c_str() + len, m_gui.selected_body_menu.name);
     schedule_selected_body_trajectory_calc();
 }
-void Game::schedule_selected_body_trajectory_calc(){
+void Game::schedule_selected_body_trajectory_calc()
+{
     auto status = static_cast<gui::TrailCompStatus>(m_gui.selected_body_menu.trajectory_status.load());
-    if(status == gui::TrailCompStatus::Running){
+    if (status == gui::TrailCompStatus::Running) {
         m_gui.selected_body_menu.calc_cancellation.cancel();
         // m_gui.selected_body_menu.trail_status.wait(gui::TrailCompStatus::Running);
         // status = static_cast<gui::TrailCompStatus>(m_gui.selected_body_menu.trail_status.load());
     }
-    if(status == gui::TrailCompStatus::Terminated){
+    if (status == gui::TrailCompStatus::Terminated) {
         m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Idle);
         m_gui.selected_body_menu.calc_cancellation = gui::CancelationToken();
     }
-    if(status == gui::TrailCompStatus::Finished){
+    if (status == gui::TrailCompStatus::Finished) {
         m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Idle);
         status = static_cast<gui::TrailCompStatus>(m_gui.selected_body_menu.trajectory_status.load());
     }
     // collect bodies into gravdata and schedule the simulation
-    if(status == gui::TrailCompStatus::Idle){
+    if (status == gui::TrailCompStatus::Idle) {
         auto gravdata = std::vector<Gravdata>(m_bodies.size());
         auto selected = m_gui.selected_body.lock().get();
-        size_t selected_idx{};
-        for(size_t i = 0; i < m_bodies.size(); i++){
+        size_t selected_idx {};
+        for (size_t i = 0; i < m_bodies.size(); i++) {
             gravdata[i] = Gravdata {
                 .mass = m_bodies[i]->get_mass(),
                 .pos = m_bodies[i]->get_pos(),
@@ -1004,43 +1037,40 @@ void Game::schedule_selected_body_trajectory_calc(){
 
         auto mean_delta_t = std::accumulate(m_delta_t_record.begin(), m_delta_t_record.end(), 0.0) / m_delta_t_record.size();
 
-        std::thread([this](std::vector<Gravdata> gd, size_t s_idx, double mean_dt){
-                auto& cancel = m_gui.selected_body_menu.calc_cancellation;
-                m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Running);
-                auto clock = std::chrono::steady_clock{};
-                auto dt = mean_dt;
-                auto last_frame_t = clock.now();
-                auto gravd = std::move(gd);
-                auto& res = m_gui.selected_body_menu.trajectory_data;
-                const auto sz = res.size();
-                for(size_t i = 0; i < sz && !cancel.is_cancelled(); i++){
-                    auto current_frame_t = clock.now();
-                    std::chrono::duration<double> delta_t = current_frame_t - last_frame_t;
-                    m_last_frame_t = m_current_frame_t;
-                    for(auto i = 0; i < 2 && !cancel.is_cancelled(); i++) {
-                        gravity_step(gravd, dt, cancel);
-                    }
-                    res[i] = gravd[s_idx].pos;
+        std::thread([this](std::vector<Gravdata> gd, size_t s_idx, double mean_dt) {
+            auto& cancel = m_gui.selected_body_menu.calc_cancellation;
+            m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Running);
+            auto clock = std::chrono::steady_clock {};
+            auto dt = mean_dt;
+            auto last_frame_t = clock.now();
+            auto gravd = std::move(gd);
+            auto& res = m_gui.selected_body_menu.trajectory_data;
+            const auto sz = res.size();
+            for (size_t i = 0; i < sz && !cancel.is_cancelled(); i++) {
+                auto current_frame_t = clock.now();
+                std::chrono::duration<double> delta_t = current_frame_t - last_frame_t;
+                m_last_frame_t = m_current_frame_t;
+                for (auto i = 0; i < 2 && !cancel.is_cancelled(); i++) {
+                    gravity_step(gravd, dt, cancel);
                 }
-                if(cancel.is_cancelled()){
-                    m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Terminated);
-                } else {
-                    m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Finished);
-                }
-
-            },
-            std::move(gravdata), selected_idx, mean_delta_t).detach();
+                res[i] = gravd[s_idx].pos;
+            }
+            if (cancel.is_cancelled()) {
+                m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Terminated);
+            } else {
+                m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Finished);
+            }
+        },
+            std::move(gravdata), selected_idx, mean_delta_t)
+            .detach();
     }
 }
-void Game::initialize_key_bindings() {
-    m_keybinds.add_binding(GLFW_KEY_H, GLFW_PRESS, BindMode::Editor, [this](){
-        this->m_gui.help_menu_enabled = !this->m_gui.help_menu_enabled;
-    }, "Toggle this help menu");
-    m_keybinds.add_binding(GLFW_KEY_ESCAPE, GLFW_PRESS, BindMode::Any, [this](){
-        glfwSetWindowShouldClose(this->m_window_ptr, true);
-    }, "Exit the simulation");
+void Game::initialize_key_bindings()
+{
+    m_keybinds.add_binding(GLFW_KEY_H, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.help_menu_enabled = !this->m_gui.help_menu_enabled; }, "Toggle this help menu");
+    m_keybinds.add_binding(GLFW_KEY_ESCAPE, GLFW_PRESS, BindMode::Any, [this]() { glfwSetWindowShouldClose(this->m_window_ptr, true); }, "Exit the simulation");
     // // toggle the gui with [E]dit
-    m_keybinds.add_binding(GLFW_KEY_E, GLFW_PRESS, BindMode::Any, [this](){
+    m_keybinds.add_binding(GLFW_KEY_E, GLFW_PRESS, BindMode::Any, [this]() {
         this->m_gui_enabled = !this->m_gui_enabled;
         if (this->m_gui_enabled){
             glfwSetInputMode(this->m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -1050,30 +1080,28 @@ void Game::initialize_key_bindings() {
             glfwSetInputMode(this->m_window_ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             m_gui.mode.set_text("Normal");
             m_gui.mode.set_color(gui::GameUI::NORMAL_MODE_TEXT_COLOR);
-        }
-    }, "Toggle edit mode");
+        } }, "Toggle edit mode");
     // // [P]ause the game
-    m_keybinds.add_binding(GLFW_KEY_P, GLFW_PRESS, BindMode::Any, [this](){
+    m_keybinds.add_binding(GLFW_KEY_P, GLFW_PRESS, BindMode::Any, [this]() {
         this->m_paused = !this->m_paused;
         if(m_paused && !m_gui.selected_body.expired()){
             schedule_selected_body_trajectory_calc();
-        }
-    }, "Pause the simulation");
+        } }, "Pause the simulation");
     // // [F]ullscreen
-    m_keybinds.add_binding(GLFW_KEY_F, GLFW_PRESS, BindMode::Any, [this](){
+    m_keybinds.add_binding(GLFW_KEY_F, GLFW_PRESS, BindMode::Any, [this]() {
         int maximized = glfwGetWindowAttrib(m_window_ptr, GLFW_MAXIMIZED);
-        this->m_maximize = maximized ? MaximizeState::Minimize : MaximizeState::Maximize;
-    }, "Fullscreen");
+        this->m_maximize = maximized ? MaximizeState::Minimize : MaximizeState::Maximize; }, "Fullscreen");
     // // Shift + S -> spawn object
-    m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this](){
+    m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this]() {
         auto front = this->m_camera.get_front();
         auto pos = this->m_camera.get_pos() + front;
         auto vel = glm::normalize(front) * this->m_gui.spawn_menu.initial_velocity;
         auto color = this->m_gui.spawn_menu.color;
         auto mass = this->m_gui.spawn_menu.mass;
         auto name = std::string(this->m_gui.spawn_menu.name);
-        // auto obj = std::make_shared<obj::Planet>(obj::Planet(nullptr, pos, vel, glm::vec3(0), this->m_gui.spawn_menu.mass));
-        // obj->set_color(this->m_gui.spawn_menu.color);
+        if(name.empty()){
+            name = "Unnamed";
+        }
         if(m_gui.spawn_menu.is_star){
             auto star = obj::Star(nullptr, pos, vel, {}, mass);
             star.set_color(color);
@@ -1084,32 +1112,23 @@ void Game::initialize_key_bindings() {
             planet.set_color(color);
             planet.set_name(std::move(name));
             add_planet(planet);
-        }
-    }, "Spawn a new celestial body in front of the camera", GLFW_MOD_SHIFT);
-    //debug menu
+        } }, "Spawn a new celestial body in front of the camera", GLFW_MOD_SHIFT);
+    // debug menu
 #ifdef DEBUG
-    m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Any, [this](){
-        this->m_gui.debug_menu_enabled = !this->m_gui.debug_menu_enabled;
-    }, "Open the debug menu", GLFW_MOD_SHIFT);
+    m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Any, [this]() { this->m_gui.debug_menu_enabled = !this->m_gui.debug_menu_enabled; }, "Open the debug menu", GLFW_MOD_SHIFT);
 #endif
     // Editor mode specific keybinds
-    m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this](){
-        this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled;
-    }, "Open game settings");
-    m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Editor, [this](){
-        this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled;
-    }, "Open spawn menu");
-    m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Editor, [this](){
+    m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled; }, "Open game settings");
+    m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled; }, "Open spawn menu");
+    m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Editor, [this]() {
         if(!m_gui.selected_body.expired()){
             this->m_gui.selected_body.lock()->set_selected(false);
             this->m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
-        }
-    }, "Deselect currently selected body");
-    m_keybinds.add_binding(GLFW_KEY_L, GLFW_PRESS, BindMode::Editor, [this](){
-        this->m_gui.bodies_list_enabled = !this->m_gui.bodies_list_enabled;
-    }, "Open celestial bodies list");
+        } }, "Deselect currently selected body");
+    m_keybinds.add_binding(GLFW_KEY_L, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.bodies_list_enabled = !this->m_gui.bodies_list_enabled; }, "Open celestial bodies list");
     // Simulation mode specific keybinds
 }
-void Game::window_refresh_handler(GLFWwindow* window){
+void Game::window_refresh_handler(GLFWwindow* window)
+{
     glfwSwapBuffers(window);
 }
