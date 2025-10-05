@@ -300,7 +300,7 @@ namespace font{
         auto m = glm::mat4(1.0f);
         m = glm::translate(m, glm::vec3(m_pos));
         m = glm::scale(m, { m_scale, m_scale, 1.0 });
-        m = glm::rotate(m, glm::radians(m_rotation), { 0.0f, 0.0f, 1.0f });
+        m = glm::rotate(m, glm::radians(m_rotation), m_rotation_axis);
         m_model = m;
     }
     void Text2D::update() {
@@ -435,7 +435,51 @@ namespace font{
     void TextBase::set_scale(float s){
         m_scale = s;
     }
+    void TextBase::set_rotation_axis(glm::vec3 a){
+        this->m_rotation_axis = a;
+	}
+    const glm::vec3& TextBase::get_rotation_axis() const{
+        return m_rotation_axis;
+	}
     const float& TextBase::get_scale() const{
         return this->m_scale;
+    }
+    void Text3D::draw() const{
+        if (m_str.length() == 0) return;
+
+        ::glDisable(GL_DEPTH_TEST);
+        ::glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        ::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        ::glBindVertexArray(m_vao);
+
+        m_font_bitmap->bind_bitmap();
+        m_text_shader->use_shader();
+
+
+        auto scale = glm::scale(m_model, glm::vec3(m_scale, m_scale, 1.0));
+        auto scaling = glm::mat3(scale[0], scale[1], scale[2]);
+
+        auto model = glm::translate(m_model, m_pos);
+
+        m_text_shader->set_mat3("scaling", scaling);
+        m_text_shader->set_mat4("model", model);
+        m_text_shader->set_vec3("color", m_color);
+
+        ::glEnable(GL_BLEND);
+        ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        ::glDrawArrays(GL_TRIANGLES, 0, 6 * m_str.length());
+
+        m_font_bitmap->unbind_bitmap();
+        ::glBindVertexArray(0);
+        ::glEnable(GL_DEPTH_TEST);
+        ::glPixelStorei(GL_PACK_ALIGNMENT, 4);
+        ::glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    }
+    void Text3D::debug_draw() const{
+
+    }
+    void Text3D::set_pos(glm::vec3&& new_pos){
+        m_pos = new_pos;
     }
 }

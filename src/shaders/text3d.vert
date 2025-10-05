@@ -9,12 +9,26 @@ layout(std140, binding = 0) uniform Matrices {
     mat4 text_projection;
 };
 
-out vec2 glyph_coord;
-
 uniform mat4 model;
+uniform mat3 scaling;
+
+out vec2 glyph_coord;
 
 // out vec3 VertColor;
 void main() {
     glyph_coord = coord;
-    gl_Position = text_projection * model *vec4(vert_pos, 0.0, 1.0);
+    mat4 model_view = view * model;
+    // https://stackoverflow.com/a/66951138
+    // https://stackoverflow.com/a/5487981
+    // we basically need to nuke the Rotation part of the matrix,
+    // but since we want to preserve the scaling, the indentity matrix
+    // (that goes in the place of the Rotation section) has to be scaled
+    // and put it the place of the Rotation matrix
+    // I hope this shit makes sense in 10 years
+    model_view[0].xyz = scaling[0];
+    model_view[1].xyz = scaling[1];
+
+    vec4 viewspace = model_view * vec4(vert_pos, 0.0, 1.0);
+
+    gl_Position = projection * viewspace;
 }

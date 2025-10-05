@@ -71,6 +71,7 @@ namespace font{
             float m_rotation{0.0f};
             float m_scale{1.0f};
             glm::vec3 m_color{1.0};
+            glm::vec3 m_rotation_axis{0.0};
 
         public:
             virtual ~TextBase();
@@ -89,6 +90,8 @@ namespace font{
             virtual const glm::vec3& get_color() const;
             virtual void set_rotation(float r);
             virtual const float& get_rotation() const;
+            virtual void set_rotation_axis(glm::vec3 a);
+            virtual const glm::vec3& get_rotation_axis() const;
             virtual void set_scale(float s);
             virtual const float& get_scale() const;
             virtual float get_text_height() const = 0;
@@ -126,8 +129,10 @@ namespace font{
         };
 
 
+    protected:
         uint32_t m_vao{}, m_vbo{};
         float m_height{}, m_width{};
+        Text2D(std::shared_ptr<FontBitmap> font, std::shared_ptr<Shader> shader, std::string text);
     public:
         virtual ~Text2D();
         Text2D();
@@ -150,6 +155,51 @@ namespace font{
         void update_position();
     };
 
+    class Text3D : public Text2D {
+    private:
+        class DefaultShader {
+            std::shared_ptr<Shader> m_shader;
+
+            inline DefaultShader() {
+#ifdef DEBUG
+            m_shader = std::make_shared<Shader>(Shader(
+                        std::string(files::src::shaders::TEXT3D_VERT),
+                        std::string(files::src::shaders::TEXT3D_FRAG)
+                        ));
+#else
+            m_shader = std::make_shared<Shader>(Shader(
+                        shaders::TEXT3D_VERT,
+                        shaders::TEXT3D_FRAG,
+                        ));
+#endif
+            }
+            DefaultShader(const DefaultShader&) = delete;
+            DefaultShader operator=(const DefaultShader&) = delete;
+        public:
+            inline static DefaultShader& get_instance() {
+                static DefaultShader instance;
+                return instance;
+            }
+            inline std::shared_ptr<Shader> get_shader() {
+                return m_shader;
+            }
+
+        };
+    public:
+        virtual ~Text3D();
+        Text3D();
+        Text3D(std::string text);
+        Text3D(const Text3D& other);
+        Text3D& operator=(const Text3D& other);
+        Text3D(Text3D&& other);
+        Text3D& operator=(Text3D&& other);
+        virtual void draw() const override;
+        virtual void debug_draw() const override;
+        void set_pos(glm::vec3&& new_pos);
+    private:
+        void update();
+        void update_position();
+    };
     class DefaultFont {
         std::shared_ptr<FontBitmap> m_font;
 

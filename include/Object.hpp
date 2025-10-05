@@ -208,7 +208,7 @@ protected:
     float m_radius {};
     glm::vec3 m_color;
     Trail m_trail{};
-    // font::Text2D m_label;
+    font::Text3D m_label;
     inline static constexpr uint32_t DEFAULT_TRAIL_POINT_N = 36;
 
 private:

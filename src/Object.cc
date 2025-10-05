@@ -27,7 +27,7 @@ namespace obj {
         }
         if(render_trails)
             m_trail.forward_render();
-        // m_label.draw();
+        m_label.draw();
     }
     void CelestialBody::fixed_update(){
         m_trail.push_point(m_pos);
@@ -38,6 +38,8 @@ namespace obj {
         auto tmp_speed = m_speed;
         tmp_speed *= delta_t;
         m_pos += tmp_speed;
+
+        m_label.set_pos(glm::vec3(m_pos.x, m_pos.y + m_radius, m_pos.z));
     }
     void CelestialBody::set_pos(glm::vec3 pos){
         m_pos = pos;
