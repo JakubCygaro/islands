@@ -243,8 +243,8 @@ Text3D::Text3D()
 Text3D::Text3D(std::string text)
     : Text2D(text)
 {
-    // m_font_bitmap = font::DefaultFont::get_instance().get_font_bitmap();
-    // m_text_shader = font::Text3D::DefaultShader::get_instance().get_shader();
+    m_font_bitmap = font::DefaultFont::get_instance().get_font_bitmap();
+    m_text_shader = font::Text3D::DefaultShader::get_instance().get_shader();
     // Text2D::update();
     // Text2D::update_position();
 }

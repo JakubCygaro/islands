@@ -31,4 +31,5 @@ void main() {
     vec4 viewspace = model_view * vec4(vert_pos, 0.0, 1.0);
 
     gl_Position = projection * viewspace;
+    gl_Position = projection * view * model * vec4(vert_pos, 0.0, 1.0);
 }

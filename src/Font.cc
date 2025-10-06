@@ -448,6 +448,7 @@ namespace font{
         if (m_str.length() == 0) return;
 
         ::glDisable(GL_DEPTH_TEST);
+        ::glDisable(GL_CULL_FACE);
         ::glPixelStorei(GL_PACK_ALIGNMENT, 1);
         ::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         ::glBindVertexArray(m_vao);
@@ -456,10 +457,11 @@ namespace font{
         m_text_shader->use_shader();
 
 
-        auto scale = glm::scale(m_model, glm::vec3(m_scale, m_scale, 1.0));
+        auto scale = glm::scale(glm::mat4(1.0), glm::vec3(m_scale, m_scale, 1.0));
         auto scaling = glm::mat3(scale[0], scale[1], scale[2]);
 
-        auto model = glm::translate(m_model, m_pos);
+        auto model = glm::scale(m_model, glm::vec3(m_scale, m_scale, 1.0));
+        model = glm::translate(model, m_pos);
 
         m_text_shader->set_mat3("scaling", scaling);
         m_text_shader->set_mat4("model", model);
@@ -473,6 +475,7 @@ namespace font{
         m_font_bitmap->unbind_bitmap();
         ::glBindVertexArray(0);
         ::glEnable(GL_DEPTH_TEST);
+        ::glEnable(GL_CULL_FACE);
         ::glPixelStorei(GL_PACK_ALIGNMENT, 4);
         ::glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     }
