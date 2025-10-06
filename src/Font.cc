@@ -481,5 +481,6 @@ namespace font{
     }
     void Text3D::set_pos(glm::vec3&& new_pos){
         m_pos = new_pos;
+        Text2D::update_position();
     }
 }

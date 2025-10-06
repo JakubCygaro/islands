@@ -77,8 +77,8 @@ namespace font{
             virtual ~TextBase();
             TextBase();
             TextBase(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text = "");
-            TextBase(const TextBase& other);
-            TextBase& operator=(const TextBase& other);
+            TextBase(const TextBase& other) = delete;
+            TextBase& operator=(const TextBase& other) = delete;
             TextBase(TextBase&& other);
             TextBase& operator=(TextBase&& other);
 
@@ -137,8 +137,8 @@ namespace font{
         virtual ~Text2D();
         Text2D();
         Text2D(std::string text);
-        Text2D(const Text2D& other);
-        Text2D& operator=(const Text2D& other);
+        Text2D(const Text2D& other) = delete;
+        Text2D& operator=(const Text2D& other) = delete;
         Text2D(Text2D&& other);
         Text2D& operator=(Text2D&& other);
         virtual void draw() const override;
@@ -150,7 +150,7 @@ namespace font{
         virtual void set_scale(float s) override;
         virtual float get_text_height() const override;
         virtual float get_text_width() const override;
-    private:
+    protected:
         void update();
         void update_position();
     };
@@ -189,16 +189,16 @@ namespace font{
         virtual ~Text3D();
         Text3D();
         Text3D(std::string text);
-        Text3D(const Text3D& other);
-        Text3D& operator=(const Text3D& other);
+        Text3D(const Text3D& other) = delete;
+        Text3D& operator=(const Text3D& other) = delete;
         Text3D(Text3D&& other);
         Text3D& operator=(Text3D&& other);
         virtual void draw() const override;
         virtual void debug_draw() const override;
         void set_pos(glm::vec3&& new_pos);
-    private:
-        void update();
-        void update_position();
+    protected:
+        // void update();
+        // void update_position();
     };
     class DefaultFont {
         std::shared_ptr<FontBitmap> m_font;

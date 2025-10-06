@@ -81,8 +81,10 @@ FontBitmap& FontBitmap::operator=(FontBitmap&& other)
 }
 FontBitmap::~FontBitmap()
 {
-    if (bitmap_id)
+    if (bitmap_id){
         glDeleteTextures(1, &bitmap_id);
+        bitmap_id = 0;
+    }
 }
 
 TextBase::TextBase()
@@ -97,29 +99,29 @@ TextBase::TextBase(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shad
     , m_font_bitmap { font_bitmap }
 {
 }
-TextBase::TextBase(const TextBase& other)
-    : m_str { other.m_str }
-    , m_text_shader { other.m_text_shader }
-    , m_font_bitmap { other.m_font_bitmap }
-    , m_pos { other.m_pos }
-    , m_model { other.m_model }
-    , m_rotation { other.m_rotation }
-    , m_scale { other.m_scale }
-    , m_color { other.m_color }
-{
-}
-TextBase& TextBase::operator=(const TextBase& other)
-{
-    m_str = other.m_str;
-    m_text_shader = other.m_text_shader;
-    m_font_bitmap = other.m_font_bitmap;
-    m_pos = other.m_pos;
-    m_model = other.m_model;
-    m_rotation = other.m_rotation;
-    m_scale = other.m_scale;
-    m_color = other.m_color;
-    return *this;
-}
+// TextBase::TextBase(const TextBase& other)
+//     : m_str { other.m_str }
+//     , m_text_shader { other.m_text_shader }
+//     , m_font_bitmap { other.m_font_bitmap }
+//     , m_pos { other.m_pos }
+//     , m_model { other.m_model }
+//     , m_rotation { other.m_rotation }
+//     , m_scale { other.m_scale }
+//     , m_color { other.m_color }
+// {
+// }
+// TextBase& TextBase::operator=(const TextBase& other)
+// {
+//     m_str = other.m_str;
+//     m_text_shader = other.m_text_shader;
+//     m_font_bitmap = other.m_font_bitmap;
+//     m_pos = other.m_pos;
+//     m_model = other.m_model;
+//     m_rotation = other.m_rotation;
+//     m_scale = other.m_scale;
+//     m_color = other.m_color;
+//     return *this;
+// }
 TextBase::TextBase(TextBase&& other)
     : m_str { std::move(other.m_str) }
     , m_text_shader { other.m_text_shader }
@@ -184,25 +186,25 @@ Text2D::Text2D(std::string text)
     update();
     update_position();
 }
-Text2D::Text2D(const Text2D& other)
-    : TextBase(other)
-    , m_vao { other.m_vao }
-    , m_vbo { other.m_vbo }
-    , m_height(other.m_height)
-    , m_width(other.m_width)
-{
-}
-Text2D& Text2D::operator=(const Text2D& other)
-{
-    TextBase::operator=(other);
-    m_vao = other.m_vao;
-    m_vbo = other.m_vbo;
-    m_width = other.m_width;
-    m_height = other.m_height;
-    return *this;
-}
+// Text2D::Text2D(const Text2D& other)
+//     : TextBase(other)
+//     , m_vao { other.m_vao }
+//     , m_vbo { other.m_vbo }
+//     , m_height(other.m_height)
+//     , m_width(other.m_width)
+// {
+// }
+// Text2D& Text2D::operator=(const Text2D& other)
+// {
+//     TextBase::operator=(other);
+//     m_vao = other.m_vao;
+//     m_vbo = other.m_vbo;
+//     m_width = other.m_width;
+//     m_height = other.m_height;
+//     return *this;
+// }
 Text2D::Text2D(Text2D&& other)
-    : TextBase(other)
+    : TextBase(std::move(other))
     , m_vao { other.m_vao }
     , m_vbo { other.m_vbo }
     , m_height(other.m_height)
@@ -214,7 +216,7 @@ Text2D::Text2D(Text2D&& other)
 }
 Text2D& Text2D::operator=(Text2D&& other)
 {
-    TextBase::operator=(other);
+    TextBase::operator=(std::move(other));
     m_vao = other.m_vao;
     m_vbo = other.m_vbo;
     m_width = other.m_width;
@@ -239,28 +241,29 @@ Text3D::Text3D()
 {
 }
 Text3D::Text3D(std::string text)
-    : Text2D(font::DefaultFont::get_instance().get_font_bitmap(),
-          Text3D::DefaultShader::get_instance().get_shader(), text)
+    : Text2D(text)
 {
-    // update();
-    // update_position();
+    // m_font_bitmap = font::DefaultFont::get_instance().get_font_bitmap();
+    // m_text_shader = font::Text3D::DefaultShader::get_instance().get_shader();
+    // Text2D::update();
+    // Text2D::update_position();
 }
-Text3D::Text3D(const Text3D& other)
-    : Text2D(other)
-{
-}
-Text3D& Text3D::operator=(const Text3D& other)
-{
-    Text2D::operator=(other);
-    return *this;
-}
+// Text3D::Text3D(const Text3D& other)
+//     : Text2D(other)
+// {
+// }
+// Text3D& Text3D::operator=(const Text3D& other)
+// {
+//     Text2D::operator=(other);
+//     return *this;
+// }
 Text3D::Text3D(Text3D&& other)
-    : Text2D(other)
+    : Text2D(std::move(other))
 {
 }
 Text3D& Text3D::operator=(Text3D&& other)
 {
-    Text2D::operator=(other);
+    Text2D::operator=(std::move(other));
     return *this;
 }
 Text3D::~Text3D() { }
