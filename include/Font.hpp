@@ -71,7 +71,7 @@ namespace font{
             float m_rotation{0.0f};
             float m_scale{1.0f};
             glm::vec3 m_color{1.0};
-            glm::vec3 m_rotation_axis{0.0};
+            glm::vec3 m_rotation_axis{1.0};
 
         public:
             virtual ~TextBase();

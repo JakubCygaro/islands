@@ -163,7 +163,7 @@ Text2D::Text2D(std::shared_ptr<FontBitmap> font, std::shared_ptr<Shader> shader,
 }
 Text2D::Text2D(std::string text)
     : TextBase(font::DefaultFont::get_instance().get_font_bitmap(),
-          DefaultShader::get_instance().get_shader(), text)
+          Text2D::DefaultShader::get_instance().get_shader(), text)
 {
     ::glGenVertexArrays(1, &m_vao);
     ::glGenBuffers(1, &m_vbo);
@@ -240,7 +240,7 @@ Text3D::Text3D()
 }
 Text3D::Text3D(std::string text)
     : Text2D(font::DefaultFont::get_instance().get_font_bitmap(),
-          DefaultShader::get_instance().get_shader(), text)
+          Text3D::DefaultShader::get_instance().get_shader(), text)
 {
     // update();
     // update_position();
