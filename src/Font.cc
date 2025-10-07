@@ -457,7 +457,7 @@ namespace font{
         m_text_shader->use_shader();
 
 
-        auto scale = glm::scale(glm::mat4(1.0), glm::vec3(m_scale, m_scale, 1.0));
+        auto scale = glm::scale(glm::mat4(1.0), glm::vec3(m_scale, -m_scale, 1.0));
         auto scaling = glm::mat3(scale[0], scale[1], scale[2]);
 
         auto model = glm::scale(m_model, glm::vec3(m_scale, m_scale, 1.0));

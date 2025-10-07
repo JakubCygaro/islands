@@ -25,7 +25,7 @@ CelestialBody::CelestialBody(std::shared_ptr<UnitSphere> sphere,
     m_trail = Trail(CelestialBody::DEFAULT_TRAIL_POINT_N);
     m_trail.fill(m_pos);
     m_label = font::Text3D(m_name);
-    m_label.set_scale(0.1);
+    m_label.set_scale(0.01);
 }
 
 // copy constructor
