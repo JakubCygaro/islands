@@ -646,9 +646,15 @@ void Game::draw_gui()
         draw_debug_menu_gui();
 #endif
 }
+static glm::vec4 get_current_imgui_window_rect() {
+    auto pos = ImGui::GetWindowPos();
+    auto size = ImGui::GetWindowSize();
+    return glm::vec4(pos.x, pos.y, size.x, size.y);
+}
 void Game::draw_game_options_gui()
 {
     ImGui::Begin("Game Options", &m_gui.game_options_menu_enabled, 0);
+    m_imgui_window_rects.push(get_current_imgui_window_rect());
     if (ImGui::SliderFloat("Camera speed", &m_gui.game_options_menu.camera_speed, 0, 100, NULL, ImGuiSliderFlags_AlwaysClamp)) {
         m_camera.set_speed(m_gui.game_options_menu.camera_speed);
     }
@@ -682,6 +688,7 @@ void Game::draw_game_options_gui()
 void Game::draw_spawn_menu_gui()
 {
     ImGui::Begin("Spawn menu", &m_gui.spawn_menu_enabled);
+    m_imgui_window_rects.push(get_current_imgui_window_rect());
     ImGui::ColorEdit3("Color", glm::value_ptr(m_gui.spawn_menu.color));
     ImGui::SliderFloat("Mass", &m_gui.spawn_menu.mass, 0.001, 100, NULL, 0);
     if (m_gui.spawn_menu.mass <= 0)
@@ -694,6 +701,7 @@ void Game::draw_spawn_menu_gui()
 void Game::draw_help_menu_gui()
 {
     ImGui::Begin("Help", &m_gui.help_menu_enabled);
+    m_imgui_window_rects.push(get_current_imgui_window_rect());
     ImGui::Text("Hello! Islands is a simple 3D gravity simulation.\n");
     ImGui::Text("%s", m_gui.help_menu.help_text.c_str());
     ImGui::End();
@@ -702,6 +710,7 @@ void Game::draw_help_menu_gui()
 void Game::draw_debug_menu_gui()
 {
     ImGui::Begin("Debug menu", &m_gui.debug_menu_enabled);
+    m_imgui_window_rects.push(get_current_imgui_window_rect());
     if (ImGui::Checkbox("Do face culling", &m_gui.debug_menu.do_face_culling)) {
         if (m_gui.debug_menu.do_face_culling) {
             glEnable(GL_CULL_FACE);
@@ -725,6 +734,7 @@ void Game::draw_selected_body_gui()
     bool discarded = true;
     auto star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
     ImGui::Begin("Selected Celestial Body", &discarded);
+    m_imgui_window_rects.push(get_current_imgui_window_rect());
     ImGui::Text("%s", m_gui.selected_body.lock()->get_name().c_str());
 
     auto slc = m_gui.selected_body.lock();
@@ -801,6 +811,7 @@ void Game::draw_selected_body_gui()
 void Game::draw_body_list_gui()
 {
     ImGui::Begin("Celestial bodies list", &m_gui.bodies_list_enabled);
+    m_imgui_window_rects.push(get_current_imgui_window_rect());
 
     ImGui::BeginListBox("Celestial bodies");
 
@@ -945,12 +956,22 @@ void Game::window_maximize_handler(GLFWwindow* window, int maximized)
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
     }
 }
-
+static bool is_mouse_pos_in_imgui_window(glm::vec2 mouse, std::queue<glm::vec4>& q){
+    bool test = false;
+    while(!q.empty()){
+        auto rect = q.front();
+        q.pop();
+        test |= mouse.x >= rect.x && mouse.x <= rect.x + rect.z &&
+            mouse.y >= rect.y && mouse.y <= rect.y + rect.w;
+    }
+    return test;
+}
 void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int mods)
 {
     (void)mods;
     double xpos = 0, ypos = 0;
     glfwGetCursorPos(window, &xpos, &ypos);
+    
     if (m_gui_enabled && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         float x = (2.0f * xpos) / m_width - 1.0f;
         float y = 1.0f - (2.0f * ypos) / m_height;

@@ -224,6 +224,7 @@ private:
     bool m_typing = false;
 
     std::deque<double> m_delta_t_record{};
+    std::queue<glm::vec4> m_imgui_window_rects{};
     struct KeyEvent {
         int key;
         int scancode;
