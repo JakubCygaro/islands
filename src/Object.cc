@@ -39,7 +39,7 @@ namespace obj {
         tmp_speed *= delta_t;
         m_pos += tmp_speed;
 
-        m_label.set_pos(glm::vec3(m_pos.x, m_pos.y + m_radius, m_pos.z));
+        m_label.set_pos(glm::vec3(m_pos.x, m_pos.y + m_radius + m_label.get_text_height() * 1.2, m_pos.z));
     }
     void CelestialBody::set_pos(glm::vec3 pos){
         m_pos = pos;

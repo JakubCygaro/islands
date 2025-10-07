@@ -11,7 +11,7 @@ layout(std140, binding = 0) uniform Matrices {
 
 uniform mat4 model;
 uniform mat3 scaling;
-
+uniform float width;
 out vec2 glyph_coord;
 
 // out vec3 VertColor;
@@ -28,7 +28,9 @@ void main() {
     model_view[0].xyz = scaling[0];
     model_view[1].xyz = scaling[1];
 
-    vec4 viewspace = model_view * vec4(vert_pos, 0.0, 1.0);
+    // vert_pos.x -= width / 2.0;
+
+    vec4 viewspace = model_view * vec4(vert_pos.x - (width / 2.0), vert_pos.y, 0.0, 1.0);
 
     gl_Position = projection * viewspace;
     // gl_Position = projection * view * model * vec4(vert_pos, 0.0, 1.0);

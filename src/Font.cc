@@ -461,11 +461,11 @@ namespace font{
         auto scaling = glm::mat3(scale[0], scale[1], scale[2]);
 
         // auto model = glm::scale(m_model, glm::vec3(m_scale, m_scale, 1.0));
-        auto model = glm::translate(m_model, m_pos);
 
         m_text_shader->set_mat3("scaling", scaling);
-        m_text_shader->set_mat4("model", model);
+        m_text_shader->set_mat4("model", m_model);
         m_text_shader->set_vec3("color", m_color);
+        m_text_shader->set_float("width", m_width);
 
         ::glEnable(GL_BLEND);
         ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -486,6 +486,7 @@ namespace font{
         m_pos = new_pos;
         auto m = glm::mat4(1.0f);
         // m = glm::rotate(m, glm::radians(m_rotation), m_rotation_axis);
+        // m = glm::translate(m, -glm::vec3((m_width / 2.) * m_scale, 0.0, 0.0));
         m = glm::translate(m, glm::vec3(m_pos));
         // m = glm::scale(m, { m_scale, m_scale, 1.0 });
         m_model = m;
