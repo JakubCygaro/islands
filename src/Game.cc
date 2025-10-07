@@ -971,7 +971,7 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
     (void)mods;
     double xpos = 0, ypos = 0;
     glfwGetCursorPos(window, &xpos, &ypos);
-    
+    if(is_mouse_pos_in_imgui_window(glm::vec2(xpos, ypos), m_imgui_window_rects)) return;
     if (m_gui_enabled && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         float x = (2.0f * xpos) / m_width - 1.0f;
         float y = 1.0f - (2.0f * ypos) / m_height;

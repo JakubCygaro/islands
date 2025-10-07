@@ -460,8 +460,8 @@ namespace font{
         auto scale = glm::scale(glm::mat4(1.0), glm::vec3(m_scale, -m_scale, 1.0));
         auto scaling = glm::mat3(scale[0], scale[1], scale[2]);
 
-        auto model = glm::scale(m_model, glm::vec3(m_scale, m_scale, 1.0));
-        model = glm::translate(model, m_pos);
+        // auto model = glm::scale(m_model, glm::vec3(m_scale, m_scale, 1.0));
+        auto model = glm::translate(m_model, m_pos);
 
         m_text_shader->set_mat3("scaling", scaling);
         m_text_shader->set_mat4("model", model);
@@ -484,6 +484,10 @@ namespace font{
     }
     void Text3D::set_pos(glm::vec3&& new_pos){
         m_pos = new_pos;
-        Text2D::update_position();
+        auto m = glm::mat4(1.0f);
+        // m = glm::rotate(m, glm::radians(m_rotation), m_rotation_axis);
+        m = glm::translate(m, glm::vec3(m_pos));
+        // m = glm::scale(m, { m_scale, m_scale, 1.0 });
+        m_model = m;
     }
 }
