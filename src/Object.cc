@@ -72,6 +72,8 @@ namespace obj {
     }
     void CelestialBody::set_name(std::string&& name) {
         m_name = name;
+        auto n = m_name;
+        m_label.set_text(std::move(n));
     }
     const std::string& CelestialBody::get_name() const {
         return m_name;

@@ -25,7 +25,7 @@ CelestialBody::CelestialBody(std::shared_ptr<UnitSphere> sphere,
     m_trail = Trail(CelestialBody::DEFAULT_TRAIL_POINT_N);
     m_trail.fill(m_pos);
     m_label = font::Text3D(m_name);
-    m_label.set_scale(0.01);
+    m_label.set_scale(0.1);
 }
 
 // copy constructor
@@ -44,6 +44,7 @@ CelestialBody::CelestialBody(const CelestialBody& other)
     , m_label(other.get_name())
 {
     m_trail.fill(m_pos);
+    m_label.set_scale(other.m_label.get_scale());
 }
 
 // copy assign
@@ -62,6 +63,7 @@ CelestialBody& CelestialBody::operator=(const CelestialBody& other)
     m_trail.fill(m_pos);
     m_name = other.m_name;
     m_label = other.m_label.get_text();;
+    m_label.set_scale(other.m_label.get_scale());
     return *this;
 }
 // move constructor
