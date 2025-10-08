@@ -348,6 +348,7 @@ public:
     virtual void set_trail_color(glm::vec4 color);
     virtual void set_name(std::string&& name);
     virtual const std::string& get_name() const;
+    virtual const font::Text3D& label();
 };
 
 class Planet : public CelestialBody {

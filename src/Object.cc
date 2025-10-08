@@ -27,10 +27,12 @@ namespace obj {
         }
         if(render_trails)
             m_trail.forward_render();
-        m_label.draw();
     }
     void CelestialBody::fixed_update(){
         m_trail.push_point(m_pos);
+    }
+    const font::Text3D& CelestialBody::label(){
+        return m_label;
     }
     void CelestialBody::update(double& delta_t){
         m_speed += m_acceleration;

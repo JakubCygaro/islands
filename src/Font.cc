@@ -447,15 +447,13 @@ namespace font{
     void Text3D::draw() const{
         if (m_str.length() == 0) return;
 
-        ::glDisable(GL_DEPTH_TEST);
-        ::glDisable(GL_CULL_FACE);
+        // ::glDisable(GL_CULL_FACE);
         ::glPixelStorei(GL_PACK_ALIGNMENT, 1);
         ::glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         ::glBindVertexArray(m_vao);
 
         m_font_bitmap->bind_bitmap();
         m_text_shader->use_shader();
-
 
         auto scale = glm::scale(glm::mat4(1.0), glm::vec3(m_scale, -m_scale, 1.0));
         auto scaling = glm::mat3(scale[0], scale[1], scale[2]);
@@ -467,15 +465,15 @@ namespace font{
         m_text_shader->set_vec3("color", m_color);
         m_text_shader->set_float("width", m_width);
 
-        ::glEnable(GL_BLEND);
-        ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // ::glEnable(GL_BLEND);
+        // ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // ::glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         ::glDrawArrays(GL_TRIANGLES, 0, 6 * m_str.length());
 
         m_font_bitmap->unbind_bitmap();
         ::glBindVertexArray(0);
-        ::glEnable(GL_DEPTH_TEST);
-        ::glEnable(GL_CULL_FACE);
+        // ::glEnable(GL_CULL_FACE);
         ::glPixelStorei(GL_PACK_ALIGNMENT, 4);
         ::glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     }

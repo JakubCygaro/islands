@@ -600,6 +600,12 @@ void Game::render()
         auto slc = m_gui.selected_body.lock();
         obj::SelectedMarker::instance().forward_render(m_camera.get_pos(), slc->get_pos(), slc->get_radius());
     }
+    if(m_gui.game_options_menu.draw_labels){
+        for(auto& obj : m_bodies){
+            auto& lab = obj->label();
+            lab.draw();
+        }
+    }
     glDisable(GL_BLEND);
 
     render_2d();
@@ -674,6 +680,7 @@ void Game::draw_game_options_gui()
     ImGui::Checkbox("Draw grid", &m_gui.game_options_menu.draw_grid);
     ImGui::Checkbox("Draw trails", &m_gui.game_options_menu.draw_trails);
     ImGui::Checkbox("Draw selection marker", &m_gui.game_options_menu.draw_selection_marker);
+    ImGui::Checkbox("Draw labels", &m_gui.game_options_menu.draw_labels);
     if (ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)) {
         m_grid->set_scale(m_gui.game_options_menu.grid_scale);
     };
