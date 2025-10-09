@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <Game.hpp>
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -736,6 +737,13 @@ void Game::draw_debug_menu_gui()
     ImGui::End();
 }
 #endif
+static bool validate_new_name(const std::string& new_name){
+    auto res = !std::any_of(new_name.begin(), new_name.end(), [](char c){
+            return !std::isalpha(c) || std::isspace(c);
+        });
+    res &= new_name.length() > 0;
+    return res;
+}
 void Game::draw_selected_body_gui()
 {
     bool discarded = true;
@@ -749,9 +757,14 @@ void Game::draw_selected_body_gui()
     m_typing |= ImGui::InputText("Name: ", m_gui.selected_body_menu.name, IM_ARRAYSIZE(m_gui.selected_body_menu.name));
 
     if (ImGui::Button("Save name change")) {
-        slc->set_name(std::string(m_gui.selected_body_menu.name));
-        std::copy(slc->get_name().c_str(), slc->get_name().c_str() + sizeof(m_gui.selected_body_menu.name),
-            m_gui.selected_body_menu.name);
+        auto new_name = std::string(m_gui.selected_body_menu.name);
+        if(validate_new_name(new_name)){
+            slc->set_name(std::move(new_name));
+            std::copy(slc->get_name().c_str(), slc->get_name().c_str() + sizeof(m_gui.selected_body_menu.name),
+                m_gui.selected_body_menu.name);
+        } else {
+            ImGui::SetTooltip("invalid name");
+        }
     }
 
     if (ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))) {
