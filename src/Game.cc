@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <Game.hpp>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <cmath>
@@ -193,6 +194,12 @@ void Game::initialize()
 
     m_grid->set_scale(m_gui.game_options_menu.grid_scale);
     m_grid->set_color(m_gui.game_options_menu.grid_color);
+
+    const std::array<std::string, 6> cube_map = {
+
+    };
+
+    m_skybox = std::make_shared<Skybox>();
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });

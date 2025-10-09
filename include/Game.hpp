@@ -21,6 +21,7 @@
 #include <ostream>
 #include <unordered_map>
 #include <vector>
+#include <Skybox.hpp>
 
 struct Gbuffer {
 private:
@@ -232,6 +233,7 @@ private:
         int mods;
     };
     std::queue<KeyEvent> m_key_events{};
+    std::shared_ptr<Skybox> m_skybox = nullptr;
 
 private:
     void initialize();
