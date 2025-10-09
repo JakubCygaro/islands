@@ -444,6 +444,11 @@ namespace font{
     const float& TextBase::get_scale() const{
         return this->m_scale;
     }
+    void Text3D::set_text(std::string&& new_text){
+        Text2D::set_text(std::move(new_text));
+        m_width /= m_scale;
+        m_height /= m_scale;
+    }
     void Text3D::draw() const{
         if (m_str.length() == 0) return;
 

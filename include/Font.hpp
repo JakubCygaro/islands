@@ -193,6 +193,7 @@ namespace font{
         Text3D& operator=(const Text3D& other) = delete;
         Text3D(Text3D&& other);
         Text3D& operator=(Text3D&& other);
+        virtual void set_text(std::string&& new_text) override;
         virtual void draw() const override;
         virtual void debug_draw() const override;
         void set_pos(glm::vec3&& new_pos);
