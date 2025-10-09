@@ -754,7 +754,10 @@ void Game::draw_selected_body_gui()
 
     auto slc = m_gui.selected_body.lock();
 
+    static bool show_incorrect_msg = false;
     m_typing |= ImGui::InputText("Name: ", m_gui.selected_body_menu.name, IM_ARRAYSIZE(m_gui.selected_body_menu.name));
+
+    if(m_typing) show_incorrect_msg = false;
 
     if (ImGui::Button("Save name change")) {
         auto new_name = std::string(m_gui.selected_body_menu.name);
@@ -763,8 +766,13 @@ void Game::draw_selected_body_gui()
             std::copy(slc->get_name().c_str(), slc->get_name().c_str() + sizeof(m_gui.selected_body_menu.name),
                 m_gui.selected_body_menu.name);
         } else {
-            ImGui::SetTooltip("invalid name");
+            show_incorrect_msg = true;
+            std::copy(slc->get_name().begin(), slc->get_name().end(), m_gui.selected_body_menu.name);
         }
+    }
+    if(show_incorrect_msg){
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(.8, .1, .0, 1.), "Invalid name");
     }
 
     if (ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))) {
