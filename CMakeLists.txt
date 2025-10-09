@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(islands VERSION 0.3.4.0)
+project(islands VERSION 0.3.5.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 set(FREETYPE_ROOT_PATHS "" CACHE FILEPATH "Where to search for the freetype library install directory")
