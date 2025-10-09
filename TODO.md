@@ -1,7 +1,5 @@
 # TODO LIST
 
-- body name (spawn menu affair)
-- planet label 3d text
 - skybox
 - custom textures for planets
 

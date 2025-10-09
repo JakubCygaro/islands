@@ -601,8 +601,8 @@ void Game::render()
         auto slc = m_gui.selected_body.lock();
         obj::SelectedMarker::instance().forward_render(m_camera.get_pos(), slc->get_pos(), slc->get_radius());
     }
-    if(m_gui.game_options_menu.draw_labels){
-        for(auto& obj : m_bodies){
+    if (m_gui.game_options_menu.draw_labels) {
+        for (auto& obj : m_bodies) {
             auto& lab = obj->label();
             lab.draw();
         }
@@ -653,7 +653,8 @@ void Game::draw_gui()
         draw_debug_menu_gui();
 #endif
 }
-static glm::vec4 get_current_imgui_window_rect() {
+static glm::vec4 get_current_imgui_window_rect()
+{
     auto pos = ImGui::GetWindowPos();
     auto size = ImGui::GetWindowSize();
     return glm::vec4(pos.x, pos.y, size.x, size.y);
@@ -693,6 +694,14 @@ void Game::draw_game_options_gui()
     }
     ImGui::End();
 }
+static bool validate_new_name(const std::string& new_name)
+{
+    auto res = !std::any_of(new_name.begin(), new_name.end(), [](char c) {
+        return !std::isalpha(c) || std::isspace(c);
+    });
+    res &= new_name.length() > 0;
+    return res;
+}
 void Game::draw_spawn_menu_gui()
 {
     ImGui::Begin("Spawn menu", &m_gui.spawn_menu_enabled);
@@ -702,7 +711,18 @@ void Game::draw_spawn_menu_gui()
     if (m_gui.spawn_menu.mass <= 0)
         m_gui.spawn_menu.mass = 0.001;
     ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
+    static bool show_incorrect_msg = false;
     m_typing |= ImGui::InputText("Name:", m_gui.spawn_menu.name, IM_ARRAYSIZE(m_gui.spawn_menu.name));
+    show_incorrect_msg &= !m_typing;
+
+    auto new_name = std::string(m_gui.spawn_menu.name);
+    if (!validate_new_name(new_name)) {
+        show_incorrect_msg = true;
+    }
+    if (show_incorrect_msg) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(.8, .1, .0, 1.), "Invalid name");
+    }
     ImGui::Checkbox("Is star", &m_gui.spawn_menu.is_star);
     ImGui::End();
 }
@@ -737,13 +757,6 @@ void Game::draw_debug_menu_gui()
     ImGui::End();
 }
 #endif
-static bool validate_new_name(const std::string& new_name){
-    auto res = !std::any_of(new_name.begin(), new_name.end(), [](char c){
-            return !std::isalpha(c) || std::isspace(c);
-        });
-    res &= new_name.length() > 0;
-    return res;
-}
 void Game::draw_selected_body_gui()
 {
     bool discarded = true;
@@ -756,12 +769,11 @@ void Game::draw_selected_body_gui()
 
     static bool show_incorrect_msg = false;
     m_typing |= ImGui::InputText("Name: ", m_gui.selected_body_menu.name, IM_ARRAYSIZE(m_gui.selected_body_menu.name));
-
-    if(m_typing) show_incorrect_msg = false;
+    show_incorrect_msg &= !m_typing;
 
     if (ImGui::Button("Save name change")) {
         auto new_name = std::string(m_gui.selected_body_menu.name);
-        if(validate_new_name(new_name)){
+        if (validate_new_name(new_name)) {
             slc->set_name(std::move(new_name));
             std::copy(slc->get_name().c_str(), slc->get_name().c_str() + sizeof(m_gui.selected_body_menu.name),
                 m_gui.selected_body_menu.name);
@@ -770,7 +782,7 @@ void Game::draw_selected_body_gui()
             std::copy(slc->get_name().begin(), slc->get_name().end(), m_gui.selected_body_menu.name);
         }
     }
-    if(show_incorrect_msg){
+    if (show_incorrect_msg) {
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(.8, .1, .0, 1.), "Invalid name");
     }
@@ -863,7 +875,7 @@ void Game::draw_body_list_gui()
 }
 void Game::add_planet(obj::Planet new_planet)
 {
-    auto planet = std::make_shared<obj::Planet>(new_planet);
+    auto planet = std::make_shared<obj::Planet>(std::move(new_planet));
     m_bodies.push_back(planet);
     collect_light_sources();
 }
@@ -984,13 +996,13 @@ void Game::window_maximize_handler(GLFWwindow* window, int maximized)
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
     }
 }
-static bool is_mouse_pos_in_imgui_window(glm::vec2 mouse, std::queue<glm::vec4>& q){
+static bool is_mouse_pos_in_imgui_window(glm::vec2 mouse, std::queue<glm::vec4>& q)
+{
     bool test = false;
-    while(!q.empty()){
+    while (!q.empty()) {
         auto rect = q.front();
         q.pop();
-        test |= mouse.x >= rect.x && mouse.x <= rect.x + rect.z &&
-            mouse.y >= rect.y && mouse.y <= rect.y + rect.w;
+        test |= mouse.x >= rect.x && mouse.x <= rect.x + rect.z && mouse.y >= rect.y && mouse.y <= rect.y + rect.w;
     }
     return test;
 }
@@ -999,7 +1011,8 @@ void Game::mouse_button_handler(GLFWwindow* window, int button, int action, int 
     (void)mods;
     double xpos = 0, ypos = 0;
     glfwGetCursorPos(window, &xpos, &ypos);
-    if(is_mouse_pos_in_imgui_window(glm::vec2(xpos, ypos), m_imgui_window_rects)) return;
+    if (is_mouse_pos_in_imgui_window(glm::vec2(xpos, ypos), m_imgui_window_rects))
+        return;
     if (m_gui_enabled && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         float x = (2.0f * xpos) / m_width - 1.0f;
         float y = 1.0f - (2.0f * ypos) / m_height;
