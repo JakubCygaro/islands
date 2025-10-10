@@ -22,9 +22,28 @@ Skybox::Skybox(const std::array<std::string, 6>& path_to_faces)
             iss << path_to_faces[i];
             throw std::runtime_error(iss.str());
         }
+        GLenum format{};
+        switch (chan){
+            case 1:
+                format = GL_RED;
+                break;
+            case 3:
+                format = GL_RGB;
+                break;
+            case 4:
+                format = GL_RGBA;
+                break;
+            default:{
+                ::stbi_image_free(data);
+                std::ostringstream iss;
+                iss << "Loaded texture of unknown component number (" << chan << ')' << std::endl;
+                iss << path_to_faces[i];
+                throw std::runtime_error(iss.str());
+            }break;
+        }
         ::glTexImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-            0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
         ::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         ::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         ::glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

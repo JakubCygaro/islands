@@ -12,5 +12,6 @@ void Skybox::forward_render() const{
     shader.use_shader();
     ::glDrawArrays(GL_TRIANGLES, 0, Skybox::vert_count);
     ::glDepthFunc(GL_LESS);
+    ::glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     // ::glEnable(GL_CULL_FACE);
 }
