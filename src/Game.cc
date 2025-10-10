@@ -196,12 +196,12 @@ void Game::initialize()
     m_grid->set_color(m_gui.game_options_menu.grid_color);
 
     const std::array<std::string, 6> cube_map = {
-        files::game_data::textures::CUBEMAP_TEST_PNG,
-        files::game_data::textures::CUBEMAP_TEST_PNG,
-        files::game_data::textures::CUBEMAP_TEST_PNG,
-        files::game_data::textures::CUBEMAP_TEST_PNG,
-        files::game_data::textures::CUBEMAP_TEST_PNG,
-        files::game_data::textures::CUBEMAP_TEST_PNG,
+        files::game_data::textures::background::BKG1_RIGHT_PNG,
+        files::game_data::textures::background::BKG1_LEFT_PNG,
+        files::game_data::textures::background::BKG1_BOT_PNG,
+        files::game_data::textures::background::BKG1_TOP_PNG,
+        files::game_data::textures::background::BKG1_FRONT_PNG,
+        files::game_data::textures::background::BKG1_BACK_PNG,
     };
 
     m_skybox = std::make_shared<Skybox>(cube_map);
@@ -601,6 +601,7 @@ void Game::render()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    m_skybox->forward_render();
     for (auto& c_obj : m_bodies) {
         c_obj->forward_render(normals_draw, wireframe_draw, m_gui.game_options_menu.draw_trails);
     }
@@ -620,7 +621,6 @@ void Game::render()
             lab.draw();
         }
     }
-    m_skybox->forward_render();
     glDisable(GL_BLEND);
 
     render_2d();

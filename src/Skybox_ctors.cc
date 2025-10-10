@@ -13,6 +13,7 @@ Skybox::Skybox(const std::array<std::string, 6>& path_to_faces)
 
     int w {}, h {}, chan {};
     unsigned char* data {};
+    ::stbi_set_flip_vertically_on_load(true);
     for (auto i = 0; i < 6; i++) {
         data = ::stbi_load(path_to_faces[i].c_str(), &w, &h, &chan, 0);
         if (!data) {
