@@ -68,13 +68,10 @@ for key, value in files.items():
         "\\", "/").replace("/", "::")
     if ns != '':
         namespace = """
-            #ifndef {guard}_HPP
-            #define {guard}_HPP
             namespace {ns} {{
                 {variable_def}
             }}
-            #endif
-        """.format(guard=ns.replace("::", "_").upper(), ns=ns, variable_def=vars)
+        """.format(ns=ns, variable_def=vars)
         source.append(namespace)
     else:
         source.append(vars)
@@ -83,9 +80,12 @@ for key, value in files.items():
 out_template = Template(
     """
     /* PYTHON AUTOGEN */
+    #ifndef PACKED_SHADERS_HPP
+    #define PACKED_SHADERS_HPP
     namespace shaders {
         $source
     }
+    #endif
     """
 )
 

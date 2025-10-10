@@ -71,6 +71,8 @@ set(SHADERS
     ${SHADERS_DIR}/trail.frag
     ${SHADERS_DIR}/marker.vert
     ${SHADERS_DIR}/marker.frag
+    ${SHADERS_DIR}/skybox.vert
+    ${SHADERS_DIR}/skybox.frag
 )
 
 add_custom_command(

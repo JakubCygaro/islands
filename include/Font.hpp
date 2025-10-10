@@ -111,7 +111,7 @@ namespace font{
 #else
             m_shader = std::make_shared<Shader>(Shader(
                         shaders::TEXT_VERT,
-                        shaders::TEXT_FRAG,
+                        shaders::TEXT_FRAG
                         ));
 #endif
             }
@@ -169,7 +169,7 @@ namespace font{
 #else
             m_shader = std::make_shared<Shader>(Shader(
                         shaders::TEXT3D_VERT,
-                        shaders::TEXT3D_FRAG,
+                        shaders::TEXT3D_FRAG
                         ));
 #endif
             }
