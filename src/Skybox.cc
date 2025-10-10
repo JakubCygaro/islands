@@ -4,9 +4,13 @@
 void Skybox::forward_render() const{
     auto& shader = ShaderInstance::get_instance().shader;
 
-    ::glDepthMask(GL_FALSE);
+    // ::glDisable(GL_CULL_FACE);
+    ::glDepthFunc(GL_LEQUAL);
     ::glBindVertexArray(m_cube_vao);
+    ::glActiveTexture(GL_TEXTURE0);
+    ::glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemap);
     shader.use_shader();
-    ::glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, NULL);
-    ::glDepthMask(GL_TRUE);
+    ::glDrawArrays(GL_TRIANGLES, 0, Skybox::vert_count);
+    ::glDepthFunc(GL_LESS);
+    // ::glEnable(GL_CULL_FACE);
 }

@@ -43,40 +43,30 @@ Skybox::Skybox(const std::array<std::string, 6>& path_to_faces)
 
     ::glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vbo_data), cube_vbo_data, GL_STATIC_DRAW);
 
-    ::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_cube_ebo);
-
-    ::glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_ebo_data), cube_ebo_data, GL_STATIC_DRAW);
-
     ::glEnableVertexAttribArray(0);
     ::glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
 
-    ::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     ::glBindVertexArray(0);
 }
 Skybox::Skybox(Skybox&& other)
     : m_cubemap(other.m_cubemap)
     , m_cube_vao(other.m_cube_vao)
     , m_cube_vbo(other.m_cube_vbo)
-    , m_cube_ebo(other.m_cube_ebo)
 {
     m_cube_vao = other.m_cube_vao;
     m_cube_vbo = other.m_cube_vbo;
-    m_cube_ebo = other.m_cube_ebo;
     other.m_cubemap = 0;
     other.m_cube_vao = 0;
     other.m_cube_vbo = 0;
-    other.m_cube_ebo = 0;
 }
 Skybox& Skybox::operator=(Skybox&& other)
 {
     m_cubemap = other.m_cubemap;
     m_cube_vao = other.m_cube_vao;
     m_cube_vbo = other.m_cube_vbo;
-    m_cube_ebo = other.m_cube_ebo;
     other.m_cubemap = 0;
     other.m_cube_vao = 0;
     other.m_cube_vbo = 0;
-    other.m_cube_ebo = 0;
     return *this;
 }
 Skybox::~Skybox()
@@ -92,9 +82,5 @@ Skybox::~Skybox()
     if (m_cube_vbo) {
         ::glDeleteTextures(1, &m_cube_vbo);
         m_cube_vbo = 0;
-    }
-    if (m_cube_ebo) {
-        ::glDeleteTextures(1, &m_cube_ebo);
-        m_cube_ebo = 0;
     }
 }

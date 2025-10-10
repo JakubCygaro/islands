@@ -17,37 +17,51 @@ class Skybox final {
     uint32_t m_cube_vbo{};
     uint32_t m_cube_ebo{};
 
-    inline static constexpr glm::vec3 cube_vbo_data[] = {
-        { -0.5, -0.5, -0.5 }, // bottom left back 0
-        { 0.5, -0.5, -0.5 }, // bottom right back 1
-        { -0.5, -0.5, 0.5 }, // bottom left front 2
-        { 0.5, -0.5, 0.5 }, // bottom right front 3
-        { -0.5, 0.5, -0.5 }, // top left back 4
-        { 0.5, 0.5, -0.5 }, // top right back 5
-        { -0.5, 0.5, 0.5 }, // top left front 6
-        { 0.5, 0.5, 0.5 }, // top right front 7
+    inline static constexpr float cube_vbo_data[] = {
+        // positions
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
     };
-    inline static constexpr uint32_t cube_ebo_data[] = {
-        // left face
-        0, 6, 4,
-        0, 2, 6,
-        // front face
-        2, 3, 7,
-        2, 7, 6,
-        // right face
-        3, 1, 5,
-        3, 5, 7,
-        // back face
-        1, 0, 4,
-        1, 4, 5,
-        // bottom face
-        0, 2, 3,
-        0, 3, 1,
-        // top face
-        4, 6, 7,
-        4, 7, 5
-    };
-    inline static constexpr size_t index_count = sizeof(cube_ebo_data);
+    inline static constexpr size_t vert_count = sizeof(cube_vbo_data) / sizeof(float) / 3;
 
     struct ShaderInstance  {
         Shader shader;

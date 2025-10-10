@@ -196,10 +196,15 @@ void Game::initialize()
     m_grid->set_color(m_gui.game_options_menu.grid_color);
 
     const std::array<std::string, 6> cube_map = {
-
+        files::game_data::textures::CUBEMAP_TEST_PNG,
+        files::game_data::textures::CUBEMAP_TEST_PNG,
+        files::game_data::textures::CUBEMAP_TEST_PNG,
+        files::game_data::textures::CUBEMAP_TEST_PNG,
+        files::game_data::textures::CUBEMAP_TEST_PNG,
+        files::game_data::textures::CUBEMAP_TEST_PNG,
     };
 
-    m_skybox = std::make_shared<Skybox>();
+    m_skybox = std::make_shared<Skybox>(cube_map);
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
@@ -593,6 +598,7 @@ void Game::render()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     for (auto& c_obj : m_bodies) {
@@ -614,6 +620,7 @@ void Game::render()
             lab.draw();
         }
     }
+    m_skybox->forward_render();
     glDisable(GL_BLEND);
 
     render_2d();
