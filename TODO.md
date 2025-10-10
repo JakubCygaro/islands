@@ -1,6 +1,5 @@
 # TODO LIST
 
-- skybox
 - custom textures for planets
 
 ## Multithreaded gravity calculation algorithm proposition

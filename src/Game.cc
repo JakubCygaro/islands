@@ -601,7 +601,8 @@ void Game::render()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    m_skybox->forward_render();
+    if(m_gui.game_options_menu.draw_skybox)
+        m_skybox->forward_render();
     for (auto& c_obj : m_bodies) {
         c_obj->forward_render(normals_draw, wireframe_draw, m_gui.game_options_menu.draw_trails);
     }
@@ -697,6 +698,7 @@ void Game::draw_game_options_gui()
     ImGui::Checkbox("Draw trails", &m_gui.game_options_menu.draw_trails);
     ImGui::Checkbox("Draw selection marker", &m_gui.game_options_menu.draw_selection_marker);
     ImGui::Checkbox("Draw labels", &m_gui.game_options_menu.draw_labels);
+    ImGui::Checkbox("Draw skybox", &m_gui.game_options_menu.draw_skybox);
     if (ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)) {
         m_grid->set_scale(m_gui.game_options_menu.grid_scale);
     };
