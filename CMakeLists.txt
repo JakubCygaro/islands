@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.30)
 project(islands VERSION 0.4.0.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
-set(FREETYPE_ROOT_PATHS "" CACHE FILEPATH "Where to search for the freetype library install directory")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     if(CMAKE_BUILD_TYPE STREQUAL "")
@@ -11,9 +10,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 find_package(glfw3 3.4 REQUIRED)
 find_package(glm CONFIG REQUIRED)
-find_package(Freetype REQUIRED
-    PATHS ${FREETYPE_ROOT_PATHS}
-)
+
+find_package(PkgConfig)
+pkg_check_modules(FreeType2 REQUIRED freetype2)
 
 find_program(HAS_PYTHON "python")
 
@@ -161,12 +160,13 @@ target_link_libraries(islands PRIVATE features)
 target_include_directories(islands
     PUBLIC include/
     PUBLIC ${CMAKE_BINARY_DIR}
+    PUBLIC ${FreeType2_INCLUDE_DIRS}
 )
 
 target_link_libraries(islands
     PRIVATE glfw
     PRIVATE glm::glm
-    PRIVATE Freetype::Freetype
+    PRIVATE ${FreeType2_LIBRARIES}
 )
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_target(copyGameData ALL)
