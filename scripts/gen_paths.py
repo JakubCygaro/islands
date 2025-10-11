@@ -19,9 +19,10 @@ game_data_dir = os.fsencode(game_data_path)
 
 cwd = os.fsencode(os.getcwd())
 
-files: dict[str, list[str]] = dict()
+source_dir_relative_to_cwd = os.path.relpath(game_data_dir, cwd)
+print(source_dir_relative_to_cwd)
 
-deps = []
+files: dict[str, list[str]] = dict()
 
 
 def get_paths(dir):
@@ -30,8 +31,6 @@ def get_paths(dir):
             if entry.is_file():
                 if dir not in files:
                     files[dir] = []
-                deps.append(os.fsdecode(entry.path).replace(
-                    "\\", "/"))
                 files[dir].append(os.path.basename(entry.path))
             elif entry.is_dir():
                 get_paths(os.fsencode(entry.path))
@@ -42,20 +41,24 @@ get_paths(game_data_dir)
 
 source: list[str] = []
 
-for key, value in files.items():
+for directory, dir_contents in files.items():
     vars: str = ''
-    for path in value:
-        name = os.fsdecode(path.upper()).replace(
+    for file_path in dir_contents:
+        name = os.fsdecode(file_path.upper()).replace(
             "\\", "/").replace("/", "_").replace(".", "_")
+
+        file_path_relative_to_gamedata = os.path.relpath(os.fsencode(
+            os.path.join(directory, file_path)), os.fsencode(source_dir_relative_to_cwd))
+        file_path_relative_to_gamedata = os.path.join(
+            source_dir_relative_to_cwd, file_path_relative_to_gamedata)
+
         variable_def = """
             inline constexpr const char* {var_name} = "{var_value}";
-        """.format(var_name=name, var_value=os.path.join(os.fsdecode(key),
-                                                         os.fsdecode(path)).replace(
+        """.format(var_name=name, var_value=os.fsdecode(file_path_relative_to_gamedata).replace(
             "\\", "/"))
         vars = vars + variable_def
-        # print(vars)
 
-    base = os.path.relpath(key, cwd)
+    base = os.path.relpath(directory, cwd)
     ns = os.fsdecode(base).replace(
         "\\", "/").replace("/", "::")
     namespace = """
@@ -83,8 +86,3 @@ autogen = out_template.substitute(source=source)
 
 with open(args.output_file, "w") as out:
     out.write(autogen)
-
-if args.deps is not None:
-    with open(args.deps, "w") as out:
-        for dep in deps:
-            out.write(dep+' ')
