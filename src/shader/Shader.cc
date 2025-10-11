@@ -36,7 +36,7 @@ Shader::Shader(const char* vert, const char* frag, const char* geom) try {
     const char* frag_char_ptr = frag;
     const char* geom_char_ptr = geom;
 
-    std::uint32_t vert_id, frag_id, geom_id;
+    std::uint32_t vert_id, frag_id, geom_id{};
     int succ;
     char info_log[1024];
 
@@ -140,7 +140,7 @@ Shader::Shader(const std::string& vert_path, const std::string& frag_path, const
     const char* frag_char_ptr = frag_src.c_str();
     const char* geom_char_ptr = geom_src.c_str();
 
-    std::uint32_t vert_id, frag_id, geom_id;
+    std::uint32_t vert_id, frag_id, geom_id{};
     int succ;
     char info_log[1024];
 

@@ -2,7 +2,6 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <sstream>
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
 
 Skybox::Skybox(const std::array<std::string, 6>& path_to_faces)

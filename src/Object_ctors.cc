@@ -37,6 +37,7 @@ CelestialBody::CelestialBody(const CelestialBody& other)
     , m_name(other.m_name)
     , m_sphere { other.m_sphere }
     , m_normals_shader(other.m_normals_shader)
+    , m_texture(other.m_texture)
     , m_mass { other.m_mass }
     , m_radius { other.m_radius }
     , m_color(other.m_color)
@@ -62,6 +63,7 @@ CelestialBody& CelestialBody::operator=(const CelestialBody& other)
     m_trail = Trail(CelestialBody::DEFAULT_TRAIL_POINT_N);
     m_trail.fill(m_pos);
     m_name = other.m_name;
+    m_texture = other.m_texture;
     m_label = other.m_label.get_text();;
     m_label.set_scale(other.m_label.get_scale());
     return *this;
@@ -75,6 +77,7 @@ CelestialBody::CelestialBody(CelestialBody&& other)
     , m_name(std::move(other.m_name))
     , m_sphere { std::move(other.m_sphere) }
     , m_normals_shader(other.m_normals_shader)
+    , m_texture(other.m_texture)
     , m_mass { other.m_mass }
     , m_radius { other.m_radius }
     , m_color(other.m_color)
@@ -101,6 +104,7 @@ CelestialBody& CelestialBody::operator=(CelestialBody&& other)
     m_trail = std::move(other.m_trail);
     m_name = std::move(other.m_name);
     m_label = std::move(other.m_label);
+    m_texture = other.m_texture;
     other.m_selected = false;
     other.m_sphere = nullptr;
     other.m_normals_shader = nullptr;
@@ -129,6 +133,9 @@ UnitSphere::UnitSphere()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, STRIDE,
         (void*)(sizeof(UnitSphereCreationData::vertex_t)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, STRIDE,
+        (void*)(sizeof(UnitSphereCreationData::vertex_t) + sizeof(UnitSphereCreationData::normal_t)));
+    glEnableVertexAttribArray(2);
 }
 // move constructor
 UnitSphere::UnitSphere(UnitSphere&& other)

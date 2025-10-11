@@ -126,6 +126,9 @@ add_executable(islands
     src/Font_ctors.cc
     src/Skybox.cc
     src/Skybox_ctors.cc
+    src/Texture.cc
+    src/Texture_ctors.cc
+    src/stbi_image_impl.cc
     src/imgui/imgui.cpp
     src/imgui/imgui_demo.cpp
     src/imgui/imgui_draw.cpp

@@ -159,6 +159,20 @@ public:
     void set_color(glm::vec4);
 };
 
+// texture for a celestial body object
+class Texture final {
+    uint32_t m_texture_id{};
+
+public:
+    Texture(const std::string& path_to_texture);
+    Texture(const Texture&) = delete;
+    Texture& operator=(const Texture&) = delete;
+    Texture(Texture&&);
+    Texture& operator=(Texture&&);
+    ~Texture();
+
+    void bind() const;
+};
 
 // Wrapper around a sphere mesh stored in the GPU
 class UnitSphere {
@@ -167,9 +181,11 @@ private:
         using vec = std::vector<UnitSphereCreationData>;
         using vertex_t = glm::vec3;
         using normal_t = glm::vec3;
+        using texture_coord_t = glm::vec2;
         struct VertexData{
             vertex_t vert{};
             normal_t normal{};
+            texture_coord_t tex_coord{};
         };
         std::vector<VertexData> vertices;
         std::vector<int32_t> indices;
@@ -204,6 +220,7 @@ protected:
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
     std::shared_ptr<Shader> m_normals_shader = nullptr;
+    std::shared_ptr<Texture> m_texture = nullptr;
     float m_mass {};
     float m_radius {};
     glm::vec3 m_color;
@@ -349,6 +366,8 @@ public:
     virtual void set_name(std::string&& name);
     virtual const std::string& get_name() const;
     virtual const font::Text3D& label();
+    virtual void set_texture(std::shared_ptr<Texture> texture);
+    virtual std::shared_ptr<Texture> get_texture() const;
 };
 
 class Planet : public CelestialBody {

@@ -3,7 +3,6 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "shader/Shader.hpp"
 #include <GLFW/glfw3.h>
 #include <Game.hpp>
 #include <algorithm>
@@ -216,6 +215,9 @@ void Game::initialize()
 
     c_body = obj::Planet(nullptr, { 0.0f, 0.0f, 10.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 25);
     c_body.set_color({ 0.0, 0.0, 1.0 });
+    auto texture = std::make_shared<obj::Texture>(files::game_data::textures::TEXTURE_TEST_PNG);
+    c_body.set_texture(texture);
+    c_body.set_name("TextureTest");
     add_planet(c_body);
 
     auto star = obj::Star(nullptr, { 0, 5, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);

@@ -30,6 +30,13 @@ namespace obj {
         m_shader->set_vec3(name_of(color), m_color);
         auto inverse_matrix = glm::mat3(glm::transpose(glm::inverse(model)));
         m_shader->set_mat3(name_of(inverse_matrix), inverse_matrix);
+        if(m_texture){
+            ::glActiveTexture(GL_TEXTURE0);
+            m_texture->bind();
+            m_shader->set_int("has_texture", true);
+        } else {
+            m_shader->set_int("has_texture", false);
+        }
         m_sphere->draw();
     }
     void Planet::set_mass(float new_mass) {

@@ -5,6 +5,7 @@ out vec4 FragColor;
 uniform sampler2D g_position;
 uniform sampler2D g_normal;
 uniform sampler2D g_albedo_spec;
+uniform sampler2D g_tex_coord;
 uniform samplerCube shadow_map;
 
 layout(std140, binding = 1) uniform LightingGlobals {

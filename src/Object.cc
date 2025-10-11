@@ -80,6 +80,12 @@ namespace obj {
     const std::string& CelestialBody::get_name() const {
         return m_name;
     }
+    void CelestialBody::set_texture(std::shared_ptr<Texture> texture){
+        m_texture = texture;
+    }
+    std::shared_ptr<Texture> CelestialBody::get_texture() const {
+        return m_texture;
+    }
     void UnitSphere::draw() const {
         glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);
@@ -116,7 +122,7 @@ namespace obj {
         const float pitch_step = 180. / step;
         const float yaw_step = 360. / step;
         glm::vec3 bottom_pole = glm::vec3(0, -1.0f, 0);
-        vrt.push_back({bottom_pole, bottom_pole});
+        vrt.push_back({bottom_pole, bottom_pole, { 0.5, 0.0 }});
 
         auto ring_base = glm::vec3(0);
         for(int i = 0; i < step; i++){
@@ -128,11 +134,11 @@ namespace obj {
                 current_vert.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 current_vert.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 yaw += yaw_step;
-                vrt.push_back({current_vert, glm::normalize(current_vert)});
+                vrt.push_back({current_vert, glm::normalize(current_vert), { (j * yaw_step) / 360.,(i * pitch_step) / 180.  }});
             }
         }
         glm::vec3 top_pole = glm::vec3(0, 1.0f, 0);
-        vrt.push_back({top_pole, glm::normalize(top_pole)});
+        vrt.push_back({top_pole, glm::normalize(top_pole), { 0.5, 1.0 }});
 
         //indices for the bottom pole cap (triangles with the bottom pole)
         const auto bottom_idx = 0;
