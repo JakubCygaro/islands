@@ -223,6 +223,8 @@ void Game::initialize()
     auto texture = std::make_shared<obj::Texture>(files::game_data::textures::TEXTURE_TEST_PNG);
     star.set_texture(texture);
     star.set_name("TextureTest");
+    star.set_rotation_speed(5.0);
+    star.set_axial_tilt(90.);
     add_star(std::move(star));
 
     star = obj::Star(nullptr, { 0, -10, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
@@ -262,6 +264,8 @@ void Game::initialize()
     m_gui.selected_body_menu.trajectory_data.resize(m_gui.selected_body_menu.trajectory_trail.size());
     m_gui.selected_body_menu.trajectory_color = { 0.1, 0.6, 0.4, 0.5 };
     m_gui.selected_body_menu.trajectory_trail.set_color(m_gui.selected_body_menu.trajectory_color);
+
+    load_custom_textures_paths();
 }
 void Game::initialize_uniforms()
 {
@@ -666,7 +670,7 @@ void Game::draw_gui()
         draw_body_list_gui();
     if (!m_gui.selected_body.expired())
         draw_selected_body_gui();
-    if (!m_gui.texture_menu_enabled)
+    if (m_gui.texture_menu_enabled)
         draw_texture_menu_gui();
 #ifdef DEBUG
     if (m_gui.debug_menu_enabled)
@@ -898,6 +902,14 @@ void Game::draw_selected_body_gui()
             glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
         m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
         schedule_selected_body_trajectory_calc();
+    }
+    if (ImGui::SliderFloat("Object rotation speed", &m_gui.selected_body_menu.rotation_speed, 0, 100)) {
+        m_gui.selected_body.lock()->set_rotation_speed(
+            m_gui.selected_body_menu.rotation_speed);
+    }
+    if (ImGui::SliderFloat("Object axial tilt", &m_gui.selected_body_menu.axial_tilt, 0, 180)) {
+        m_gui.selected_body.lock()->set_axial_tilt(
+            m_gui.selected_body_menu.axial_tilt);
     }
     if (ImGui::ColorEdit3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color))) {
         m_gui.selected_body.lock()->set_trail_color(m_gui.selected_body_menu.trail_color);
@@ -1145,6 +1157,8 @@ void Game::on_body_selected(std::shared_ptr<obj::CelestialBody> obj)
     m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
     m_gui.selected_body_menu.trail_color = obj->get_trail_color();
     m_gui.selected_body_menu.track = false;
+    m_gui.selected_body_menu.rotation_speed = obj->get_rotation_speed();
+    m_gui.selected_body_menu.axial_tilt = obj->get_axial_tilt();
     if(obj->get_texture()){
         for(auto& [path, tex] : m_loaded_textures){
             if(tex == obj->get_texture()){

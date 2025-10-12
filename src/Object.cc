@@ -41,6 +41,8 @@ namespace obj {
         tmp_speed *= delta_t;
         m_pos += tmp_speed;
 
+        m_rotation += m_rotation_speed * delta_t;
+
         m_label.set_pos(glm::vec3(m_pos.x, m_pos.y + m_radius + m_label.get_text_height() * 1.2, m_pos.z));
     }
     void CelestialBody::set_pos(glm::vec3 pos){
@@ -85,6 +87,18 @@ namespace obj {
     }
     std::shared_ptr<Texture> CelestialBody::get_texture() const {
         return m_texture;
+    }
+    float CelestialBody::get_axial_tilt() const{
+        return m_axial_tilt;
+    }
+    void CelestialBody::set_axial_tilt(float tilt){
+        m_axial_tilt = std::clamp(tilt, 0.0f, 180.0f);
+    }
+    float CelestialBody::get_rotation_speed() const{
+        return m_rotation_speed;
+    }
+    void CelestialBody::set_rotation_speed(float rot_speed){
+        m_rotation_speed = rot_speed;
     }
     void UnitSphere::draw() const {
         glBindVertexArray(m_vao);

@@ -43,6 +43,9 @@ CelestialBody::CelestialBody(const CelestialBody& other)
     , m_color(other.m_color)
     , m_trail(Trail(CelestialBody::DEFAULT_TRAIL_POINT_N))
     , m_label(other.get_name())
+    , m_axial_tilt(other.m_axial_tilt)
+    , m_rotation_speed(other.m_rotation_speed)
+    , m_rotation(other.m_rotation)
 {
     m_trail.fill(m_pos);
     m_label.set_scale(other.m_label.get_scale());
@@ -66,6 +69,9 @@ CelestialBody& CelestialBody::operator=(const CelestialBody& other)
     m_texture = other.m_texture;
     m_label = other.m_label.get_text();;
     m_label.set_scale(other.m_label.get_scale());
+    m_axial_tilt = other.m_axial_tilt;
+    m_rotation_speed = other.m_rotation_speed;
+    m_rotation = other.m_rotation;
     return *this;
 }
 // move constructor
@@ -83,6 +89,9 @@ CelestialBody::CelestialBody(CelestialBody&& other)
     , m_color(other.m_color)
     , m_trail(std::move(other.m_trail))
     , m_label(std::move(other.m_label))
+    , m_axial_tilt(other.m_axial_tilt)
+    , m_rotation_speed(other.m_rotation_speed)
+    , m_rotation(other.m_rotation)
 {
     other.m_sphere = nullptr;
     other.m_normals_shader = nullptr;
@@ -105,6 +114,9 @@ CelestialBody& CelestialBody::operator=(CelestialBody&& other)
     m_name = std::move(other.m_name);
     m_label = std::move(other.m_label);
     m_texture = other.m_texture;
+    m_axial_tilt = other.m_axial_tilt;
+    m_rotation_speed = other.m_rotation_speed;
+    m_rotation = other.m_rotation;
     other.m_selected = false;
     other.m_sphere = nullptr;
     other.m_normals_shader = nullptr;

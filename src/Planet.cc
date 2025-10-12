@@ -6,6 +6,8 @@ namespace obj {
         if(!render_wireframe && !render_normals) return;
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);
+        model = glm::rotate(model, glm::radians(m_axial_tilt), glm::vec3(1.0, 0.0, 0.0));
+        model = glm::rotate(model, glm::radians(m_rotation), glm::vec3(0.0, 1.0, 0.0));
         model = glm::scale(model, glm::vec3(1) * m_radius);
         if(render_wireframe){
             auto w_sh = Planet::forward_shader_instance();
@@ -24,6 +26,8 @@ namespace obj {
     void Planet::deferred_render(){
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);
+        model = glm::rotate(model, glm::radians(m_axial_tilt), glm::vec3(1.0, 0.0, 0.0));
+        model = glm::rotate(model, glm::radians(m_rotation), glm::vec3(0.0, 1.0, 0.0));
         model = glm::scale(model, glm::vec3(1) * m_radius);
         m_shader->use_shader();
         m_shader->set_mat4(name_of(model), model);

@@ -116,6 +116,8 @@ struct SelectedBodyMenu {
     CancelationToken calc_cancellation {};
     char name[sizeof(SpawnMenu::name)] = "";
     std::string texture_name{};
+    float rotation_speed{};
+    float axial_tilt{};
 };
 struct GameUI {
     inline static const glm::vec3 EDIT_MODE_TEXT_COLOR = { .0, .7, .0 };

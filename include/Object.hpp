@@ -226,6 +226,9 @@ protected:
     glm::vec3 m_color;
     Trail m_trail{};
     font::Text3D m_label;
+    float m_axial_tilt{0.0};
+    float m_rotation_speed{0.0};
+    float m_rotation{0};
     inline static constexpr uint32_t DEFAULT_TRAIL_POINT_N = 36;
 
 private:
@@ -368,6 +371,10 @@ public:
     virtual const font::Text3D& label();
     virtual void set_texture(std::shared_ptr<Texture> texture);
     virtual std::shared_ptr<Texture> get_texture() const;
+    virtual float get_axial_tilt() const;
+    virtual void set_axial_tilt(float tilt);
+    virtual float get_rotation_speed() const;
+    virtual void set_rotation_speed(float rot_speed);
 };
 
 class Planet : public CelestialBody {
