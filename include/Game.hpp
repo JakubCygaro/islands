@@ -1,7 +1,9 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 #include <deque>
+#include <filesystem>
 #include <queue>
+#include <set>
 #include <string>
 #include <vector>
 #include "Grid.hpp"
@@ -235,6 +237,11 @@ private:
     std::queue<KeyEvent> m_key_events{};
     std::shared_ptr<Skybox> m_skybox = nullptr;
 
+    // a map of textures that have been loaded by the game and are availabe for celestial bodies
+    std::unordered_map<std::filesystem::path, std::shared_ptr<obj::Texture>> m_loaded_textures{};
+    // a set of texture file paths that can be loaded
+    std::set<std::filesystem::path> m_unloaded_textures{};
+
 private:
     void initialize();
     void initialize_uniforms();
@@ -255,6 +262,7 @@ private:
     void draw_selected_body_gui();
     void draw_spawn_menu_gui();
     void draw_help_menu_gui();
+    void draw_texture_menu_gui();
 #ifdef DEBUG
     void draw_debug_menu_gui();
 #endif
@@ -276,6 +284,8 @@ private:
     void buffer_light_data();
     void schedule_selected_body_trajectory_calc();
     void on_body_selected(std::shared_ptr<obj::CelestialBody> body);
+    void load_custom_textures_paths();
+    void load_texture_from_path(const std::filesystem::path&);
 public:
     ~Game();
     Game();

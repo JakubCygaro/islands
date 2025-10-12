@@ -115,6 +115,7 @@ struct SelectedBodyMenu {
     std::vector<glm::vec3> trajectory_data {};
     CancelationToken calc_cancellation {};
     char name[sizeof(SpawnMenu::name)] = "";
+    std::string texture_name{};
 };
 struct GameUI {
     inline static const glm::vec3 EDIT_MODE_TEXT_COLOR = { .0, .7, .0 };
@@ -128,6 +129,7 @@ struct GameUI {
     GameOptionsMenu game_options_menu {};
     bool help_menu_enabled { false };
     HelpMenu help_menu {};
+    bool texture_menu_enabled { false };
     bool bodies_list_enabled { false };
 #ifdef DEBUG
     bool debug_menu_enabled { false };

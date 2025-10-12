@@ -20,18 +20,17 @@ game_data_dir = os.fsencode(game_data_path)
 cwd = os.fsencode(os.getcwd())
 
 source_dir_relative_to_cwd = os.path.relpath(game_data_dir, cwd)
-print(source_dir_relative_to_cwd)
 
-files: dict[str, list[str]] = dict()
+directories_with_files: dict[str, list[str]] = dict()
 
 
 def get_paths(dir):
+    if dir not in directories_with_files:
+        directories_with_files[dir] = []
     with os.scandir(dir) as it:
         for entry in it:
             if entry.is_file():
-                if dir not in files:
-                    files[dir] = []
-                files[dir].append(os.path.basename(entry.path))
+                directories_with_files[dir].append(os.path.basename(entry.path))
             elif entry.is_dir():
                 get_paths(os.fsencode(entry.path))
 
@@ -41,7 +40,7 @@ get_paths(game_data_dir)
 
 source: list[str] = []
 
-for directory, dir_contents in files.items():
+for directory, dir_contents in directories_with_files.items():
     vars: str = ''
     for file_path in dir_contents:
         name = os.fsdecode(file_path.upper()).replace(
@@ -59,6 +58,13 @@ for directory, dir_contents in files.items():
         vars = vars + variable_def
 
     base = os.path.relpath(directory, cwd)
+
+    directory_path_var = """
+            inline constexpr const char* __DIRECTORY_PATH = "{var_value}";
+    """.format(var_value=os.fsdecode(base)).replace(
+        "\\", "/")
+    vars = vars + directory_path_var
+
     ns = os.fsdecode(base).replace(
         "\\", "/").replace("/", "::")
     namespace = """

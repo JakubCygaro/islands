@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <cstring>
 #include <files.hpp>
+#include <filesystem>
 #include <functional>
 #include <glm/common.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
@@ -215,13 +216,13 @@ void Game::initialize()
 
     c_body = obj::Planet(nullptr, { 0.0f, 0.0f, 10.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 25);
     c_body.set_color({ 0.0, 0.0, 1.0 });
-    auto texture = std::make_shared<obj::Texture>(files::game_data::textures::TEXTURE_TEST_PNG);
-    c_body.set_texture(texture);
-    c_body.set_name("TextureTest");
     add_planet(c_body);
 
     auto star = obj::Star(nullptr, { 0, 5, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
     star.set_color({ 0.78, 0.52, 0.06 });
+    auto texture = std::make_shared<obj::Texture>(files::game_data::textures::TEXTURE_TEST_PNG);
+    star.set_texture(texture);
+    star.set_name("TextureTest");
     add_star(std::move(star));
 
     star = obj::Star(nullptr, { 0, -10, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
@@ -665,6 +666,8 @@ void Game::draw_gui()
         draw_body_list_gui();
     if (!m_gui.selected_body.expired())
         draw_selected_body_gui();
+    if (!m_gui.texture_menu_enabled)
+        draw_texture_menu_gui();
 #ifdef DEBUG
     if (m_gui.debug_menu_enabled)
         draw_debug_menu_gui();
@@ -730,7 +733,7 @@ void Game::draw_spawn_menu_gui()
         m_gui.spawn_menu.mass = 0.001;
     ImGui::SliderFloat("Initial velocity", &m_gui.spawn_menu.initial_velocity, 0, 10, NULL, 0);
     static bool show_incorrect_msg = false;
-    m_typing |= ImGui::InputText("Name:", m_gui.spawn_menu.name, IM_ARRAYSIZE(m_gui.spawn_menu.name));
+    m_typing |= ImGui::InputText("Name", m_gui.spawn_menu.name, IM_ARRAYSIZE(m_gui.spawn_menu.name));
     show_incorrect_msg &= !m_typing;
 
     auto new_name = std::string(m_gui.spawn_menu.name);
@@ -750,6 +753,54 @@ void Game::draw_help_menu_gui()
     m_imgui_window_rects.push(get_current_imgui_window_rect());
     ImGui::Text("Hello! Islands is a simple 3D gravity simulation.\n");
     ImGui::Text("%s", m_gui.help_menu.help_text.c_str());
+    ImGui::End();
+}
+void Game::draw_texture_menu_gui(){
+    static std::unique_ptr<std::string> error_message = nullptr;
+
+    ImGui::Begin("Textures", &m_gui.texture_menu_enabled);
+    m_imgui_window_rects.push(get_current_imgui_window_rect());
+    ImGui::BeginListBox("Loaded:");
+    for (auto it = m_loaded_textures.begin(); it != m_loaded_textures.end(); ++it) {
+        auto& [path, texture] = *it;
+        ImGui::Text("%s", path.filename().c_str());
+        // ImGui::SameLine();
+        // if(ImGui::Button("Unload")){
+        //     texture = nullptr;
+        // }
+    }
+    ImGui::EndListBox();
+    std::optional<std::filesystem::path> to_load = std::nullopt;
+
+    ImGui::BeginListBox("Detected but not loaded");
+    for (auto it = m_unloaded_textures.begin(); it != m_unloaded_textures.end(); ++it) {
+        const auto& path = *it;
+        ImGui::Text("%s", path.filename().c_str());
+        ImGui::SameLine();
+        if(ImGui::Button("Load")){
+            to_load = path;
+        }
+    }
+    ImGui::EndListBox();
+    if(to_load){
+        auto path = to_load.value();
+        try{
+            load_texture_from_path(path);
+            (void)m_unloaded_textures.extract(path);
+            to_load = std::nullopt;
+        } catch (const std::runtime_error& err){
+            error_message = std::make_unique<std::string>(err.what());
+        }
+    }
+    if(ImGui::Button("Refresh")){
+        load_custom_textures_paths();
+    }
+    if(ImGui::IsItemHovered()){
+        ImGui::SetItemTooltip("Refresh the list of available textures from the game_data/textures/custom directory");
+    }
+    if(error_message){
+        ImGui::TextColored(ImVec4(.8, .2, .0, 1.0), "Error while trying to load a texture: %s", error_message->c_str());
+    }
     ImGui::End();
 }
 #ifdef DEBUG
@@ -803,6 +854,19 @@ void Game::draw_selected_body_gui()
     if (show_incorrect_msg) {
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(.8, .1, .0, 1.), "Invalid name");
+    }
+    if(ImGui::BeginCombo("Texture", m_gui.selected_body_menu.texture_name.c_str())){
+        if(ImGui::Selectable("none")){
+            slc->set_texture(nullptr);
+            m_gui.selected_body_menu.texture_name = "";
+        }
+        for(auto& [path, texture] : m_loaded_textures){
+            if(ImGui::Selectable(path.filename().c_str())){
+                slc->set_texture(texture);
+                m_gui.selected_body_menu.texture_name = path.filename();
+            }
+        }
+        ImGui::EndCombo();
     }
 
     if (ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))) {
@@ -1077,10 +1141,38 @@ void Game::on_body_selected(std::shared_ptr<obj::CelestialBody> obj)
     m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
     m_gui.selected_body_menu.trail_color = obj->get_trail_color();
     m_gui.selected_body_menu.track = false;
+    if(obj->get_texture()){
+        for(auto& [path, tex] : m_loaded_textures){
+            if(tex == obj->get_texture()){
+                m_gui.selected_body_menu.texture_name = path.filename();
+            }
+        }
+    } else {
+        m_gui.selected_body_menu.texture_name = "";
+    }
     std::fill(m_gui.selected_body_menu.name, m_gui.selected_body_menu.name + sizeof(m_gui.selected_body_menu.name), '\0');
     auto len = std::min(obj->get_name().length(), sizeof(m_gui.selected_body_menu.name));
     std::copy(obj->get_name().c_str(), obj->get_name().c_str() + len, m_gui.selected_body_menu.name);
     schedule_selected_body_trajectory_calc();
+}
+void Game::load_custom_textures_paths(){
+    auto custom_txt_path = files::game_data::textures::custom::__DIRECTORY_PATH;
+    std::filesystem::create_directory(custom_txt_path);
+    m_unloaded_textures.clear();
+    auto dir_it = std::filesystem::directory_iterator(custom_txt_path);
+    for(auto& entry : dir_it){
+        if(!entry.is_regular_file() || m_loaded_textures.contains(entry)) continue;
+        auto& path = entry.path();
+        auto ext = path.extension();
+        if(ext == std::filesystem::path(".png") || ext == std::filesystem::path(".jpg")){
+            m_unloaded_textures.insert(path);
+        }
+    }
+}
+void Game::load_texture_from_path(const std::filesystem::path& path){
+    auto path_as_string = path.generic_string();
+    auto texture = obj::Texture(path_as_string);
+    m_loaded_textures[path] = std::make_shared<obj::Texture>(std::move(texture));
 }
 void Game::schedule_selected_body_trajectory_calc()
 {
@@ -1206,6 +1298,10 @@ void Game::initialize_key_bindings()
             this->m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
         } }, "Deselect currently selected body");
     m_keybinds.add_binding(GLFW_KEY_L, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.bodies_list_enabled = !this->m_gui.bodies_list_enabled; }, "Open celestial bodies list");
+    // // [T]exture menu
+    m_keybinds.add_binding(GLFW_KEY_T, GLFW_PRESS, BindMode::Editor, [this]() {
+        this->m_gui.texture_menu_enabled = !this->m_gui.texture_menu_enabled;
+        }, "Toggle texture menu");
     // Simulation mode specific keybinds
 }
 void Game::window_refresh_handler(GLFWwindow* window)
