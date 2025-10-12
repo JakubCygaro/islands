@@ -131,12 +131,15 @@ namespace obj {
         std::vector<UnitSphereCreationData::VertexData> vrt{};
         std::vector<int32_t> indices{};
 
-        float pitch = -90, yaw = 0;
+        constexpr const float pitch_start_value = -90;
+        float pitch = pitch_start_value, yaw = 0;
         const int step = 30;
         const float pitch_step = 180. / step;
         const float yaw_step = 360. / step;
         glm::vec3 bottom_pole = glm::vec3(0, -1.0f, 0);
-        vrt.push_back({bottom_pole, bottom_pole, { 0.5, 0.0 }});
+        for(auto i = 0; i < step; i++){
+            vrt.push_back({bottom_pole, bottom_pole, { (i * yaw_step) / 360., 0.0 }});
+        }
 
         auto ring_base = glm::vec3(0);
         for(int i = 0; i < step; i++){
@@ -148,16 +151,20 @@ namespace obj {
                 current_vert.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 current_vert.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
                 yaw += yaw_step;
-                vrt.push_back({current_vert, glm::normalize(current_vert), { (j * yaw_step) / 360.,(i * pitch_step) / 180.  }});
+                vrt.push_back({current_vert, glm::normalize(current_vert), { (yaw) / (360.), (pitch - pitch_start_value) / 180.  }});
             }
+            yaw = 0;
         }
         glm::vec3 top_pole = glm::vec3(0, 1.0f, 0);
-        vrt.push_back({top_pole, glm::normalize(top_pole), { 0.5, 1.0 }});
+
+        for(auto i = 0; i < step; i++){
+            vrt.push_back({top_pole, glm::normalize(top_pole), { (i * yaw_step) / 360., 1.0 }});
+        }
 
         //indices for the bottom pole cap (triangles with the bottom pole)
-        const auto bottom_idx = 0;
-        for(size_t idx = 1; idx < step - 1; idx++){
-            indices.push_back(bottom_idx);
+        auto bottom_idx = 0;
+        for(size_t idx = step; idx < step - 1; idx++){
+            indices.push_back(bottom_idx++);
             indices.push_back(idx);
             indices.push_back(idx + 1);
             /*if(idx == step - 1){*/
@@ -166,15 +173,16 @@ namespace obj {
             /*    indices.push_back(start);*/
             /*}*/
         }
-        const auto top_idx = vrt.size() - 1;
+        const auto first_top_vert_idx = (step + 1);
+        auto top_idx = vrt.size() - first_top_vert_idx;
         //body of the sphere up to the top pole cap, i guess it also does the cap? no idea why tho, but cool that it works i guess
-        for(size_t idx = 0; idx < vrt.size() - (step  + 1); idx++){
+        for(size_t idx = 0; idx < vrt.size() - first_top_vert_idx; idx++){
             indices.push_back(idx + step);
             indices.push_back(idx + 1);
             indices.push_back(idx);
 
             indices.push_back(std::clamp(idx + step - 1, idx, top_idx));
-            indices.push_back(std::clamp(idx + step, idx, top_idx));
+            indices.push_back(std::clamp(idx + step, idx, top_idx++));
             indices.push_back(idx);
         }
         //indices for the bottom pole cap (triangles with the bottom pole), NOT NEEDED since the loop above magically does this

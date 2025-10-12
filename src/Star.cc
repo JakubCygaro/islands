@@ -12,7 +12,7 @@ namespace obj {
         m_shader->use_shader();
         m_shader->set_mat4(name_of(model), model);
         m_shader->set_vec3(name_of(color), m_color);
-        if(m_texture){
+        if(m_texture && !rw){
             ::glActiveTexture(GL_TEXTURE0);
             m_texture->bind();
             m_shader->set_int("has_texture", true);
