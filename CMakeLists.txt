@@ -11,8 +11,25 @@ endif()
 find_package(glfw3 3.4 REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
+# interface library for passing on freetype stuff that could be found either through pkgconfig or find_package
+add_library(freetype_lib INTERFACE)
+
 find_package(PkgConfig)
-pkg_check_modules(FreeType2 REQUIRED freetype2)
+pkg_check_modules(FreeType2 freetype2)
+
+if(NOT FreeType2_FOUND)
+    find_package(Freetype REQUIRED)
+    target_link_libraries(freetype_lib
+        INTERFACE Freetype::Freetype
+    )
+else()
+    target_include_directories(freetype_lib
+        INTERFACE ${FreeType2_INCLUDE_DIRS}
+    )
+    target_link_libraries(freetype_lib
+        INTERFACE ${FreeType2_LIBRARIES}
+    )
+endif()
 
 find_program(HAS_PYTHON "python")
 
@@ -160,13 +177,12 @@ target_link_libraries(islands PRIVATE features)
 target_include_directories(islands
     PUBLIC include/
     PUBLIC ${CMAKE_BINARY_DIR}
-    PUBLIC ${FreeType2_INCLUDE_DIRS}
 )
 
 target_link_libraries(islands
     PRIVATE glfw
     PRIVATE glm::glm
-    PRIVATE ${FreeType2_LIBRARIES}
+    PRIVATE freetype_lib
 )
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_target(copyGameData ALL)
