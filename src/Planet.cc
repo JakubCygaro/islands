@@ -38,6 +38,9 @@ namespace obj {
             ::glActiveTexture(GL_TEXTURE0);
             m_texture->bind();
             m_shader->set_int("has_texture", true);
+            auto texture_rotation = glm::mat4(1);
+            texture_rotation = glm::rotate(texture_rotation, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
+            m_shader->set_mat4("texture_rotation", texture_rotation);
         } else {
             m_shader->set_int("has_texture", false);
         }

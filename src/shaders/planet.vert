@@ -7,6 +7,7 @@ layout (location = 2) in vec2 tex_coord;
 uniform mat4 model;
 uniform mat3 inverse_matrix;
 uniform vec3 color;
+uniform mat4 texture_rotation;
 
 layout(std140, binding = 0) uniform Matrices {
     mat4 view;
@@ -15,12 +16,14 @@ layout(std140, binding = 0) uniform Matrices {
 
 out LightData {
     vec3 FragPos;
+    vec3 ModelVertPos;
     vec3 VertColor;
     vec3 Normal;
     vec2 TexCoord;
 } light_data;
 
 void main() {
+    light_data.ModelVertPos = (texture_rotation * vec4(vert_pos, 1.0)).xyz;
     light_data.VertColor = color;
     light_data.Normal = inverse_matrix * normal;
     light_data.TexCoord = tex_coord;

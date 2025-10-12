@@ -6,8 +6,8 @@ namespace obj {
         CelestialBody::forward_render(render_normals, rw, dt);
         auto model = glm::mat4(1);
         model = glm::translate(model, m_pos);
-        model = glm::rotate(model, glm::radians(m_axial_tilt), glm::vec3(1.0, 0.0, 0.0));
         model = glm::rotate(model, glm::radians(m_rotation), glm::vec3(0.0, 1.0, 0.0));
+        model = glm::rotate(model, glm::radians(m_axial_tilt), glm::vec3(1.0, 0.0, 0.0));
         model = glm::scale(model, glm::vec3(1) * m_radius);
         m_shader->use_shader();
         m_shader->set_mat4(name_of(model), model);
@@ -16,6 +16,9 @@ namespace obj {
             ::glActiveTexture(GL_TEXTURE0);
             m_texture->bind();
             m_shader->set_int("has_texture", true);
+            auto texture_rotation = glm::mat4(1);
+            texture_rotation = glm::rotate(texture_rotation, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
+            m_shader->set_mat4("texture_rotation", texture_rotation);
         } else {
             m_shader->set_int("has_texture", false);
         }

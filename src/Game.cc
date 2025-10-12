@@ -224,7 +224,7 @@ void Game::initialize()
     star.set_texture(texture);
     star.set_name("TextureTest");
     star.set_rotation_speed(5.0);
-    star.set_axial_tilt(90.);
+    star.set_axial_tilt(0);
     add_star(std::move(star));
 
     star = obj::Star(nullptr, { 0, -10, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);

@@ -7,9 +7,7 @@ namespace obj {
         ::glGenTextures(1, &m_texture_id);
         ::glBindTexture(GL_TEXTURE_2D, m_texture_id);
 
-
         ::stbi_set_flip_vertically_on_load_thread(true);
-
         unsigned char* data{};
         int32_t w{}, h{}, chan{};
 

@@ -7,6 +7,7 @@ layout (location = 2) in vec2 tex_coord;
 uniform mat4 model;
 uniform vec3 color;
 uniform bool selected;
+uniform mat4 texture_rotation;
 
 layout(std140, binding = 0) uniform Matrices {
     mat4 view;
@@ -16,8 +17,11 @@ layout(std140, binding = 0) uniform Matrices {
 
 out vec3 VertColor;
 out vec2 TexCoord;
+out vec3 VertModelPos;
 
 void main() {
+    VertModelPos = ((texture_rotation) * vec4(vert_pos, 1.0)).xyz;
+    // VertModelPos = vert_pos;
     VertColor = color;
     TexCoord = tex_coord;
     gl_Position = projection * view * model * vec4(vert_pos, 1.0);
