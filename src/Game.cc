@@ -764,10 +764,12 @@ void Game::draw_texture_menu_gui(){
     for (auto it = m_loaded_textures.begin(); it != m_loaded_textures.end(); ++it) {
         auto& [path, texture] = *it;
         ImGui::Text("%s", path.filename().c_str());
+        ImGui::PushID(path.c_str());
         // ImGui::SameLine();
         // if(ImGui::Button("Unload")){
         //     texture = nullptr;
         // }
+        ImGui::PopID();
     }
     ImGui::EndListBox();
     std::optional<std::filesystem::path> to_load = std::nullopt;
@@ -775,11 +777,13 @@ void Game::draw_texture_menu_gui(){
     ImGui::BeginListBox("Detected but not loaded");
     for (auto it = m_unloaded_textures.begin(); it != m_unloaded_textures.end(); ++it) {
         const auto& path = *it;
+        ImGui::PushID(path.c_str());
         ImGui::Text("%s", path.filename().c_str());
         ImGui::SameLine();
         if(ImGui::Button("Load")){
             to_load = path;
         }
+        ImGui::PopID();
     }
     ImGui::EndListBox();
     if(to_load){
