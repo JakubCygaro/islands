@@ -17,9 +17,31 @@ The game works in two modes: edit and normal. While in normal mode you can only 
 
 ## Building
 
-The build is done via CMake
+The build is done via CMake.
 
+Configure the build directory with:
 ``` cmake -S <islands-repo-dir> -B <build-directory> -DCMAKE_BUILD_TYPE=<Debug or Release>```
+
+And then build the project with:
+```cmake --build <path-to-build-directory>```
+
+## Requirements
+
+__Beside a C++ compiler (I use only gcc) you need to have python installed.__
+
+### Libraries used (that are not included with the project)
+
+- glfw3
+- freetype2
+- glm
+
+### Linux
+
+Install the required libraries in case they are not already installed and build the project.
+
+### Windows
+
+Use MinGW, but do not install cmake through MinGW. Add the `-G 'MinGW Makefiles'` option while configuring the build with cmake. Install all required libraries with MinGW.
 
 ## Features
 
@@ -28,7 +50,7 @@ The build is done via CMake
 - Custom textures for planets
 - Trajectory prediction for selected celestial body
 
-# Custom textures
+## Custom textures
 
 Read the included `game_data/textures/custom/README.txt` file.
 
