@@ -407,10 +407,10 @@ void Game::update()
     if (!m_paused) {
         update_bodies();
     }
-    // if (m_maximize != MaximizeState::DoNothing) {
-    //     glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
-    //     glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
-    // }
+    if (m_maximize != MaximizeState::DoNothing) {
+        glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
+    }
     switch (m_maximize) {
     case MaximizeState::Maximize:
         glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
@@ -1115,12 +1115,13 @@ void Game::scroll_handler(GLFWwindow* window, double xoffset, double yoffset)
 }
 void Game::window_maximize_handler(GLFWwindow* window, int maximized)
 {
-    glfwFocusWindow(window);
+    // glfwFocusWindow(window);
     if (maximized) {
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
     } else {
         glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_TRUE);
     }
+    m_maximize = MaximizeState::DoNothing;
 }
 static bool is_mouse_pos_in_imgui_window(glm::vec2 mouse, std::queue<glm::vec4>& q)
 {
