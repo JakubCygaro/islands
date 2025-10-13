@@ -155,19 +155,19 @@ void Game::initialize()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
     // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     // glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     // glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
-    // glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
 
     m_window_ptr = glfwCreateWindow(m_width, m_height, "Islands", NULL, NULL);
     if (m_window_ptr == NULL) {
         throw std::runtime_error("Failed to create the window");
         glfwTerminate();
     }
+    glfwMakeContextCurrent(m_window_ptr);
     // glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
     // glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_FALSE);
-    glfwMakeContextCurrent(m_window_ptr);
     glfwSetWindowUserPointer(m_window_ptr, this);
     glfwSetWindowSizeLimits(m_window_ptr, m_width, m_height, m_width, m_height);
     auto framebuffer_size_callback = [](GLFWwindow* window, int w, int h) {
@@ -211,6 +211,8 @@ void Game::initialize()
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         throw std::runtime_error("Failed to initialize GLAD");
     }
+    glfwGetFramebufferSize(m_window_ptr, &m_width, &m_height);
+
     glViewport(0, 0, m_width, m_height);
 
     initialize_uniforms();
