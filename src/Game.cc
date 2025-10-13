@@ -21,6 +21,7 @@
 #include <glm/ext/vector_float4.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <limits>
 #include <numeric>
 #include <optional>
 #include <thread>
@@ -126,6 +127,30 @@ void Game::buffer_light_data()
 void Game::initialize()
 {
     glfwInit();
+    GLFWmonitor* primary = glfwGetPrimaryMonitor();
+    if(!primary){
+        throw std::runtime_error("no monitors found");
+    }
+    const GLFWvidmode* video_mode = glfwGetVideoMode(primary);
+    int w{}, h{};
+    w = video_mode->width * 0.80;
+    h = video_mode->height * 0.80;
+
+    auto& resolutions = gui::GameOptionsMenu::resolutions;
+    size_t idx{};
+    size_t min_diff = std::numeric_limits<size_t>::max();
+    for(size_t i = 0; i < resolutions.size(); i++){
+        auto& res = resolutions[i];
+        auto diff = static_cast<size_t>(std::abs(w - res.width) + std::abs(h - res.height));
+        if(diff < min_diff){
+            min_diff = diff;
+            idx = i;
+        }
+    }
+    m_width = resolutions[idx].width;
+    m_height = resolutions[idx].height;
+    m_gui.game_options_menu.current = idx;
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -181,6 +206,7 @@ void Game::initialize()
         instance->window_refresh_handler(window);
     };
     glfwSetWindowRefreshCallback(m_window_ptr, window_refresh_callback);
+
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         throw std::runtime_error("Failed to initialize GLAD");

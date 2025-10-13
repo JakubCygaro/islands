@@ -98,6 +98,7 @@ struct GameOptionsMenu {
         return resolutions[idx].str.c_str();
     }
 };
+using resolution_t = GameOptionsMenu::Resolution;
 struct HelpMenu {
     std::string help_text {};
 };
