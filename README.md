@@ -6,34 +6,39 @@
 >
 > 'Neathe heaven's sea
 
-<img width="1200" height="927" alt="image" src="https://github.com/user-attachments/assets/c339d626-6f55-40c0-852a-4c978d4b2c9e" />
-
-<img width="1201" height="927" alt="image" src="https://github.com/user-attachments/assets/e59facfe-fb58-4324-94ca-294c9d163f4d" />
-
-<img width="1202" height="928" alt="image" src="https://github.com/user-attachments/assets/df8f2479-2f9b-40e4-bc64-08c5d47fb03c" />
-
 # Islands
 
-This project is a simple 3D gravity simulation made in openGL. 
+This project is a simple 3D gravity simulation made with OpenGL. 
 The purpose of this project is to test out what I've learned from the world famous [tutorial](https://learnopengl.com/).
 
 The controls are explained on the welcome panel that appears on game start-up.
 
+The game works in two modes: edit and normal. While in normal mode you can only spectate the simulation, in edit mode you can tinker with the celestial bodies and configure the game. 
+
 ## Building
 
-The build is done via CMake, with a little caveat (which doesnt seem to happen on linux).
+The build is done via CMake
 
-The FreeType2 library has to be build and installed separately and the path to its install directory must be supplied to CMake via the FREETYPE_ROOT_PATHS variable. 
-You can either do it with the `-D` flag at configure step:
+``` cmake -S <islands-repo-dir> -B <build-directory> -DCMAKE_BUILD_TYPE=<Debug or Release>```
 
-``` cmake -S <islands-src-directory> -B <islands-build-directory> -DFREETYPE_ROOT_PATHS=<path-to-freetype2-install-dir>```
+## Features
 
-or by editing the variable directly in the CMakeCache.txt file.
+- Multiple light sources simulation with shadows
+- Orbit trails
+- Custom textures for planets
+- Trajectory prediction for selected celestial body
 
-## Things that I plan on doing
+# Custom textures
 
-- Orbit trails behind celestial bodies
-- Possibly custom textures for planets
-- Stuff
+Read the included `game_data/textures/custom/README.txt` file.
+
+<img width="1918" height="1036" alt="Screenshot_20251013_024944" src="https://github.com/user-attachments/assets/34962962-2943-4a87-8621-9e3562d9a9e4" />
+
+<img width="1918" height="1036" alt="Screenshot_20251013_025009" src="https://github.com/user-attachments/assets/8198c13c-826f-4ab9-aa84-18ae30a37620" />
+
+<img width="1918" height="1036" alt="Screenshot_20251013_025056" src="https://github.com/user-attachments/assets/09658a6a-f8a1-4527-b498-d306f50169bf" />
+
+
+
 
 
