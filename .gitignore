@@ -1,3 +1,4 @@
 /build/**
-/game_data/textures/custom/**
+/game_data/textures/custom/*.png
+/game_data/textures/custom/*.jpg
 /imgui.ini
