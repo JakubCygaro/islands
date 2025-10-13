@@ -208,27 +208,29 @@ void Game::initialize()
 
     auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
     c_body.set_color({ 1.0, .1, .1 });
+    c_body.set_rotation_speed(100.0);
     add_planet(c_body);
 
     c_body = obj::Planet(nullptr, { -10.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 0.0f }, 10);
     c_body.set_color({ 0.0, 1.0, .1 });
+    c_body.set_rotation_speed(40.0);
     add_planet(c_body);
 
     c_body = obj::Planet(nullptr, { 0.0f, 0.0f, 10.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 25);
     c_body.set_color({ 0.0, 0.0, 1.0 });
+    c_body.set_rotation_speed(-40.0);
     add_planet(c_body);
 
     auto star = obj::Star(nullptr, { 0, 5, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
     star.set_color({ 0.78, 0.52, 0.06 });
-    auto texture = std::make_shared<obj::Texture>(files::game_data::textures::TEXTURE_TEST_PNG);
-    star.set_texture(texture);
-    star.set_name("TextureTest");
     star.set_rotation_speed(5.0);
     star.set_axial_tilt(0);
     add_star(std::move(star));
 
     star = obj::Star(nullptr, { 0, -10, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
     star.set_color({ 0.78, 0.52, 0.06 });
+    star.set_rotation_speed(-30.0);
+    star.set_axial_tilt(20);
     add_star(std::move(star));
 
     IMGUI_CHECKVERSION();
@@ -769,10 +771,10 @@ void Game::draw_texture_menu_gui(){
         auto& [path, texture] = *it;
         ImGui::Text("%s", path.filename().c_str());
         ImGui::PushID(path.c_str());
-        // ImGui::SameLine();
-        // if(ImGui::Button("Unload")){
-        //     texture = nullptr;
-        // }
+        ImGui::SameLine();
+        if(ImGui::Button("Reload")){
+            load_texture_from_path(path);
+        }
         ImGui::PopID();
     }
     ImGui::EndListBox();
@@ -903,7 +905,7 @@ void Game::draw_selected_body_gui()
         m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
         schedule_selected_body_trajectory_calc();
     }
-    if (ImGui::SliderFloat("Object rotation speed", &m_gui.selected_body_menu.rotation_speed, 0, 100)) {
+    if (ImGui::SliderFloat("Object rotation speed", &m_gui.selected_body_menu.rotation_speed, -100, 100)) {
         m_gui.selected_body.lock()->set_rotation_speed(
             m_gui.selected_body_menu.rotation_speed);
     }

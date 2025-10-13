@@ -1,6 +1,5 @@
 # TODO LIST
 
-- custom textures for planets
 - fix resolution fuckery
 
 ## Multithreaded gravity calculation algorithm proposition
