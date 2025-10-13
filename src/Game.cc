@@ -407,10 +407,10 @@ void Game::update()
     if (!m_paused) {
         update_bodies();
     }
-    if (m_maximize != MaximizeState::DoNothing) {
-        glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
-        glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
-    }
+    // if (m_maximize != MaximizeState::DoNothing) {
+    //     glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    //     glfwSetWindowAttrib(m_window_ptr, GLFW_RESIZABLE, GLFW_TRUE);
+    // }
     switch (m_maximize) {
     case MaximizeState::Maximize:
         glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
@@ -1304,11 +1304,14 @@ void Game::initialize_key_bindings()
         this->m_paused = !this->m_paused;
         if(m_paused && !m_gui.selected_body.expired()){
             schedule_selected_body_trajectory_calc();
-        } }, "Pause the simulation");
+        }
+        }, "Pause the simulation");
     // // [F]ullscreen
     m_keybinds.add_binding(GLFW_KEY_F, GLFW_PRESS, BindMode::Any, [this]() {
         int maximized = glfwGetWindowAttrib(m_window_ptr, GLFW_MAXIMIZED);
-        this->m_maximize = maximized ? MaximizeState::Minimize : MaximizeState::Maximize; }, "Fullscreen");
+        this->m_maximize = maximized ? MaximizeState::Minimize : MaximizeState::Maximize;
+        },
+        "Fullscreen");
     // // Shift + S -> spawn object
     m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Any, [this]() {
         auto front = this->m_camera.get_front();
