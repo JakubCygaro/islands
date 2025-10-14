@@ -1,6 +1,5 @@
 # TODO LIST
 
-- fix resolution fuckery
 - fix the segfault !!!!
 
 ## Multithreaded gravity calculation algorithm proposition

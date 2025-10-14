@@ -148,6 +148,7 @@ add_executable(islands
     src/Skybox_ctors.cc
     src/Texture.cc
     src/Texture_ctors.cc
+    src/Singletons.cc
     src/stbi_image_impl.cc
     src/imgui/imgui.cpp
     src/imgui/imgui_demo.cpp

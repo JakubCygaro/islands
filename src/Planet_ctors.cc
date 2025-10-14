@@ -1,6 +1,8 @@
 #include <Object.hpp>
+#include <Singletons.hpp>
+using namespace gm::singl;
 namespace obj {
-    Planet::Planet(std::shared_ptr<Shader> shader,
+    Planet::Planet(Shader* shader,
                 glm::vec3 pos,
                 glm::vec3 speed,
                 glm::vec3 acc,
@@ -10,7 +12,7 @@ namespace obj {
             m_shader(shader)
     {
         if (!m_shader){
-            m_shader = Planet::shader_instance();
+            m_shader = shader_instances::get_instance(shader_instances::ShaderInstance::Planet);
         }
         m_radius = std::remove_reference<decltype(*this)>::type::calculate_radius(m_mass);
     }

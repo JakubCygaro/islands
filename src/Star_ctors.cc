@@ -1,9 +1,10 @@
 #include "Font.hpp"
 #include "Object.hpp"
+#include "Singletons.hpp"
 #include <algorithm>
 #include <cstdio>
 
-
+using namespace gm::singl;
 namespace obj {
     namespace {
         uint32_t gen_shadow_cube_map() {
@@ -45,14 +46,14 @@ namespace obj {
             return shadow_map_fbo;
         }
     }
-    Star::Star(std::shared_ptr<Shader> shader,
+    Star::Star(Shader* shader,
         glm::vec3 pos,
         glm::vec3 speed,
         glm::vec3 acc,
-        float mass) : CelestialBody(UnitSphere::instance(), pos, speed, acc, mass), m_shader(shader)
+        float mass) : CelestialBody(UnitSphere::instance(), pos, speed, acc, mass), shader(shader)
     {
-        if (!m_shader) {
-            m_shader = Star::shader_instance();
+        if (!shader) {
+            shader = shader_instances::get_instance(shader_instances::ShaderInstance::Star);
         }
         m_radius = std::remove_reference<decltype(*this)>::type::calculate_radius(m_mass);
         m_attenuation_linear = calc_attenuation_linear(m_mass);
@@ -83,7 +84,7 @@ namespace obj {
     //     return *this;
     // }
     Star::Star(Star&& other) : CelestialBody(other),
-        m_shader(other.m_shader),
+        shader(other.shader),
         m_attenuation_linear(other.m_attenuation_linear),
         m_attenuation_quadratic(other.m_attenuation_quadratic),
         m_light_source_radius(other.m_light_source_radius),
@@ -91,20 +92,20 @@ namespace obj {
         m_shadow_map_fbo(other.m_shadow_map_fbo)
     {
         std::copy(std::begin(other.m_shadow_transforms), std::end(other.m_shadow_transforms), std::begin(m_shadow_transforms));
-        other.m_shader = nullptr;
+        other.shader = nullptr;
         other.m_shadow_cube_map_id = 0;
         other.m_shadow_map_fbo = 0;
     }
     Star& Star::operator=(Star&& other) {
         CelestialBody::operator=(other);
-        m_shader = other.m_shader;
+        shader = other.shader;
         m_attenuation_linear = other.m_attenuation_linear;
         m_attenuation_quadratic = other.m_attenuation_quadratic;
         m_light_source_radius = other.m_light_source_radius;
         m_shadow_cube_map_id = other.m_shadow_cube_map_id;
         m_shadow_map_fbo = other.m_shadow_map_fbo;
         std::copy(std::begin(other.m_shadow_transforms), std::end(other.m_shadow_transforms), std::begin(m_shadow_transforms));
-        other.m_shader = nullptr;
+        other.shader = nullptr;
         other.m_shadow_cube_map_id = 0;
         other.m_shadow_map_fbo = 0;
         return *this;

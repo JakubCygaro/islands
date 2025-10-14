@@ -1,4 +1,7 @@
+#include "Singletons.hpp"
 #include <Object.hpp>
+
+using namespace gm::singl;
 
 namespace obj {
 
@@ -20,7 +23,7 @@ CelestialBody::CelestialBody(std::shared_ptr<UnitSphere> sphere,
     , m_mass(mass)
 {
     if (!m_normals_shader) {
-        m_normals_shader = get_normals_shader_instance();
+        m_normals_shader = shader_instances::get_instance(shader_instances::ShaderInstance::Normals);
     }
     m_trail = Trail(CelestialBody::DEFAULT_TRAIL_POINT_N);
     m_trail.fill(m_pos);

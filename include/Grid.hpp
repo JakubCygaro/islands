@@ -6,7 +6,7 @@
 
 class Grid final {
     uint32_t m_vao{}, m_vbo{}, m_ebo{}, m_offset{};
-    Shader m_shader;
+    Shader* m_shader;
 
     float m_scale{1.0};
     glm::vec3 m_rotation{};

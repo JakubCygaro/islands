@@ -1,5 +1,6 @@
 #include <Object.hpp>
-
+#include <Singletons.hpp>
+using namespace gm::singl;
 namespace obj {
     void Planet::forward_render(bool render_normals, bool render_wireframe, bool dt){
         CelestialBody::forward_render(render_normals, render_wireframe, dt);
@@ -10,7 +11,7 @@ namespace obj {
         model = glm::rotate(model, glm::radians(m_rotation), glm::vec3(0.0, 1.0, 0.0));
         model = glm::scale(model, glm::vec3(1) * m_radius);
         if(render_wireframe){
-            auto w_sh = Planet::forward_shader_instance();
+            auto w_sh = shader_instances::get_instance(shader_instances::ShaderInstance::PlanetForward);
             w_sh->use_shader();
             w_sh->set_mat4(name_of(model), model);
             w_sh->set_vec3(name_of(color), m_color);

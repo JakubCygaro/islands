@@ -1,5 +1,8 @@
 #include "Object.hpp"
+#include "Singletons.hpp"
 #include <cstddef>
+
+using namespace gm::singl;
 
 namespace obj {
     void Star::forward_render(bool render_normals, bool rw, bool dt) {
@@ -9,18 +12,19 @@ namespace obj {
         model = glm::rotate(model, glm::radians(m_axial_tilt), glm::vec3(1.0, 0.0, 0.0));
         model = glm::rotate(model, glm::radians(m_rotation), glm::vec3(0.0, 1.0, 0.0));
         model = glm::scale(model, glm::vec3(1) * m_radius);
-        m_shader->use_shader();
-        m_shader->set_mat4(name_of(model), model);
-        m_shader->set_vec3(name_of(color), m_color);
+        auto* shader = shader_instances::get_instance(shader_instances::ShaderInstance::Star);
+        shader->use_shader();
+        shader->set_mat4(name_of(model), model);
+        shader->set_vec3(name_of(color), m_color);
         if(m_texture && !rw){
             ::glActiveTexture(GL_TEXTURE0);
             m_texture->bind();
-            m_shader->set_int("has_texture", true);
+            shader->set_int("has_texture", true);
             auto texture_rotation = glm::mat4(1);
             texture_rotation = glm::rotate(texture_rotation, glm::radians(90.0f), glm::vec3(1.0, 0.0, 0.0));
-            m_shader->set_mat4("texture_rotation", texture_rotation);
+            shader->set_mat4("texture_rotation", texture_rotation);
         } else {
-            m_shader->set_int("has_texture", false);
+            shader->set_int("has_texture", false);
         }
         m_sphere->draw();
         if(render_normals){
@@ -45,8 +49,7 @@ namespace obj {
                          glm::lookAt(m_pos, m_pos + glm::vec3( 0.0, 0.0, 1.0), glm::vec3(0.0,-1.0, 0.0)));
         m_shadow_transforms[5] = (s_shadow_projection *
                          glm::lookAt(m_pos, m_pos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
-        auto sh = CelestialBody::shadow_map_shader_instance();
-        sh->use_shader();
+        auto sh = shader_instances::get_instance(shader_instances::ShaderInstance::ShadowMap);        sh->use_shader();
         for(size_t i = 0; i < 6; i++){
             auto name = "shadow_trans[" + std::to_string(i) + "]";
             sh->set_mat4(name.c_str(), m_shadow_transforms[i]);

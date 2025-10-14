@@ -61,11 +61,17 @@ namespace obj{
         return *this;
     }
     Trail::~Trail(){
-        if(m_vao)
+        if(m_vao){
             ::glDeleteVertexArrays(1, &m_vao);
-        if(m_vbo)
+            m_vao = 0;
+        }
+        if(m_vbo){
             ::glDeleteBuffers(1, &m_vbo);
-        if(m_ebo)
+            m_vbo = 0;
+        }
+        if(m_ebo){
             ::glDeleteBuffers(1, &m_ebo);
+            m_ebo = 0;
+        }
     }
 }

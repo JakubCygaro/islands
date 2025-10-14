@@ -2,22 +2,19 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 #include "shader/Shader.hpp"
-
+#include <Singletons.hpp>
+using namespace gm::singl;
 namespace obj {
     SelectedMarker::SelectedMarker() {}
 
     void SelectedMarker::forward_render(const glm::vec3& camera_pos, glm::vec3 pos, float radius) const {
         (void)camera_pos;
-        auto sh = shader_instance();
+        auto sh = shader_instances::get_instance(shader_instances::ShaderInstance::Marker);
         auto& vao = VAO::instance();
 
         auto model = glm::mat4(1.0);
 
         auto scaleup = radius;
-
-        // scaleup *= glm::distance(pos, camera_pos);
-        //
-        // std::cout << "scaleup: " << scaleup << std::endl;
 
         auto scale = glm::scale(model, glm::vec3(scaleup, scaleup, 1.0));
         auto scaling = glm::mat3(scale[0], scale[1], scale[2]);

@@ -1,12 +1,11 @@
 #include "Grid.hpp"
 #include "shader/Shader.hpp"
-#include <files.hpp>
-#ifdef DEBUG
-#include <shader_files.hpp>
-#endif
 #include <utility>
 #include <vector>
 #include <shaders.hpp>
+#include <Singletons.hpp>
+
+using namespace gm::singl;
 
 namespace {
     std::vector<glm::vec2> gen_instance_offset_data(int32_t additional_segments, float offset = 1.0) {
@@ -95,19 +94,7 @@ Grid::Grid(uint32_t side_len) :
 
     ::glBindVertexArray(0);
 
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            m_shader = Shader(
-                        std::string(files::src::shaders::GRID_VERT),
-                        std::string(files::src::shaders::GRID_FRAG)
-                        );
-#else
-            m_shader = Shader(
-                        shaders::GRID_VERT,
-                        shaders::GRID_FRAG
-                        );
-#endif
-
+    m_shader = shader_instances::get_instance(shader_instances::ShaderInstance::Grid);
 }
 Grid::Grid(Grid&& other):
     m_vao(other.m_vao)
@@ -188,7 +175,7 @@ void Grid::set_color(glm::vec4 color) {
     m_color = color;
 }
 void Grid::forward_render(glm::vec3 camera_pos) {
-    m_shader.use_shader();
+    m_shader->use_shader();
     auto model = glm::mat4(1);
 
     const auto half_len = (m_side_len * m_scale);// / 2.0;
@@ -200,8 +187,8 @@ void Grid::forward_render(glm::vec3 camera_pos) {
 
     model = glm::translate(model, glm::vec3(grid_pos.x, 0.0, grid_pos.y));
     model = glm::scale(model, glm::vec3(m_scale, 1.0, m_scale));
-    m_shader.set_mat4("model", model);
-    m_shader.set_vec4("color", m_color);
+    m_shader->set_mat4("model", model);
+    m_shader->set_vec4("color", m_color);
     ::glBindVertexArray(m_vao);
     ::glDrawElementsInstanced(GL_LINES, m_i_count, GL_UNSIGNED_INT, NULL, m_instance_count);
     ::glBindVertexArray(0);

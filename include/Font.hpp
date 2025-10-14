@@ -63,7 +63,7 @@ namespace font{
     class TextBase {
         protected:
             std::string m_str{};
-            std::shared_ptr<Shader> m_text_shader{};
+            Shader* m_text_shader{};
             std::shared_ptr<FontBitmap> m_font_bitmap{};
 
             glm::vec3 m_pos{};
@@ -76,7 +76,7 @@ namespace font{
         public:
             virtual ~TextBase();
             TextBase();
-            TextBase(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text = "");
+            TextBase(std::shared_ptr<FontBitmap> font_bitmap, Shader* text_shader, std::string text = "");
             TextBase(const TextBase& other) = delete;
             TextBase& operator=(const TextBase& other) = delete;
             TextBase(TextBase&& other);
@@ -98,41 +98,10 @@ namespace font{
             virtual float get_text_width() const = 0;
     };
     class Text2D : public TextBase {
-    private:
-        class DefaultShader {
-            std::shared_ptr<Shader> m_shader;
-
-            inline DefaultShader() {
-#ifdef DEBUG
-            m_shader = std::make_shared<Shader>(Shader(
-                        std::string(files::src::shaders::TEXT_VERT),
-                        std::string(files::src::shaders::TEXT_FRAG)
-                        ));
-#else
-            m_shader = std::make_shared<Shader>(Shader(
-                        shaders::TEXT_VERT,
-                        shaders::TEXT_FRAG
-                        ));
-#endif
-            }
-            DefaultShader(const DefaultShader&) = delete;
-            DefaultShader operator=(const DefaultShader&) = delete;
-        public:
-            inline static DefaultShader& get_instance() {
-                static DefaultShader instance;
-                return instance;
-            }
-            inline std::shared_ptr<Shader> get_shader() {
-                return m_shader;
-            }
-
-        };
-
-
     protected:
         uint32_t m_vao{}, m_vbo{};
         float m_height{}, m_width{};
-        Text2D(std::shared_ptr<FontBitmap> font, std::shared_ptr<Shader> shader, std::string text);
+        Text2D(std::shared_ptr<FontBitmap> font, Shader* shader, std::string text);
     public:
         virtual ~Text2D();
         Text2D();
@@ -156,35 +125,6 @@ namespace font{
     };
 
     class Text3D : public Text2D {
-    private:
-        class DefaultShader {
-            std::shared_ptr<Shader> m_shader;
-
-            inline DefaultShader() {
-#ifdef DEBUG
-            m_shader = std::make_shared<Shader>(Shader(
-                        std::string(files::src::shaders::TEXT3D_VERT),
-                        std::string(files::src::shaders::TEXT3D_FRAG)
-                        ));
-#else
-            m_shader = std::make_shared<Shader>(Shader(
-                        shaders::TEXT3D_VERT,
-                        shaders::TEXT3D_FRAG
-                        ));
-#endif
-            }
-            DefaultShader(const DefaultShader&) = delete;
-            DefaultShader operator=(const DefaultShader&) = delete;
-        public:
-            inline static DefaultShader& get_instance() {
-                static DefaultShader instance;
-                return instance;
-            }
-            inline std::shared_ptr<Shader> get_shader() {
-                return m_shader;
-            }
-
-        };
     public:
         virtual ~Text3D();
         Text3D();

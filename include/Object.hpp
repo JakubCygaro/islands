@@ -29,60 +29,7 @@
 
 namespace obj {
 
-class Text3DShader {
-    std::shared_ptr<Shader> m_shader;
-
-    inline Text3DShader(){
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            auto shader = Shader(
-                        std::string(files::src::shaders::TEXT3D_VERT),
-                        std::string(files::src::shaders::TEXT3D_FRAG)
-                        );
-#else
-            auto shader = Shader(
-                        shaders::TEXT3D_VERT,
-                        shaders::TEXT3D_FRAG
-                        );
-#endif
-            m_shader = std::make_shared<Shader>(std::move(shader));
-    };
-
-    Text3DShader(const Text3DShader&) = delete;
-    Text3DShader& operator=(const Text3DShader&) = delete;
-
-public:
-    inline std::shared_ptr<Shader> shader() {
-        return m_shader;
-    }
-    inline static Text3DShader& get_instance() {
-        static Text3DShader instance;
-        return instance;
-    }
-};
-
 class SelectedMarker {
-    inline static std::shared_ptr<Shader> s_shader_instance = nullptr;
-    inline static std::shared_ptr<Shader> shader_instance(){
-        if(s_shader_instance){
-            return s_shader_instance;
-        } else {
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            s_shader_instance = std::make_shared<Shader>(Shader(
-                        std::string(files::src::shaders::MARKER_VERT),
-                        std::string(files::src::shaders::MARKER_FRAG)
-                        ));
-#else
-            s_shader_instance = std::make_shared<Shader>(Shader(
-                        shaders::MARKER_VERT,
-                        shaders::MARKER_FRAG
-                        ));
-#endif
-            return s_shader_instance;
-        }
-    }
-
     struct VAO {
         uint32_t id{}, vbo{};
     private:
@@ -99,8 +46,6 @@ class SelectedMarker {
     };
 private:
     SelectedMarker();
-    // SelectedMarker(SelectedMarker&&);
-    // SelectedMarker& operator=(SelectedMarker&&);
     SelectedMarker(const SelectedMarker&) = delete;
     SelectedMarker& operator=(const SelectedMarker&) = delete;
 public:
@@ -112,28 +57,6 @@ public:
 };
 
 class Trail {
-private:
-    inline static std::shared_ptr<Shader> s_shader_instance = nullptr;
-    inline static std::shared_ptr<Shader> shader_instance(){
-        if(s_shader_instance){
-            return s_shader_instance;
-        } else {
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            s_shader_instance = std::make_shared<Shader>(Shader(
-                        std::string(files::src::shaders::TRAIL_VERT),
-                        std::string(files::src::shaders::TRAIL_FRAG)
-                        ));
-#else
-            s_shader_instance = std::make_shared<Shader>(Shader(
-                        shaders::TRAIL_VERT,
-                        shaders::TRAIL_FRAG
-                        ));
-#endif
-            return s_shader_instance;
-        }
-    }
-
     uint32_t m_vao{}, m_vbo{}, m_ebo{};
     std::size_t m_size{};
     std::vector<glm::vec3> m_data{};
@@ -219,7 +142,7 @@ protected:
     std::string m_name{"Unnamed"};
 protected:
     std::shared_ptr<UnitSphere> m_sphere = nullptr;
-    std::shared_ptr<Shader> m_normals_shader = nullptr;
+    Shader* m_normals_shader = nullptr;
     std::shared_ptr<Texture> m_texture = nullptr;
     float m_mass {};
     float m_radius {};
@@ -230,78 +153,6 @@ protected:
     float m_rotation_speed{0.0};
     float m_rotation{0};
     inline static constexpr uint32_t DEFAULT_TRAIL_POINT_N = 36;
-
-private:
-    inline static std::shared_ptr<Shader> s_normals_shader = nullptr;
-    inline static std::shared_ptr<Shader> get_normals_shader_instance(){
-        if (s_normals_shader){
-            return s_normals_shader;
-        } else {
-#ifdef DEBUG
-            auto geom = std::string(files::src::shaders::NORMALS_GEOM);
-            s_normals_shader = std::make_shared<Shader>(Shader(
-                        std::string(files::src::shaders::NORMALS_VERT),
-                        std::string(files::src::shaders::NORMALS_FRAG),
-                        &geom));
-#else
-            s_normals_shader = std::make_shared<Shader>(Shader(
-                        shaders::NORMALS_VERT,
-                        shaders::NORMALS_FRAG,
-                        shaders::NORMALS_GEOM
-                        ));
-#endif
-            return s_normals_shader;
-        }
-    }
-protected:
-    inline static std::shared_ptr<Shader> shadow_map_shader_instance() {
-        if(s_shadow_map_shader){
-            return s_shadow_map_shader;
-        } else {
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            auto geom = std::string(files::src::shaders::SHADOW_MAP_GEOM);
-            s_shadow_map_shader = std::make_shared<Shader>(Shader(
-                        std::string(files::src::shaders::SHADOW_MAP_VERT),
-                        std::string(files::src::shaders::SHADOW_MAP_FRAG),
-                        &geom
-                        ));
-#else
-            s_shadow_map_shader = std::make_shared<Shader>(Shader(
-                        shaders::SHADOW_MAP_VERT,
-                        shaders::SHADOW_MAP_FRAG,
-                        shaders::SHADOW_MAP_GEOM));
-#endif
-            return s_shadow_map_shader;
-        }
-    }
-private:
-    inline static std::shared_ptr<Shader> s_shadow_map_shader = nullptr;
-protected:
-    inline static std::shared_ptr<Shader> selected_shader_instance() {
-        if(s_selected_shader){
-            return s_selected_shader;
-        } else {
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            auto geom = std::string(files::src::shaders::SELECTED_GEOM);
-            s_selected_shader = std::make_shared<Shader>(Shader(
-                        std::string(files::src::shaders::SELECTED_VERT),
-                        std::string(files::src::shaders::SELECTED_FRAG),
-                        &geom
-                        ));
-#else
-            s_selected_shader = std::make_shared<Shader>(Shader(
-                        shaders::SELECTED_VERT,
-                        shaders::SELECTED_FRAG,
-                        shaders::SELECTED_GEOM));
-#endif
-            return s_selected_shader;
-        }
-    }
-private:
-    inline static std::shared_ptr<Shader> s_selected_shader = nullptr;
-
 protected:
     struct MoveVectorVAO {
         uint32_t vao{}, vbo{};
@@ -379,48 +230,14 @@ public:
 
 class Planet : public CelestialBody {
 private:
-    inline static std::shared_ptr<Shader> shader_instance() {
-        if(s_planet_shader_deferred){
-            return s_planet_shader_deferred;
-        } else {
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            s_planet_shader_deferred = std::make_shared<Shader>(Shader(std::string(files::src::shaders::PLANET_VERT),
-                        std::string(files::src::shaders::PLANET_FRAG)));
-#else
-            s_planet_shader_deferred = std::make_shared<Shader>(Shader(shaders::PLANET_VERT, shaders::PLANET_FRAG));
-#endif
-            return s_planet_shader_deferred;
-        }
-    }
-    inline static std::shared_ptr<Shader> s_planet_shader_deferred = nullptr;
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
         //assuming the density of a planet to be equal to the density of the earth
         return std::pow(mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
     }
-
-    inline static std::shared_ptr<Shader> forward_shader_instance() {
-        if(s_planet_shader_forward){
-            return s_planet_shader_forward;
-        } else {
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            s_planet_shader_forward = std::make_shared<Shader>(Shader(
-                        std::string(files::src::shaders::PLANET_FORWARD_VERT),
-                        std::string(files::src::shaders::PLANET_FORWARD_FRAG)));
-#else
-            s_planet_shader_forward  = std::make_shared<Shader>(Shader(
-                        shaders::PLANET_FORWARD_VERT,
-                        shaders::PLANET_FORWARD_FRAG));
-#endif
-            return s_planet_shader_forward;
-        }
-    }
-    inline static std::shared_ptr<Shader> s_planet_shader_forward = nullptr;
-    std::shared_ptr<Shader> m_shader = nullptr;
+    Shader* m_shader = nullptr;
 public:
-    Planet(std::shared_ptr<Shader> shader = nullptr,
+    Planet(Shader* shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
         glm::vec3 speed = glm::vec3(0),
         glm::vec3 acc = glm::vec3(0),
@@ -439,29 +256,13 @@ class Star : public CelestialBody {
 public:
     inline static const float s_shadow_far_plane = 100.0f;
 private:
-private:
-    inline static std::shared_ptr<Shader> shader_instance() {
-        if(s_star_shader){
-            return s_star_shader;
-        } else {
-#ifdef DEBUG
-            //load directly from source tree -> works without whole project rebuild
-            s_star_shader = std::make_shared<Shader>(Shader(std::string(files::src::shaders::STAR_VERT),
-                        std::string(files::src::shaders::STAR_FRAG)));
-#else
-            s_star_shader = std::make_shared<Shader>(Shader(shaders::STAR_VERT, shaders::STAR_FRAG));
-#endif
-            return s_star_shader;
-        }
-    }
-    inline static std::shared_ptr<Shader> s_star_shader = nullptr;
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
         //assuming the density of a star to be equal to the density of the sun
         return std::pow(mass/(((4./3.) * std::numbers::pi * 1.622)), 1./3.);
     }
 
-    std::shared_ptr<Shader> m_shader = nullptr;
+    Shader* shader = nullptr;
 
     float m_attenuation_linear{};
     float m_attenuation_quadratic{};
@@ -488,7 +289,7 @@ private:
     uint32_t m_shadow_map_fbo{};
 
 public:
-    Star(std::shared_ptr<Shader> shader = nullptr,
+    Star(Shader* shader = nullptr,
         glm::vec3 pos = glm::vec3(0),
         glm::vec3 speed = glm::vec3(0),
         glm::vec3 acc = glm::vec3(0),

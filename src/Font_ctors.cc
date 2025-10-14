@@ -1,5 +1,8 @@
 #include <Font.hpp>
 #include <cstdio>
+#include <Singletons.hpp>
+
+using namespace gm::singl;
 
 namespace font {
 FontBitmap::FontBitmap(uint32_t bitmap, uint32_t glyphs_x, uint32_t glyphs_y,
@@ -93,35 +96,12 @@ TextBase::TextBase()
     , m_font_bitmap { nullptr }
 {
 }
-TextBase::TextBase(std::shared_ptr<FontBitmap> font_bitmap, std::shared_ptr<Shader> text_shader, std::string text)
+TextBase::TextBase(std::shared_ptr<FontBitmap> font_bitmap, Shader* text_shader, std::string text)
     : m_str { text }
     , m_text_shader { text_shader }
     , m_font_bitmap { font_bitmap }
 {
 }
-// TextBase::TextBase(const TextBase& other)
-//     : m_str { other.m_str }
-//     , m_text_shader { other.m_text_shader }
-//     , m_font_bitmap { other.m_font_bitmap }
-//     , m_pos { other.m_pos }
-//     , m_model { other.m_model }
-//     , m_rotation { other.m_rotation }
-//     , m_scale { other.m_scale }
-//     , m_color { other.m_color }
-// {
-// }
-// TextBase& TextBase::operator=(const TextBase& other)
-// {
-//     m_str = other.m_str;
-//     m_text_shader = other.m_text_shader;
-//     m_font_bitmap = other.m_font_bitmap;
-//     m_pos = other.m_pos;
-//     m_model = other.m_model;
-//     m_rotation = other.m_rotation;
-//     m_scale = other.m_scale;
-//     m_color = other.m_color;
-//     return *this;
-// }
 TextBase::TextBase(TextBase&& other)
     : m_str { std::move(other.m_str) }
     , m_text_shader { other.m_text_shader }
@@ -157,7 +137,7 @@ Text2D::Text2D()
     : TextBase()
 {
 }
-Text2D::Text2D(std::shared_ptr<FontBitmap> font, std::shared_ptr<Shader> shader, std::string text)
+Text2D::Text2D(std::shared_ptr<FontBitmap> font, Shader* shader, std::string text)
     : Text2D(text)
 {
     m_font_bitmap = font;
@@ -165,7 +145,7 @@ Text2D::Text2D(std::shared_ptr<FontBitmap> font, std::shared_ptr<Shader> shader,
 }
 Text2D::Text2D(std::string text)
     : TextBase(font::DefaultFont::get_instance().get_font_bitmap(),
-          Text2D::DefaultShader::get_instance().get_shader(), text)
+          shader_instances::get_instance(shader_instances::ShaderInstance::Text), text)
 {
     ::glGenVertexArrays(1, &m_vao);
     ::glGenBuffers(1, &m_vbo);
@@ -186,23 +166,6 @@ Text2D::Text2D(std::string text)
     update();
     update_position();
 }
-// Text2D::Text2D(const Text2D& other)
-//     : TextBase(other)
-//     , m_vao { other.m_vao }
-//     , m_vbo { other.m_vbo }
-//     , m_height(other.m_height)
-//     , m_width(other.m_width)
-// {
-// }
-// Text2D& Text2D::operator=(const Text2D& other)
-// {
-//     TextBase::operator=(other);
-//     m_vao = other.m_vao;
-//     m_vbo = other.m_vbo;
-//     m_width = other.m_width;
-//     m_height = other.m_height;
-//     return *this;
-// }
 Text2D::Text2D(Text2D&& other)
     : TextBase(std::move(other))
     , m_vao { other.m_vao }
@@ -244,19 +207,8 @@ Text3D::Text3D(std::string text)
     : Text2D(text)
 {
     m_font_bitmap = font::DefaultFont::get_instance().get_font_bitmap();
-    m_text_shader = font::Text3D::DefaultShader::get_instance().get_shader();
-    // Text2D::update();
-    // Text2D::update_position();
+    m_text_shader = shader_instances::get_instance(shader_instances::ShaderInstance::Text3D);
 }
-// Text3D::Text3D(const Text3D& other)
-//     : Text2D(other)
-// {
-// }
-// Text3D& Text3D::operator=(const Text3D& other)
-// {
-//     Text2D::operator=(other);
-//     return *this;
-// }
 Text3D::Text3D(Text3D&& other)
     : Text2D(std::move(other))
 {

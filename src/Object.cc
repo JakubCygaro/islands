@@ -1,11 +1,13 @@
+#include "Singletons.hpp"
 #include <Object.hpp>
 #include <algorithm>
 #include <cstdio>
 
+using namespace gm::singl;
 
 namespace obj {
     void CelestialBody::shadow_render() {
-        auto sh = shadow_map_shader_instance();
+        auto* sh = shader_instances::get_instance(shader_instances::ShaderInstance::ShadowMap);
         sh->use_shader();
         auto model = glm::mat4(1.0);
         model = glm::translate(model, m_pos);
@@ -17,13 +19,12 @@ namespace obj {
         if(m_selected){
             auto model = glm::mat4(1.0);
             model = glm::translate(model, m_pos);
-            auto s_sh = selected_shader_instance();
+            auto s_sh = shader_instances::get_instance(shader_instances::ShaderInstance::Selected);
             s_sh->use_shader();
             s_sh->set_mat4(name_of(model), model);
             s_sh->set_vec3("move_vector", m_speed);
             s_sh->set_float(name_of(radius), m_radius);
             MoveVectorVAO::get_instance().draw();
-
         }
         if(render_trails)
             m_trail.forward_render();

@@ -1,6 +1,8 @@
 #include "Object.hpp"
 #include <algorithm>
+#include <Singletons.hpp>
 
+using namespace gm::singl;
 namespace obj{
     void Trail::fill(glm::vec3 val){
         ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
@@ -11,7 +13,7 @@ namespace obj{
         ::glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     void Trail::forward_render() {
-        auto sh = Trail::shader_instance();
+        auto sh = shader_instances::get_instance(shader_instances::ShaderInstance::Trail);
         sh->use_shader();
         sh->set_vec4("color", m_color);
         ::glBindVertexArray(m_vao);
