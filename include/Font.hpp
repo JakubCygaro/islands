@@ -64,7 +64,7 @@ namespace font{
         protected:
             std::string m_str{};
             Shader* m_text_shader{};
-            std::shared_ptr<FontBitmap> m_font_bitmap{};
+            FontBitmap* m_font_bitmap{};
 
             glm::vec3 m_pos{};
             glm::mat4 m_model{};
@@ -76,7 +76,7 @@ namespace font{
         public:
             virtual ~TextBase();
             TextBase();
-            TextBase(std::shared_ptr<FontBitmap> font_bitmap, Shader* text_shader, std::string text = "");
+            TextBase(FontBitmap* font_bitmap, Shader* text_shader, std::string text = "");
             TextBase(const TextBase& other) = delete;
             TextBase& operator=(const TextBase& other) = delete;
             TextBase(TextBase&& other);
@@ -101,7 +101,7 @@ namespace font{
     protected:
         uint32_t m_vao{}, m_vbo{};
         float m_height{}, m_width{};
-        Text2D(std::shared_ptr<FontBitmap> font, Shader* shader, std::string text);
+        Text2D(FontBitmap* font, Shader* shader, std::string text);
     public:
         virtual ~Text2D();
         Text2D();
@@ -137,27 +137,6 @@ namespace font{
         virtual void draw() const override;
         virtual void debug_draw() const override;
         void set_pos(glm::vec3&& new_pos);
-    protected:
-        // void update();
-        // void update_position();
-    };
-    class DefaultFont {
-        std::shared_ptr<FontBitmap> m_font;
-
-        inline DefaultFont(){
-            m_font = std::make_shared<font::FontBitmap>(font::load_font(files::game_data::fonts::ARCADE_TTF, 48));
-        }
-        DefaultFont(const DefaultFont&) = delete;
-        DefaultFont& operator=(const DefaultFont&) = delete;
-
-    public:
-        inline static DefaultFont& get_instance() {
-            static DefaultFont instance;
-            return instance;
-        }
-        inline std::shared_ptr<FontBitmap> get_font_bitmap() {
-            return m_font;
-        }
     };
 }
 #endif

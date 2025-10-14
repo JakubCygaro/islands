@@ -208,7 +208,7 @@ namespace gm {
         void initialize();
         void initialize_uniforms();
         void initialize_key_bindings();
-        void initialize_shaders();
+        void initialize_singletons();
         void update();
         void update_bodies();
         void update_buffers();

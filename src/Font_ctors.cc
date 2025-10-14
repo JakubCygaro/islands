@@ -96,7 +96,7 @@ TextBase::TextBase()
     , m_font_bitmap { nullptr }
 {
 }
-TextBase::TextBase(std::shared_ptr<FontBitmap> font_bitmap, Shader* text_shader, std::string text)
+TextBase::TextBase(FontBitmap* font_bitmap, Shader* text_shader, std::string text)
     : m_str { text }
     , m_text_shader { text_shader }
     , m_font_bitmap { font_bitmap }
@@ -137,14 +137,14 @@ Text2D::Text2D()
     : TextBase()
 {
 }
-Text2D::Text2D(std::shared_ptr<FontBitmap> font, Shader* shader, std::string text)
+Text2D::Text2D(FontBitmap* font, Shader* shader, std::string text)
     : Text2D(text)
 {
     m_font_bitmap = font;
     m_text_shader = shader;
 }
 Text2D::Text2D(std::string text)
-    : TextBase(font::DefaultFont::get_instance().get_font_bitmap(),
+    : TextBase(font_instances::get_default_font_instance(),
           shader_instances::get_instance(shader_instances::ShaderInstance::Text), text)
 {
     ::glGenVertexArrays(1, &m_vao);
@@ -206,7 +206,7 @@ Text3D::Text3D()
 Text3D::Text3D(std::string text)
     : Text2D(text)
 {
-    m_font_bitmap = font::DefaultFont::get_instance().get_font_bitmap();
+    m_font_bitmap = font_instances::get_default_font_instance();
     m_text_shader = shader_instances::get_instance(shader_instances::ShaderInstance::Text3D);
 }
 Text3D::Text3D(Text3D&& other)

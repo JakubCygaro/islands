@@ -212,7 +212,7 @@ namespace gm{
 
         glViewport(0, 0, m_width, m_height);
 
-        initialize_shaders();
+        initialize_singletons();
         initialize_uniforms();
         m_gbuffer = Gbuffer { this->m_width, this->m_height };
 
@@ -338,8 +338,9 @@ namespace gm{
             sizeof(LightingGlobalsUBO::camera_pos),
             m_camera.get_pos_ptr());
     }
-    void Game::initialize_shaders(){
+    void Game::initialize_singletons(){
         singl::shader_instances::load_all();
+        singl::font_instances::load_default_font();
     }
     void Game::run()
     {

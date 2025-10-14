@@ -1,3 +1,4 @@
+#include "Font.hpp"
 #include <Singletons.hpp>
 #include <shader/Shader.hpp>
 #include <string>
@@ -78,5 +79,20 @@ namespace gm::singl::shader_instances {
     };
     Shader* get_instance(ShaderInstance ins){
         return &INSTANCES[static_cast<int>(ins)];
+    }
+}
+namespace gm::singl::font_instances {
+    namespace {
+        static font::FontBitmap* INSTANCE = nullptr;
+    }
+    void load_default_font(){
+        INSTANCE = reinterpret_cast<font::FontBitmap*>(new unsigned char [sizeof(font::FontBitmap)]);
+        *INSTANCE = font::load_font(files::game_data::fonts::ARCADE_TTF, 48);
+    }
+    void unload_default_font(){
+        delete INSTANCE;
+    }
+    font::FontBitmap* get_default_font_instance(){
+        return INSTANCE;
     }
 }

@@ -1,5 +1,6 @@
 #ifndef SINGLETONS_HPP
 #define SINGLETONS_HPP
+#include "Font.hpp"
 #include "shader/Shader.hpp"
 #include <Game.hpp>
 namespace gm{
@@ -26,6 +27,11 @@ namespace gm{
             void unload_all();
             Shader* get_instance(ShaderInstance ins);
 
+        }
+        namespace font_instances {
+            void load_default_font();
+            void unload_default_font();
+            font::FontBitmap* get_default_font_instance();
         }
     }
 }

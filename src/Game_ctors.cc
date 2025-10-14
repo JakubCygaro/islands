@@ -31,6 +31,7 @@ namespace gm {
         m_bodies.clear();
         m_loaded_textures.clear();
         singl::shader_instances::unload_all();
+        singl::font_instances::unload_default_font();
         glDeleteBuffers(1, &m_ubos.matrices.id);
         glDeleteBuffers(1, &m_ubos.lighting_globals.id);
         glDeleteBuffers(1, &m_ssbos.light_sources.id);
