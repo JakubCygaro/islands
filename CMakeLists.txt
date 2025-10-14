@@ -184,7 +184,6 @@ target_include_directories(islands
 )
 
 target_link_libraries(islands
-    PRIVATE features
     PRIVATE glfw
     PRIVATE glm::glm
     PRIVATE freetype_lib
