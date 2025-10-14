@@ -14,8 +14,12 @@ find_package(glm CONFIG REQUIRED)
 # interface library for passing on freetype stuff that could be found either through pkgconfig or find_package
 add_library(freetype_lib INTERFACE)
 
-find_package(PkgConfig)
-pkg_check_modules(FreeType2 freetype2)
+include(FindPkgConfig)
+
+if(PKG_CONFIG_FOUND)
+    find_package(PkgConfig)
+    pkg_check_modules(FreeType2 freetype2)
+endif()
 
 if(NOT FreeType2_FOUND)
     find_package(Freetype REQUIRED)
