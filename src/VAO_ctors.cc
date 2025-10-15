@@ -1,13 +1,13 @@
 #include "Object.hpp"
-#include "shader/Shader.hpp"
+#include <cstdio>
 #include <glm/fwd.hpp>
 
 namespace obj {
-    SelectedMarker::VAO ::VAO() {
-        ::glGenVertexArrays(1, &id);
-        ::glGenBuffers(1, &vbo);
+    SelectedMarkerVAO::SelectedMarkerVAO() {
+        ::glGenVertexArrays(1, &m_vao);
+        ::glGenBuffers(1, &m_vbo);
 
-        ::glBindVertexArray(id);
+        ::glBindVertexArray(m_vao);
 
         glm::vec3 vbo_data[] = {
             // top triangle
@@ -28,7 +28,7 @@ namespace obj {
             { -1.2, -0.2, 0 },
         };
 
-        ::glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         ::glBufferData(GL_ARRAY_BUFFER, sizeof(vbo_data), vbo_data, GL_STATIC_DRAW);
 
         ::glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
@@ -37,15 +37,6 @@ namespace obj {
         ::glBindBuffer(GL_ARRAY_BUFFER, 0);
         ::glBindVertexArray(0);
     }
-    SelectedMarker::VAO ::~VAO() {
-        if(id){
-            ::glDeleteVertexArrays(1, &id);
-            id = 0;
-        }
-        if(vbo){
-            ::glDeleteBuffers(1, &vbo);
-            vbo = 0;
-        }
-
+    SelectedMarkerVAO::~SelectedMarkerVAO() {
     }
 }

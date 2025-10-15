@@ -1,8 +1,10 @@
 #include "Font.hpp"
 #include <Singletons.hpp>
+#include <cstddef>
 #include <shader/Shader.hpp>
 #include <string>
 #include <files.hpp>
+#include <VertexArrayObject.hpp>
 #ifdef DEBUG
 #include <shader_files.hpp>
 #else
@@ -27,6 +29,7 @@
 #else
     shaders::NAME ## _GEOM
 #endif
+
 
 namespace gm::singl::shader_instances {
     namespace {
@@ -94,5 +97,20 @@ namespace gm::singl::font_instances {
     }
     font::FontBitmap* get_default_font_instance(){
         return INSTANCE;
+    }
+}
+namespace gm::singl::buffer_instances {
+    namespace {
+        void load_buffer_instance(BufferInstance ins, VertexArrrayObject* vao){
+            BUFFERS[static_cast<int>(ins)] = vao;
+        }
+    }
+    void load_all(){
+        load_buffer_instance(BufferInstance::SelectedMarker, static_cast<VertexArrrayObject*>(new obj::SelectedMarkerVAO()));
+    }
+    void unload_all(){
+        for(size_t i = 0; i < sizeof(BUFFERS) / sizeof(VertexArrrayObject*); i++){
+            delete BUFFERS[i];
+        }
     }
 }

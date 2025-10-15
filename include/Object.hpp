@@ -1,6 +1,7 @@
 #ifndef OBJECT_HPP
 #define OBJECT_HPP
 #include "Font.hpp"
+#include "VertexArrayObject.hpp"
 #include "shader/Shader.hpp"
 #include "Util.hpp"
 #include <glad/glad.h>
@@ -21,30 +22,19 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#ifdef DEBUG
-#include <shader_files.hpp>
-#else
-#include <shaders.hpp>
-#endif
 
 namespace obj {
 
+struct SelectedMarkerVAO : VertexArrrayObject {
+public:
+    SelectedMarkerVAO();
+    virtual ~SelectedMarkerVAO();
+    SelectedMarkerVAO(const SelectedMarkerVAO&) = delete;
+    SelectedMarkerVAO& operator=(const SelectedMarkerVAO&) = delete;
+};
 class SelectedMarker {
-    struct VAO {
-        uint32_t id{}, vbo{};
-    private:
-        VAO();
-        ~VAO();
-        VAO(const VAO&) = delete;
-        VAO& operator=(const VAO&) = delete;
-
-    public:
-        static inline VAO& instance(){
-            static VAO instance;
-            return instance;
-        }
-    };
 private:
+    SelectedMarkerVAO* m_vao = nullptr;
     SelectedMarker();
     SelectedMarker(const SelectedMarker&) = delete;
     SelectedMarker& operator=(const SelectedMarker&) = delete;

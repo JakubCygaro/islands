@@ -33,6 +33,23 @@ namespace gm{
             void unload_default_font();
             font::FontBitmap* get_default_font_instance();
         }
+        namespace buffer_instances {
+            enum class BufferInstance : int {
+                SelectedMarker,
+                __end
+            };
+            inline VertexArrrayObject* BUFFERS[static_cast<int>(BufferInstance::__end)] = { };
+            void load_all();
+            void unload_all();
+            template<typename T>
+            inline static T* get_instance(BufferInstance ins){
+                static_assert(std::is_base_of_v<VertexArrrayObject, T> || std::is_same_v<T, VertexArrrayObject>,
+                        "T has to be derived from the VertexArrrayObject interface");
+                auto* b = BUFFERS[static_cast<int>(ins)];
+                auto* ret = dynamic_cast<T*>(b);
+                return ret;
+            }
+        }
     }
 }
 

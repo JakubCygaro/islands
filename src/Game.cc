@@ -340,6 +340,7 @@ namespace gm{
     }
     void Game::initialize_singletons(){
         singl::shader_instances::load_all();
+        singl::buffer_instances::load_all();
         singl::font_instances::load_default_font();
     }
     void Game::run()

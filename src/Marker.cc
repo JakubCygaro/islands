@@ -5,13 +5,13 @@
 #include <Singletons.hpp>
 using namespace gm::singl;
 namespace obj {
-    SelectedMarker::SelectedMarker() {}
+    SelectedMarker::SelectedMarker() {
+        m_vao = buffer_instances::get_instance<SelectedMarkerVAO>(buffer_instances::BufferInstance::SelectedMarker);
+    }
 
     void SelectedMarker::forward_render(const glm::vec3& camera_pos, glm::vec3 pos, float radius) const {
         (void)camera_pos;
         auto sh = shader_instances::get_instance(shader_instances::ShaderInstance::Marker);
-        auto& vao = VAO::instance();
-
         auto model = glm::mat4(1.0);
 
         auto scaleup = radius;
@@ -26,10 +26,10 @@ namespace obj {
         sh->set_mat3(name_of(scaling), scaling);
         sh->set_vec3("center", pos);
 
-        ::glBindVertexArray(vao.id);
+        m_vao->bind();
         ::glDisable(GL_CULL_FACE);
         ::glDrawArrays(GL_TRIANGLES, 0, 12);
         ::glEnable(GL_CULL_FACE);
-        ::glBindVertexArray(0);
+        m_vao->unbind();
     }
 }
