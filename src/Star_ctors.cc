@@ -50,7 +50,8 @@ namespace obj {
         glm::vec3 pos,
         glm::vec3 speed,
         glm::vec3 acc,
-        float mass) : CelestialBody(UnitSphere::instance(), pos, speed, acc, mass), shader(shader)
+        float mass) : CelestialBody(buffer_instances::get_instance<UnitSphereVAO>(buffer_instances::BufferInstance::UnitSphere)
+            , pos, speed, acc, mass), shader(shader)
     {
         if (!shader) {
             shader = shader_instances::get_instance(shader_instances::ShaderInstance::Star);

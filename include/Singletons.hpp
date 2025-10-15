@@ -36,6 +36,7 @@ namespace gm{
         namespace buffer_instances {
             enum class BufferInstance : int {
                 SelectedMarker,
+                UnitSphere,
                 __end
             };
             inline VertexArrrayObject* BUFFERS[static_cast<int>(BufferInstance::__end)] = { };

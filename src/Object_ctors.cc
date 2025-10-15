@@ -10,7 +10,7 @@ CelestialBody::CelestialBody()
     , m_normals_shader(nullptr)
 {
 }
-CelestialBody::CelestialBody(std::shared_ptr<UnitSphere> sphere,
+CelestialBody::CelestialBody(UnitSphereVAO* sphere,
     glm::vec3 pos,
     glm::vec3 speed,
     glm::vec3 acc,
@@ -128,7 +128,7 @@ CelestialBody& CelestialBody::operator=(CelestialBody&& other)
 }
 CelestialBody::~CelestialBody() { }
 
-UnitSphere::UnitSphere()
+UnitSphereVAO::UnitSphereVAO()
 {
     auto sphere = make_unit_sphere();
     m_num_verticies = sphere.vertices.size();
@@ -153,42 +153,23 @@ UnitSphere::UnitSphere()
     glEnableVertexAttribArray(2);
 }
 // move constructor
-UnitSphere::UnitSphere(UnitSphere&& other)
-    : m_vao { other.m_vao }
-    , m_vbo { other.m_vbo }
-    , m_ebo { other.m_ebo }
+UnitSphereVAO::UnitSphereVAO(UnitSphereVAO&& other) : VertexArrrayObject(std::move(other))
     , m_num_indices { other.m_num_indices }
     , m_num_verticies { other.m_num_verticies }
 {
-    other.m_vao = 0;
-    other.m_vbo = 0;
-    other.m_ebo = 0;
     other.m_num_verticies = 0;
     other.m_num_indices = 0;
 }
 // move assign
-UnitSphere& UnitSphere::operator=(UnitSphere&& other)
+UnitSphereVAO& UnitSphereVAO::operator=(UnitSphereVAO&& other)
 {
-    m_vao = other.m_vao;
-    m_vbo = other.m_vbo;
-    m_ebo = other.m_ebo;
+    VertexArrrayObject::operator=(std::move(other));
     m_num_verticies = other.m_num_verticies;
     m_num_indices = other.m_num_indices;
-    other.m_vao = 0;
-    other.m_vbo = 0;
-    other.m_ebo = 0;
     other.m_num_verticies = 0;
     other.m_num_indices = 0;
     return *this;
 }
 // destructor
-UnitSphere::~UnitSphere()
-{
-    if (m_vao)
-        glDeleteVertexArrays(1, &m_vao);
-    if (m_vbo)
-        glDeleteBuffers(1, &m_vbo);
-    if (m_ebo)
-        glDeleteBuffers(1, &m_ebo);
-}
+UnitSphereVAO::~UnitSphereVAO(){}
 }

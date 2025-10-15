@@ -29,6 +29,8 @@ struct SelectedMarkerVAO : VertexArrrayObject {
 public:
     SelectedMarkerVAO();
     virtual ~SelectedMarkerVAO();
+    SelectedMarkerVAO(SelectedMarkerVAO&&);
+    SelectedMarkerVAO& operator=(SelectedMarkerVAO&&);
     SelectedMarkerVAO(const SelectedMarkerVAO&) = delete;
     SelectedMarkerVAO& operator=(const SelectedMarkerVAO&) = delete;
 };
@@ -88,7 +90,7 @@ public:
 };
 
 // Wrapper around a sphere mesh stored in the GPU
-class UnitSphere {
+class UnitSphereVAO : public VertexArrrayObject {
 private:
     struct UnitSphereCreationData {
         using vec = std::vector<UnitSphereCreationData>;
@@ -103,24 +105,19 @@ private:
         std::vector<VertexData> vertices;
         std::vector<int32_t> indices;
     };
-    uint32_t m_vao {}, m_vbo {}, m_ebo {};
     size_t m_num_indices {}, m_num_verticies {};
     uint32_t make_unit_sphere_vbo(const UnitSphereCreationData& data);
     uint32_t make_unit_sphere_ebo(const UnitSphereCreationData& data);
     UnitSphereCreationData make_unit_sphere();
 
-    inline static std::shared_ptr<UnitSphere> s_instance = nullptr;
-
 public:
-    UnitSphere();
-    UnitSphere(const UnitSphere&) = delete;
-    UnitSphere& operator=(const UnitSphere&) = delete;
-    UnitSphere(UnitSphere&& other);
-    UnitSphere& operator=(UnitSphere&& other);
-    ~UnitSphere();
+    UnitSphereVAO();
+    UnitSphereVAO(const UnitSphereVAO&) = delete;
+    UnitSphereVAO& operator=(const UnitSphereVAO&) = delete;
+    UnitSphereVAO(UnitSphereVAO&& other);
+    UnitSphereVAO& operator=(UnitSphereVAO&& other);
+    virtual ~UnitSphereVAO();
     void draw() const;
-
-    static std::shared_ptr<UnitSphere> instance();
 };
 
 class CelestialBody {
@@ -131,7 +128,7 @@ protected:
     PROTECTED_PROPERTY(bool, selected)
     std::string m_name{"Unnamed"};
 protected:
-    std::shared_ptr<UnitSphere> m_sphere = nullptr;
+    UnitSphereVAO* m_sphere = nullptr;
     Shader* m_normals_shader = nullptr;
     std::shared_ptr<Texture> m_texture = nullptr;
     float m_mass {};
@@ -183,7 +180,7 @@ public:
     // one unit of mass in the simulation is equal to 10 kg
     inline static const float MASS_BOOST_FACTOR = 1e4;
     CelestialBody();
-    CelestialBody(std::shared_ptr<UnitSphere> sphere = nullptr,
+    CelestialBody(UnitSphereVAO* sphere = nullptr,
         glm::vec3 pos = glm::vec3(0),
         glm::vec3 speed = glm::vec3(0),
         glm::vec3 acc = glm::vec3(0),

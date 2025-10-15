@@ -101,13 +101,13 @@ namespace obj {
     void CelestialBody::set_rotation_speed(float rot_speed){
         m_rotation_speed = rot_speed;
     }
-    void UnitSphere::draw() const {
+    void UnitSphereVAO::draw() const {
         glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, m_num_indices, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
 
-    uint32_t UnitSphere::make_unit_sphere_vbo(const UnitSphere::UnitSphereCreationData& data) {
+    uint32_t UnitSphereVAO::make_unit_sphere_vbo(const UnitSphereVAO::UnitSphereCreationData& data) {
         uint32_t vbo = 0;
         glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -118,7 +118,7 @@ namespace obj {
 
         return vbo;
     }
-    uint32_t UnitSphere::make_unit_sphere_ebo(const UnitSphereCreationData& data){
+    uint32_t UnitSphereVAO::make_unit_sphere_ebo(const UnitSphereCreationData& data){
         uint32_t ebo = 0;
         glGenBuffers(1, &ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -128,7 +128,7 @@ namespace obj {
                 GL_STATIC_DRAW);
         return ebo;
     }
-    UnitSphere::UnitSphereCreationData UnitSphere::make_unit_sphere() {
+    UnitSphereVAO::UnitSphereCreationData UnitSphereVAO::make_unit_sphere() {
         std::vector<UnitSphereCreationData::VertexData> vrt{};
         std::vector<int32_t> indices{};
 
@@ -186,46 +186,10 @@ namespace obj {
             indices.push_back(std::clamp(idx + step, idx, top_idx++));
             indices.push_back(idx);
         }
-        //indices for the bottom pole cap (triangles with the bottom pole), NOT NEEDED since the loop above magically does this
-
-
-        /*std::printf("vertices.size(): %lld\n", vertices.size());*/
-        /*std::printf("top_idx: %lld\n", top_idx);*/
-        /**/
-        /*start = top_idx - step - 1;*/
-        /*start = vertices.size() - (step * 2 + 1);*/
-        /**/
-        /*std::printf("start: %d\n", start);*/
-
-        /*for(size_t idx = start; idx < top_idx; idx++){*/
-        /*    indices.push_back(idx + 1);*/
-        /*    indices.push_back(idx);*/
-        /*    indices.push_back(top_idx);*/
-        /*    if(idx == top_idx - 1){*/
-        /*        indices.push_back(top_idx);*/
-        /*        indices.push_back(idx);*/
-        /*        indices.push_back(start);*/
-        /*    }*/
-        /*}*/
-
-        /*for (auto idx : indices | std::views::drop(indices.size() - 31)){*/
-        /*    std::printf("{ %d }\n", idx);*/
-        /*}*/
         return UnitSphereCreationData{
-            // .vertices = std::move(vertices),
-            // .normals = std::move(normals),
             .vertices = std::move(vrt),
             .indices = std::move(indices)
         };
 
-    }
-    // get shared_ptr to singleton instane of a UnitSphere
-    std::shared_ptr<UnitSphere> UnitSphere::instance() {
-        if(s_instance) [[likely]] {
-            return s_instance;
-        } else {
-            s_instance = std::make_shared<UnitSphere>(UnitSphere());
-            return s_instance;
-        }
     }
 } // namespace obj

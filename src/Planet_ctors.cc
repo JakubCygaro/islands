@@ -8,7 +8,8 @@ namespace obj {
                 glm::vec3 acc,
                 float mass)
         :
-            CelestialBody(UnitSphere::instance(), pos, speed, acc, mass),
+            CelestialBody(buffer_instances::get_instance<UnitSphereVAO>(buffer_instances::BufferInstance::UnitSphere)
+                    , pos, speed, acc, mass),
             m_shader(shader)
     {
         if (!m_shader){

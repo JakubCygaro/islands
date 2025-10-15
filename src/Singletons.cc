@@ -1,4 +1,5 @@
 #include "Font.hpp"
+#include "Object.hpp"
 #include <Singletons.hpp>
 #include <cstddef>
 #include <shader/Shader.hpp>
@@ -107,6 +108,7 @@ namespace gm::singl::buffer_instances {
     }
     void load_all(){
         load_buffer_instance(BufferInstance::SelectedMarker, static_cast<VertexArrrayObject*>(new obj::SelectedMarkerVAO()));
+        load_buffer_instance(BufferInstance::UnitSphere, static_cast<VertexArrrayObject*>(new obj::UnitSphereVAO()));
     }
     void unload_all(){
         for(size_t i = 0; i < sizeof(BUFFERS) / sizeof(VertexArrrayObject*); i++){

@@ -573,7 +573,7 @@ namespace gm{
         glBlendEquation(GL_FUNC_ADD);
         glBlendFunc(GL_ONE, GL_ONE);
         glCullFace(GL_FRONT);
-        auto uv = obj::UnitSphere::instance();
+        auto* uv = singl::buffer_instances::get_instance<obj::UnitSphereVAO>(singl::buffer_instances::BufferInstance::UnitSphere);
         using namespace singl;
         auto lv_shader = shader_instances::get_instance(shader_instances::ShaderInstance::LightPassSphere);
         lv_shader->use_shader();

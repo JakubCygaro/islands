@@ -37,6 +37,13 @@ namespace obj {
         ::glBindBuffer(GL_ARRAY_BUFFER, 0);
         ::glBindVertexArray(0);
     }
+    SelectedMarkerVAO::SelectedMarkerVAO(SelectedMarkerVAO&& other): VertexArrrayObject(std::move(other)) {
+
+    };
+    SelectedMarkerVAO& SelectedMarkerVAO::operator=(SelectedMarkerVAO&& other){
+        VertexArrrayObject::operator=(std::move(other));
+        return *this;
+    }
     SelectedMarkerVAO::~SelectedMarkerVAO() {
     }
 }
