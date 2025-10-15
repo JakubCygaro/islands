@@ -180,7 +180,7 @@ namespace gm {
         gui::GameUI m_gui {};
         KeybindHandler m_keybinds {};
 
-        std::shared_ptr<Grid> m_grid = nullptr;
+        std::unique_ptr<Grid> m_grid = nullptr;
 
         int32_t m_fps{};
         double m_last_fixed_update_t {};
@@ -197,7 +197,7 @@ namespace gm {
             int mods;
         };
         std::queue<KeyEvent> m_key_events{};
-        std::shared_ptr<Skybox> m_skybox = nullptr;
+        std::unique_ptr<Skybox> m_skybox = nullptr;
 
         // a map of textures that have been loaded by the game and are availabe for celestial bodies
         std::unordered_map<std::filesystem::path, std::shared_ptr<obj::Texture>> m_loaded_textures{};

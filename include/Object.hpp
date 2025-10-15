@@ -24,6 +24,33 @@
 #include <cstdint>
 
 namespace obj {
+struct MoveVectorVAO : public VertexArrrayObject{
+public:
+    MoveVectorVAO(const MoveVectorVAO&) = delete;
+    MoveVectorVAO& operator=(const MoveVectorVAO&) = delete;
+    inline MoveVectorVAO(MoveVectorVAO&& other) : VertexArrrayObject(std::move(other)) {}
+    MoveVectorVAO& operator=(MoveVectorVAO&& other) { VertexArrrayObject::operator=(std::move(other)); return *this; }
+    inline MoveVectorVAO(){
+        glGenVertexArrays(1, &m_vao);
+        glGenBuffers(1, &m_vbo);
+        glBindVertexArray(m_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+        glm::vec3 center{};
+        glBufferData(GL_ARRAY_BUFFER, sizeof(center), glm::value_ptr(center), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(center), (void*)0);
+        glEnableVertexAttribArray(0);
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    };
+    inline virtual ~MoveVectorVAO(){}
+public:
+    inline void draw() const {
+        glBindVertexArray(m_vao);
+        glDrawArrays(GL_POINTS, 0, 1);
+        glBindVertexArray(0);
+    }
+};
 
 struct SelectedMarkerVAO : VertexArrrayObject {
 public:
@@ -48,7 +75,7 @@ public:
     void forward_render(const glm::vec3& camera_pos, glm::vec3 pos, float radius) const;
 };
 
-class Trail {
+class Trail final {
     uint32_t m_vao{}, m_vbo{}, m_ebo{};
     std::size_t m_size{};
     std::vector<glm::vec3> m_data{};
@@ -141,41 +168,6 @@ protected:
     float m_rotation{0};
     inline static constexpr uint32_t DEFAULT_TRAIL_POINT_N = 36;
 protected:
-    struct MoveVectorVAO {
-        uint32_t vao{}, vbo{};
-    private:
-        MoveVectorVAO(const MoveVectorVAO&) = delete;
-        MoveVectorVAO& operator=(const MoveVectorVAO&) = delete;
-        inline MoveVectorVAO(){
-            glGenVertexArrays(1, &vao);
-            glGenBuffers(1, &vbo);
-            glBindVertexArray(vao);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-            glm::vec3 center{};
-            glBufferData(GL_ARRAY_BUFFER, sizeof(center), glm::value_ptr(center), GL_STATIC_DRAW);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(center), (void*)0);
-            glEnableVertexAttribArray(0);
-            glBindVertexArray(0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-        };
-        inline ~MoveVectorVAO(){
-            if(vao)
-                glDeleteVertexArrays(1, &vao);
-            if(vbo)
-                glDeleteBuffers(1, &vbo);
-        }
-    public:
-        inline static MoveVectorVAO& get_instance(){
-            static MoveVectorVAO instance;
-            return instance;
-        }
-        inline void draw() const {
-            glBindVertexArray(vao);
-            glDrawArrays(GL_POINTS, 0, 1);
-            glBindVertexArray(0);
-        }
-    };
 public:
     // one unit of mass in the simulation is equal to 10 kg
     inline static const float MASS_BOOST_FACTOR = 1e4;
@@ -249,7 +241,7 @@ private:
         return std::pow(mass/(((4./3.) * std::numbers::pi * 1.622)), 1./3.);
     }
 
-    Shader* shader = nullptr;
+    Shader* m_shader = nullptr;
 
     float m_attenuation_linear{};
     float m_attenuation_quadratic{};

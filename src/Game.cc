@@ -216,7 +216,7 @@ namespace gm{
         initialize_uniforms();
         m_gbuffer = Gbuffer { this->m_width, this->m_height };
 
-        m_grid = std::make_shared<Grid>(Grid(9));
+        m_grid = std::make_unique<Grid>(Grid(9));
 
         m_grid->set_scale(m_gui.game_options_menu.grid_scale);
         m_grid->set_color(m_gui.game_options_menu.grid_color);
@@ -230,7 +230,7 @@ namespace gm{
             files::game_data::textures::background::BKG1_BACK_PNG,
         };
 
-        m_skybox = std::make_shared<Skybox>(cube_map);
+        m_skybox = std::make_unique<Skybox>(cube_map);
 
         auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
         c_body.set_color({ 1.0, .1, .1 });
@@ -1121,7 +1121,7 @@ namespace gm{
     }
     void Game::window_maximize_handler(GLFWwindow* window, int maximized)
     {
-        // glfwFocusWindow(window);
+        (void)window;
         if (maximized) {
             glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
         } else {

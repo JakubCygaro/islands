@@ -24,7 +24,7 @@ namespace obj {
             s_sh->set_mat4(name_of(model), model);
             s_sh->set_vec3("move_vector", m_speed);
             s_sh->set_float(name_of(radius), m_radius);
-            MoveVectorVAO::get_instance().draw();
+            buffer_instances::get_instance<MoveVectorVAO>(buffer_instances::BufferInstance::MoveVector)->draw();
         }
         if(render_trails)
             m_trail.forward_render();

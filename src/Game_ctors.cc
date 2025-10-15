@@ -28,6 +28,8 @@ namespace gm {
     }
     Game::~Game()
     {
+        m_gbuffer = Gbuffer();
+        m_skybox = nullptr;
         m_bodies.clear();
         m_loaded_textures.clear();
         singl::shader_instances::unload_all();
