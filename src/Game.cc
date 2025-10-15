@@ -801,7 +801,7 @@ namespace gm{
         ImGui::BeginListBox("Loaded:");
         for (auto it = m_loaded_textures.begin(); it != m_loaded_textures.end(); ++it) {
             auto& [path, texture] = *it;
-            ImGui::Text("%s", path.filename().c_str());
+            ImGui::Text("%s", path.filename().generic_string().c_str());
             ImGui::PushID(path.c_str());
             ImGui::SameLine();
             if(ImGui::Button("Reload")){
@@ -816,7 +816,7 @@ namespace gm{
         for (auto it = m_unloaded_textures.begin(); it != m_unloaded_textures.end(); ++it) {
             const auto& path = *it;
             ImGui::PushID(path.c_str());
-            ImGui::Text("%s", path.filename().c_str());
+            ImGui::Text("%s", path.filename().generic_string().c_str());
             ImGui::SameLine();
             if(ImGui::Button("Load")){
                 to_load = path;
@@ -903,9 +903,9 @@ namespace gm{
                 m_gui.selected_body_menu.texture_name = "";
             }
             for(auto& [path, texture] : m_loaded_textures){
-                if(ImGui::Selectable(path.filename().c_str())){
+                if(ImGui::Selectable(path.filename().generic_string().c_str())){
                     slc->set_texture(texture);
-                    m_gui.selected_body_menu.texture_name = path.filename();
+                    m_gui.selected_body_menu.texture_name = path.filename().generic_string();
                 }
             }
             ImGui::EndCombo();
@@ -1197,7 +1197,7 @@ namespace gm{
         if(obj->get_texture()){
             for(auto& [path, tex] : m_loaded_textures){
                 if(tex == obj->get_texture()){
-                    m_gui.selected_body_menu.texture_name = path.filename();
+                    m_gui.selected_body_menu.texture_name = path.filename().generic_string();
                 }
             }
         } else {
