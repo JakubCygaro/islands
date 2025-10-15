@@ -16,18 +16,21 @@
 #define VERT(NAME)\
     files::src::shaders::NAME ## _VERT
 #else
+#define VERT(NAME)\
     shaders::NAME ## _VERT
 #endif
 #ifdef DEBUG
 #define FRAG(NAME)\
     files::src::shaders::NAME ## _FRAG
 #else
+#define FRAG(NAME)\
     shaders::NAME ## _FRAG
 #endif
 #ifdef DEBUG
 #define GEOM(NAME)\
     files::src::shaders::NAME ## _GEOM
 #else
+#define GEOM(NAME)\
     shaders::NAME ## _GEOM
 #endif
 
