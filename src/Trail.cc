@@ -21,7 +21,9 @@ namespace obj{
         ::glBindVertexArray(0);
     }
     void Trail::push_point(glm::vec3 point){
-        std::shift_left(m_data.begin(), m_data.end(), 1);
+        for(size_t i = 1; i < m_data.size(); i++){
+            m_data[i - 1] = m_data[i];
+        }
         m_data.back() = point;
 
         ::glBindBuffer(GL_ARRAY_BUFFER, m_vbo);

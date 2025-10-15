@@ -42,7 +42,7 @@ namespace gm{
         const BindMode& mode, const int& mods) const
     {
         auto kb = (BindKey) { key, action, mode, mods };
-        if (m_bindings.contains(kb))
+        if (m_bindings.find(kb) != m_bindings.end())
             m_bindings.at(kb).first();
     }
     std::string KeybindHandler::gen_help_text() const {
