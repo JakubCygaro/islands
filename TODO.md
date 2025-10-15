@@ -1,7 +1,5 @@
 # TODO LIST
 
-- fix the segfault !!!!
-
 ## Multithreaded gravity calculation algorithm proposition
 
 Input: slice of Celestial Bodies
