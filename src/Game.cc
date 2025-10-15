@@ -492,7 +492,7 @@ namespace gm{
                     if (dynamic_cast<obj::Star*>(eaten.get())) {
                         std::swap(eater, eaten);
                     }
-                    if (!to_delete.contains(eaten)) {
+                    if (to_delete.find(eaten) != to_delete.end()) {
                         eater->set_mass(eater->get_mass() + eaten->get_mass());
                         to_delete.insert({ eaten, next_body });
                         break;
@@ -1214,7 +1214,7 @@ namespace gm{
         m_unloaded_textures.clear();
         auto dir_it = std::filesystem::directory_iterator(custom_txt_path);
         for(auto& entry : dir_it){
-            if(!entry.is_regular_file() || m_loaded_textures.contains(entry)) continue;
+            if(!entry.is_regular_file() || m_loaded_textures.find(entry) != m_loaded_textures.end()) continue;
             auto& path = entry.path();
             auto ext = path.extension();
             if(ext == std::filesystem::path(".png") || ext == std::filesystem::path(".jpg")){

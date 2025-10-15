@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(islands VERSION 0.6.0.0)
+project(islands VERSION 0.6.1.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
 
@@ -168,7 +168,7 @@ configure_file(global_declarations.hpp.in global_declarations.hpp @ONLY)
 
 add_library(features INTERFACE)
 
-target_compile_features(features INTERFACE cxx_std_20)
+target_compile_features(features INTERFACE cxx_std_17)
 
 target_compile_options(islands
     PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>

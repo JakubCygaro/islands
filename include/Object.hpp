@@ -19,6 +19,7 @@
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include <GL/gl.h>
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -212,7 +213,7 @@ private:
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
         //assuming the density of a planet to be equal to the density of the earth
-        return std::pow(mass/(((4./3.) * std::numbers::pi * 5.51)), 1./3.);
+        return std::pow(mass/(((4./3.) * M_PI * 5.51)), 1./3.);
     }
     Shader* m_shader = nullptr;
 public:
@@ -238,7 +239,7 @@ private:
     inline static float calculate_radius(float mass) {
         //get radius of a sphere from density equation,
         //assuming the density of a star to be equal to the density of the sun
-        return std::pow(mass/(((4./3.) * std::numbers::pi * 1.622)), 1./3.);
+        return std::pow(mass/(((4./3.) * M_PI * 1.622)), 1./3.);
     }
 
     Shader* m_shader = nullptr;
