@@ -10,19 +10,14 @@
 #include "Gui.hpp"
 #include "Object.hpp"
 #include <Camera.hpp>
-#include <GLFW/glfw3.h>
 #include <Font.hpp>
 #include <cstddef>
-#include <cstdint>
-#include <cstdio>
 #include <functional>
 #include <glad/glad.h>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/fwd.hpp>
 #include <memory>
-#include <ostream>
 #include <unordered_map>
-#include <vector>
 #include <Skybox.hpp>
 
 namespace gm{

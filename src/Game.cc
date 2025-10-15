@@ -874,9 +874,12 @@ namespace gm{
         auto star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
         ImGui::Begin("Selected Celestial Body", &discarded);
         m_imgui_window_rects.push(get_current_imgui_window_rect());
-        ImGui::Text("%s", m_gui.selected_body.lock()->get_name().c_str());
-
         auto slc = m_gui.selected_body.lock();
+
+        m_gui.selected_body_menu.velocity = slc->get_speed();
+        m_gui.selected_body_menu.speed = slc->get_speed().length();
+
+        ImGui::Text("%s", slc->get_name().c_str());
 
         static bool show_incorrect_msg = false;
         m_typing |= ImGui::InputText("Name: ", m_gui.selected_body_menu.name, IM_ARRAYSIZE(m_gui.selected_body_menu.name));
@@ -912,7 +915,7 @@ namespace gm{
         }
 
         if (ImGui::ColorEdit3("Object color", glm::value_ptr(m_gui.selected_body_menu.color))) {
-            m_gui.selected_body.lock()->set_color(m_gui.selected_body_menu.color);
+            slc->set_color(m_gui.selected_body_menu.color);
             if (star) {
                 collect_light_sources();
             }
@@ -920,37 +923,40 @@ namespace gm{
         if (ImGui::SliderFloat("Object mass", &m_gui.selected_body_menu.mass, 0.001, 1000)) {
             if (m_gui.selected_body_menu.mass <= 0)
                 m_gui.selected_body_menu.mass = 0.001;
-            m_gui.selected_body.lock()->set_mass(m_gui.selected_body_menu.mass);
+            slc->set_mass(m_gui.selected_body_menu.mass);
             schedule_selected_body_trajectory_calc();
             if (star) {
                 collect_light_sources();
             }
         }
-        if (ImGui::SliderFloat3("Object velocity vector components", glm::value_ptr(m_gui.selected_body_menu.velocity), -50, 50)) {
-            m_gui.selected_body.lock()->set_speed(m_gui.selected_body_menu.velocity);
-            m_gui.selected_body_menu.speed = m_gui.selected_body_menu.velocity.length();
+        if (ImGui::SliderFloat3("Object velocity vector components", glm::value_ptr(m_gui.selected_body_menu.velocity), -1, 1)) {
+            auto& vel = m_gui.selected_body_menu.velocity;
+            vel = glm::normalize(vel);
+            vel *= slc->get_speed().length();
+            slc->set_speed(vel);
+            m_gui.selected_body_menu.speed = vel.length();
             schedule_selected_body_trajectory_calc();
         }
         if (ImGui::SliderFloat("Object speed", &m_gui.selected_body_menu.speed, 0, 50)) {
-            m_gui.selected_body.lock()->set_speed(
+            slc->set_speed(
                 glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
             m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
             schedule_selected_body_trajectory_calc();
         }
         if (ImGui::SliderFloat("Object rotation speed", &m_gui.selected_body_menu.rotation_speed, -100, 100)) {
-            m_gui.selected_body.lock()->set_rotation_speed(
+            slc->set_rotation_speed(
                 m_gui.selected_body_menu.rotation_speed);
         }
         if (ImGui::SliderFloat("Object axial tilt", &m_gui.selected_body_menu.axial_tilt, 0, 180)) {
-            m_gui.selected_body.lock()->set_axial_tilt(
+            slc->set_axial_tilt(
                 m_gui.selected_body_menu.axial_tilt);
         }
         if (ImGui::ColorEdit3("Trail color", glm::value_ptr(m_gui.selected_body_menu.trail_color))) {
-            m_gui.selected_body.lock()->set_trail_color(m_gui.selected_body_menu.trail_color);
+            slc->set_trail_color(m_gui.selected_body_menu.trail_color);
         }
         m_gui.selected_body_menu.position = m_gui.selected_body.lock()->get_pos();
         if (ImGui::InputFloat3("Object position", glm::value_ptr(m_gui.selected_body_menu.position))) {
-            m_gui.selected_body.lock()->set_pos(m_gui.selected_body_menu.position);
+            slc->set_pos(m_gui.selected_body_menu.position);
             schedule_selected_body_trajectory_calc();
         }
         if (ImGui::Checkbox("Track", &m_gui.selected_body_menu.track)) {
@@ -963,7 +969,7 @@ namespace gm{
             m_camera.set_pos(new_camera_pos);
         }
         if (ImGui::Button("Deselect")) {
-            m_gui.selected_body.lock()->set_selected(false);
+            slc->set_selected(false);
             m_gui.selected_body.reset();
         }
         if (ImGui::Button("Delete body")) {
@@ -1083,7 +1089,7 @@ namespace gm{
             2 * sizeof(MatricesUBO::view), sizeof(MatricesUBO::text_projection), glm::value_ptr(m_ubos.matrices.text_projection));
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         m_gui.paused.set_pos({ 0, m_height - m_gui.paused.get_text_height() });
-
+        m_gui.fps_count.set_pos({ m_width - m_gui.game_version.get_text_width(), m_gui.game_version.get_text_height() });
         m_gui.game_version.set_pos({ m_width - m_gui.game_version.get_text_width(), m_height - m_gui.game_version.get_text_height() });
     }
     void Game::mouse_handler(GLFWwindow* window, double xpos, double ypos)
