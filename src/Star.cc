@@ -1,9 +1,6 @@
 #include "Object.hpp"
 #include "Singletons.hpp"
 #include <cstddef>
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
-#define std::sqrtf std::sqrt
-#endif
 
 using namespace gm::singl;
 
@@ -104,8 +101,13 @@ namespace obj {
         float quadratic = quad;
         float light_max  = std::fmaxf(std::fmaxf(color.r, color.g), color.b);
         float radius    =
-          (-linear +  std::sqrtf(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * light_max)))
-          / (2 * quadratic);
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+            (-linear +  std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * light_max)))
+            / (2 * quadratic);
+#else
+            (-linear +  std::sqrtf(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * light_max)))
+            / (2 * quadratic);
+#endif
         return radius;
     }
 }
