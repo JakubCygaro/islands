@@ -492,7 +492,7 @@ namespace gm{
                     if (dynamic_cast<obj::Star*>(eaten.get())) {
                         std::swap(eater, eaten);
                     }
-                    if (to_delete.find(eaten) != to_delete.end()) {
+                    if (to_delete.find(eaten) == to_delete.end()) {
                         eater->set_mass(eater->get_mass() + eaten->get_mass());
                         to_delete.insert({ eaten, next_body });
                         break;
@@ -875,10 +875,6 @@ namespace gm{
         ImGui::Begin("Selected Celestial Body", &discarded);
         m_imgui_window_rects.push(get_current_imgui_window_rect());
         auto slc = m_gui.selected_body.lock();
-
-        m_gui.selected_body_menu.velocity = slc->get_speed();
-        m_gui.selected_body_menu.speed = slc->get_speed().length();
-
         ImGui::Text("%s", slc->get_name().c_str());
 
         static bool show_incorrect_msg = false;
@@ -929,18 +925,18 @@ namespace gm{
                 collect_light_sources();
             }
         }
-        if (ImGui::SliderFloat3("Object velocity vector components", glm::value_ptr(m_gui.selected_body_menu.velocity), -1, 1)) {
-            auto& vel = m_gui.selected_body_menu.velocity;
-            vel = glm::normalize(vel);
-            vel *= slc->get_speed().length();
-            slc->set_speed(vel);
-            m_gui.selected_body_menu.speed = vel.length();
+        auto slc_vel = slc->get_speed();
+        ImGui::Text("Object velocity vector: %f, %f, %f", slc_vel.x, slc_vel.y, slc_vel.z);
+        ImGui::Text("Object speed: %lf", glm::length(slc_vel));
+        auto& vel = m_gui.selected_body_menu.velocity;
+        if (ImGui::SliderFloat3("Velocity to add", glm::value_ptr(vel), -50, 50)) {}
+        if(ImGui::Button("Add velocity vector")){
+            slc->set_speed(slc_vel + vel);
             schedule_selected_body_trajectory_calc();
-        }
-        if (ImGui::SliderFloat("Object speed", &m_gui.selected_body_menu.speed, 0, 50)) {
-            slc->set_speed(
-                glm::normalize(m_gui.selected_body_menu.velocity) * m_gui.selected_body_menu.speed);
-            m_gui.selected_body_menu.velocity = m_gui.selected_body.lock()->get_speed();
+        };
+        if (ImGui::SliderFloat("Speed", &m_gui.selected_body_menu.speed, -50, 50)) {}
+        if(ImGui::Button("Add speed")){
+            slc->set_speed(slc->get_speed() + glm::normalize(slc->get_speed()) * m_gui.selected_body_menu.speed);
             schedule_selected_body_trajectory_calc();
         }
         if (ImGui::SliderFloat("Object rotation speed", &m_gui.selected_body_menu.rotation_speed, -100, 100)) {
