@@ -52,14 +52,14 @@ namespace gm{
         bool is_star {};
     };
     // step through one frame of gravity simulation
-    void gravity_step(std::vector<Gravdata>& gravdata, double delta_t, const gui::CancelationToken& cancel)
+    void gravity_step(std::vector<Gravdata>& gravdata, double delta_t, bool do_collision, const gui::CancelationToken& cancel)
     {
         for (size_t body = 0; body < gravdata.size() && !cancel.is_cancelled(); body++) {
             for (size_t next_body = body + 1; next_body < gravdata.size() && !cancel.is_cancelled(); next_body++) {
                 auto& b_1 = gravdata[body];
                 auto& b_2 = gravdata[next_body];
 
-                if (glm::distance(b_1.pos, b_2.pos) <= b_1.radius + b_2.radius) {
+                if (do_collision && glm::distance(b_1.pos, b_2.pos) <= b_1.radius + b_2.radius) {
                     auto [eater, eaten] = b_1.mass > b_2.mass ? std::make_tuple(std::ref(b_1), std::ref(b_2)) : std::make_tuple(std::ref(b_2), std::ref(b_1));
                     if (eaten.is_star) {
                         std::swap(eater, eaten);
@@ -486,8 +486,9 @@ namespace gm{
                 auto b_1 = m_bodies[body];
                 auto b_2 = m_bodies[next_body];
 
+                auto& do_collision = m_gui.game_options_menu.do_collision;
                 // check if collision first
-                if (glm::distance(b_1->get_pos(), b_2->get_pos()) <= b_1->get_radius() + b_2->get_radius()) {
+                if (do_collision && glm::distance(b_1->get_pos(), b_2->get_pos()) <= b_1->get_radius() + b_2->get_radius()) {
                     auto [eater, eaten] = b_1->get_mass() > b_2->get_mass() ? std::make_tuple(b_1, b_2) : std::make_tuple(b_2, b_1);
                     if (dynamic_cast<obj::Star*>(eaten.get())) {
                         std::swap(eater, eaten);
@@ -742,6 +743,7 @@ namespace gm{
         ImGui::Checkbox("Draw selection marker", &m_gui.game_options_menu.draw_selection_marker);
         ImGui::Checkbox("Draw labels", &m_gui.game_options_menu.draw_labels);
         ImGui::Checkbox("Draw skybox", &m_gui.game_options_menu.draw_skybox);
+        ImGui::Checkbox("Enable collisions", &m_gui.game_options_menu.do_collision);
         if (ImGui::SliderFloat("Grid scale", &m_gui.game_options_menu.grid_scale, 1.0, 50.0)) {
             m_grid->set_scale(m_gui.game_options_menu.grid_scale);
         };
@@ -1264,7 +1266,7 @@ namespace gm{
 
             auto mean_delta_t = std::accumulate(m_delta_t_record.begin(), m_delta_t_record.end(), 0.0) / m_delta_t_record.size();
 
-            std::thread([this](std::vector<Gravdata> gd, size_t s_idx, double mean_dt) {
+            std::thread([this](std::vector<Gravdata> gd, size_t s_idx, double mean_dt, bool do_collision) {
                 auto& cancel = m_gui.selected_body_menu.calc_cancellation;
                 m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Running);
                 auto clock = std::chrono::steady_clock {};
@@ -1278,7 +1280,7 @@ namespace gm{
                     std::chrono::duration<double> delta_t = current_frame_t - last_frame_t;
                     m_last_frame_t = m_current_frame_t;
                     for (auto i = 0; i < 2 && !cancel.is_cancelled(); i++) {
-                        gravity_step(gravd, dt, cancel);
+                        gravity_step(gravd, dt, do_collision, cancel);
                     }
                     res[i] = gravd[s_idx].pos;
                 }
@@ -1288,7 +1290,7 @@ namespace gm{
                     m_gui.selected_body_menu.trajectory_status.store(gui::TrailCompStatus::Finished);
                 }
             },
-                std::move(gravdata), selected_idx, mean_delta_t)
+                std::move(gravdata), selected_idx, mean_delta_t, m_gui.game_options_menu.do_collision)
                 .detach();
         }
     }

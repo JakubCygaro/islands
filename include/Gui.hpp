@@ -57,6 +57,7 @@ struct GameOptionsMenu {
     bool draw_selection_marker {true};
     bool draw_labels {true};
     bool draw_skybox {true};
+    bool do_collision {true};
     float camera_speed {};
     float fov { 70.0 };
     bool draw_grid { true };
