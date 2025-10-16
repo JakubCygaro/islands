@@ -232,31 +232,22 @@ namespace gm{
 
         m_skybox = std::make_unique<Skybox>(cube_map);
 
-        auto c_body = obj::Planet(nullptr, { 2.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
+        // add starting planet and star
+        auto c_body = obj::Planet(nullptr, { 15.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 100);
         c_body.set_color({ 1.0, .1, .1 });
+        c_body.set_mass(100);
+        c_body.set_speed({ -3.581562, 0, 9.353334 });
         c_body.set_rotation_speed(100.0);
+        c_body.set_name("RATS");
         add_planet(c_body);
 
-        c_body = obj::Planet(nullptr, { -10.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f, 0.0f }, 10);
-        c_body.set_color({ 0.0, 1.0, .1 });
-        c_body.set_rotation_speed(40.0);
-        add_planet(c_body);
-
-        c_body = obj::Planet(nullptr, { 0.0f, 0.0f, 10.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 25);
-        c_body.set_color({ 0.0, 0.0, 1.0 });
-        c_body.set_rotation_speed(-40.0);
-        add_planet(c_body);
-
-        auto star = obj::Star(nullptr, { 0, 5, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
+        auto star = obj::Star(nullptr, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
         star.set_color({ 0.78, 0.52, 0.06 });
+        star.set_mass(26.672);
+        star.set_speed({ 0.310855, 0, 0.026137 });
         star.set_rotation_speed(5.0);
         star.set_axial_tilt(0);
-        add_star(std::move(star));
-
-        star = obj::Star(nullptr, { 0, -10, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 5);
-        star.set_color({ 0.78, 0.52, 0.06 });
-        star.set_rotation_speed(-30.0);
-        star.set_axial_tilt(20);
+        star.set_name("HOT");
         add_star(std::move(star));
 
         IMGUI_CHECKVERSION();
@@ -1150,9 +1141,11 @@ namespace gm{
         glfwGetCursorPos(window, &xpos, &ypos);
         if (is_mouse_pos_in_imgui_window(glm::vec2(xpos, ypos), m_imgui_window_rects))
             return;
+        int w{}, h{};
+        glfwGetWindowSize(m_window_ptr, &w, &h);
         if (m_gui_enabled && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-            float x = (2.0f * xpos) / m_width - 1.0f;
-            float y = 1.0f - (2.0f * ypos) / m_height;
+            float x = (2.0f * xpos) / w - 1.0f;
+            float y = 1.0f - (2.0f * ypos) / h;
             float z = 1.0f;
             glm::vec3 ray_nds = glm::vec3(x, y, z);
             glm::vec4 ray_clip = glm::vec4(ray_nds.x, ray_nds.y, -1.0f, 1.0f);
