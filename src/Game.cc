@@ -1325,7 +1325,9 @@ namespace gm{
         m_keybinds.add_binding(GLFW_KEY_H, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.help_menu_enabled = !this->m_gui.help_menu_enabled; }, "Toggle this help menu");
         m_keybinds.add_binding(GLFW_KEY_X, GLFW_PRESS, BindMode::Editor, [this]() {
                 m_gui.help_menu_enabled = false;
+#ifdef DEBUG
                 m_gui.debug_menu_enabled = false;
+#endif
                 m_gui.spawn_menu_enabled = false;
                 m_gui.texture_menu_enabled = false;
                 m_gui.bodies_list_enabled = false;
