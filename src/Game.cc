@@ -421,6 +421,7 @@ namespace gm{
         switch (m_maximize) {
         case MaximizeState::Maximize:
             glfwSetWindowSizeLimits(m_window_ptr, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE, GLFW_DONT_CARE);
+            glfwSetWindowAttrib(m_window_ptr, GLFW_DECORATED, GLFW_FALSE);
             glfwMaximizeWindow(m_window_ptr);
             break;
         case MaximizeState::Minimize: {
