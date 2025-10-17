@@ -31,6 +31,7 @@
 #include "global_declarations.hpp"
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
+#include <stb_image/stb_image.h>
 
 namespace gm{
 
@@ -158,6 +159,7 @@ namespace gm{
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 
         m_window_ptr = glfwCreateWindow(m_width, m_height, "Islands", NULL, NULL);
         if (m_window_ptr == NULL) {
@@ -204,7 +206,6 @@ namespace gm{
         };
         glfwSetWindowRefreshCallback(m_window_ptr, window_refresh_callback);
 
-
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             throw std::runtime_error("Failed to initialize GLAD");
         }
@@ -215,6 +216,16 @@ namespace gm{
         initialize_singletons();
         initialize_uniforms();
         m_gbuffer = Gbuffer { this->m_width, this->m_height };
+
+
+        //load icons
+        using namespace files;
+        GLFWimage icons[2] = {};
+        icons[0].pixels = ::stbi_load(game_data::ISLANDS_ICON_PNG, &icons[0].width, &icons[0].height, NULL, 4);
+        icons[1].pixels = ::stbi_load(game_data::ISLANDS_ICON_SMALL_PNG, &icons[1].width, &icons[1].height, NULL, 4);
+        glfwSetWindowIcon(m_window_ptr, 2, icons);
+        ::stbi_image_free(icons[0].pixels);
+        ::stbi_image_free(icons[1].pixels);
 
         m_grid = std::make_unique<Grid>(Grid(9));
 

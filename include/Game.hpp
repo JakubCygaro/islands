@@ -199,6 +199,7 @@ namespace gm {
         // a set of texture file paths that can be loaded
         std::set<std::filesystem::path> m_unloaded_textures{};
 
+
     private:
         void initialize();
         void initialize_uniforms();
