@@ -222,6 +222,7 @@ namespace gm {
         void draw_spawn_menu_gui();
         void draw_help_menu_gui();
         void draw_texture_menu_gui();
+        void draw_exit_notification();
 #ifdef DEBUG
         void draw_debug_menu_gui();
 #endif

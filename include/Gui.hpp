@@ -135,6 +135,7 @@ struct GameUI {
     HelpMenu help_menu {};
     bool texture_menu_enabled { false };
     bool bodies_list_enabled { false };
+    bool exit_notification { false };
 #ifdef DEBUG
     bool debug_menu_enabled { false };
     DebugMenu debug_menu {};

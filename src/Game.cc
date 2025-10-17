@@ -389,8 +389,8 @@ namespace gm{
             auto selected = m_gui.selected_body.lock();
             selected_pos_before_update = selected->get_pos();
         }
-
         glfwPollEvents();
+        while(!m_imgui_window_rects.empty()) m_imgui_window_rects.pop();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -710,6 +710,8 @@ namespace gm{
             draw_selected_body_gui();
         if (m_gui.texture_menu_enabled)
             draw_texture_menu_gui();
+        if (m_gui.exit_notification)
+            draw_exit_notification();
 #ifdef DEBUG
         if (m_gui.debug_menu_enabled)
             draw_debug_menu_gui();
@@ -848,6 +850,24 @@ namespace gm{
         }
         if(error_message){
             ImGui::TextColored(ImVec4(.8, .2, .0, 1.0), "Error while trying to load a texture: %s", error_message->c_str());
+        }
+        ImGui::End();
+    }
+    void Game::draw_exit_notification(){
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        ImGui::Begin("Exit Islands");
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Are you sure you want to exit Islands?");
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("(You can close all opened menus with the 'X' key)");
+        if(ImGui::Button("Yes")){
+            glfwSetWindowShouldClose(m_window_ptr, GLFW_TRUE);
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("No")){
+            m_gui.exit_notification = false;
         }
         ImGui::End();
     }
@@ -1303,7 +1323,22 @@ namespace gm{
     void Game::initialize_key_bindings()
     {
         m_keybinds.add_binding(GLFW_KEY_H, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.help_menu_enabled = !this->m_gui.help_menu_enabled; }, "Toggle this help menu");
-        m_keybinds.add_binding(GLFW_KEY_ESCAPE, GLFW_PRESS, BindMode::Any, [this]() { glfwSetWindowShouldClose(this->m_window_ptr, true); }, "Exit the simulation");
+        m_keybinds.add_binding(GLFW_KEY_X, GLFW_PRESS, BindMode::Editor, [this]() {
+                m_gui.help_menu_enabled = false;
+                m_gui.debug_menu_enabled = false;
+                m_gui.spawn_menu_enabled = false;
+                m_gui.texture_menu_enabled = false;
+                m_gui.bodies_list_enabled = false;
+                m_gui.game_options_menu_enabled = false;
+                m_gui.exit_notification = false;
+            }, "Close all windows");
+        m_keybinds.add_binding(GLFW_KEY_ESCAPE, GLFW_PRESS, BindMode::Any, [this]() {
+                if(this->m_imgui_window_rects.empty()){
+                    glfwSetWindowShouldClose(this->m_window_ptr, true);
+                } else {
+                    this->m_gui.exit_notification = true;
+                }
+            }, "Exit the simulation");
         // // toggle the gui with [E]dit
         m_keybinds.add_binding(GLFW_KEY_E, GLFW_PRESS, BindMode::Any, [this]() {
             this->m_gui_enabled = !this->m_gui_enabled;
