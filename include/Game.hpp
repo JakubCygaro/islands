@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <queue>
 #include <set>
+#include <stack>
 #include <string>
 #include <vector>
 #include "Grid.hpp"
@@ -184,7 +185,12 @@ namespace gm {
         bool m_typing = false;
 
         std::deque<double> m_delta_t_record{};
-        std::queue<glm::vec4> m_imgui_window_rects{};
+    public:
+        struct WindowRect {
+            float x, y, w, h;
+        };
+    private:
+        std::queue<WindowRect> m_imgui_window_rects{};
         struct KeyEvent {
             int key;
             int scancode;
@@ -198,7 +204,7 @@ namespace gm {
         std::unordered_map<std::filesystem::path, std::shared_ptr<obj::Texture>> m_loaded_textures{};
         // a set of texture file paths that can be loaded
         std::set<std::filesystem::path> m_unloaded_textures{};
-
+        std::stack<bool*> m_window_stack{};
 
     private:
         void initialize();

@@ -706,7 +706,7 @@ namespace gm{
             draw_help_menu_gui();
         if (m_gui.bodies_list_enabled)
             draw_body_list_gui();
-        if (!m_gui.selected_body.expired())
+        if (m_gui.selected_body_menu_enabled && !m_gui.selected_body.expired())
             draw_selected_body_gui();
         if (m_gui.texture_menu_enabled)
             draw_texture_menu_gui();
@@ -717,11 +717,16 @@ namespace gm{
             draw_debug_menu_gui();
 #endif
     }
-    static glm::vec4 get_current_imgui_window_rect()
+    static gm::Game::WindowRect get_current_imgui_window_rect()
     {
         auto pos = ImGui::GetWindowPos();
         auto size = ImGui::GetWindowSize();
-        return glm::vec4(pos.x, pos.y, size.x, size.y);
+        return {
+            .x = pos.x,
+            .y = pos.y,
+            .w = size.x,
+            .h = size.y
+        };
     }
     void Game::draw_game_options_gui()
     {
@@ -896,9 +901,8 @@ namespace gm{
 #endif
     void Game::draw_selected_body_gui()
     {
-        bool discarded = true;
         auto star = dynamic_cast<obj::Star*>(m_gui.selected_body.lock().get());
-        ImGui::Begin("Selected Celestial Body", &discarded);
+        ImGui::Begin("Selected Celestial Body", &m_gui.selected_body_menu_enabled);
         m_imgui_window_rects.push(get_current_imgui_window_rect());
         auto slc = m_gui.selected_body.lock();
         ImGui::Text("%s", slc->get_name().c_str());
@@ -1004,9 +1008,9 @@ namespace gm{
             m_gui.selected_body.reset();
         }
         ImGui::End();
-        if (!discarded) {
-            m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
-        }
+        // if (!discarded) {
+        //     m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
+        // }
     }
     void Game::draw_body_list_gui()
     {
@@ -1157,13 +1161,13 @@ namespace gm{
         }
         m_maximize = MaximizeState::DoNothing;
     }
-    static bool is_mouse_pos_in_imgui_window(glm::vec2 mouse, std::queue<glm::vec4>& q)
+    static bool is_mouse_pos_in_imgui_window(glm::vec2 mouse, std::queue<gm::Game::WindowRect>& q)
     {
         bool test = false;
         while (!q.empty()) {
             auto rect = q.front();
             q.pop();
-            test |= mouse.x >= rect.x && mouse.x <= rect.x + rect.z && mouse.y >= rect.y && mouse.y <= rect.y + rect.w;
+            test |= mouse.x >= rect.x && mouse.x <= rect.x + rect.w && mouse.y >= rect.y && mouse.y <= rect.y + rect.h;
         }
         return test;
     }
@@ -1224,6 +1228,8 @@ namespace gm{
         m_gui.selected_body_menu.track = false;
         m_gui.selected_body_menu.rotation_speed = obj->get_rotation_speed();
         m_gui.selected_body_menu.axial_tilt = obj->get_axial_tilt();
+        m_gui.selected_body_menu_enabled = true;
+        m_window_stack.push(&m_gui.selected_body_menu_enabled);
         if(obj->get_texture()){
             for(auto& [path, tex] : m_loaded_textures){
                 if(tex == obj->get_texture()){
@@ -1322,7 +1328,10 @@ namespace gm{
     }
     void Game::initialize_key_bindings()
     {
-        m_keybinds.add_binding(GLFW_KEY_H, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.help_menu_enabled = !this->m_gui.help_menu_enabled; }, "Toggle this help menu");
+        m_keybinds.add_binding(GLFW_KEY_H, GLFW_PRESS, BindMode::Editor, [this]() {
+                this->m_gui.help_menu_enabled = !this->m_gui.help_menu_enabled;
+                m_window_stack.push(&m_gui.help_menu_enabled);
+            }, "Toggle this help menu");
         m_keybinds.add_binding(GLFW_KEY_X, GLFW_PRESS, BindMode::Editor, [this]() {
                 m_gui.help_menu_enabled = false;
 #ifdef DEBUG
@@ -1333,10 +1342,21 @@ namespace gm{
                 m_gui.bodies_list_enabled = false;
                 m_gui.game_options_menu_enabled = false;
                 m_gui.exit_notification = false;
+                m_gui.selected_body_menu_enabled = false;
             }, "Close all windows");
         m_keybinds.add_binding(GLFW_KEY_ESCAPE, GLFW_PRESS, BindMode::Any, [this]() {
                 if(this->m_imgui_window_rects.empty()){
                     glfwSetWindowShouldClose(this->m_window_ptr, true);
+                } else if(!m_window_stack.empty()){
+                    bool* latest_window;
+                    while(!m_window_stack.empty()){
+                        latest_window = m_window_stack.top();
+                        m_window_stack.pop();
+                        if(latest_window && *latest_window) {
+                            *latest_window = false;
+                            break;
+                        }
+                    }
                 } else {
                     this->m_gui.exit_notification = true;
                 }
@@ -1393,17 +1413,27 @@ namespace gm{
         m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Any, [this]() { this->m_gui.debug_menu_enabled = !this->m_gui.debug_menu_enabled; }, "Open the debug menu", GLFW_MOD_SHIFT);
 #endif
         // Editor mode specific keybinds
-        m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled; }, "Open game settings");
-        m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled; }, "Open spawn menu");
+        m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this]() {
+                this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled;
+                m_window_stack.push(&m_gui.game_options_menu_enabled);
+            }, "Open game settings");
+        m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Editor, [this]() {
+                this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled;
+                m_window_stack.push(&m_gui.spawn_menu_enabled);
+            }, "Open spawn menu");
         m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Editor, [this]() {
             if(!m_gui.selected_body.expired()){
                 this->m_gui.selected_body.lock()->set_selected(false);
                 this->m_gui.selected_body = std::weak_ptr<obj::CelestialBody>();
             } }, "Deselect currently selected body");
-        m_keybinds.add_binding(GLFW_KEY_L, GLFW_PRESS, BindMode::Editor, [this]() { this->m_gui.bodies_list_enabled = !this->m_gui.bodies_list_enabled; }, "Open celestial bodies list");
+        m_keybinds.add_binding(GLFW_KEY_L, GLFW_PRESS, BindMode::Editor, [this]() {
+                this->m_gui.bodies_list_enabled = !this->m_gui.bodies_list_enabled;
+                m_window_stack.push(&m_gui.bodies_list_enabled);
+            }, "Open celestial bodies list");
         // // [T]exture menu
         m_keybinds.add_binding(GLFW_KEY_T, GLFW_PRESS, BindMode::Editor, [this]() {
-            this->m_gui.texture_menu_enabled = !this->m_gui.texture_menu_enabled;
+                this->m_gui.texture_menu_enabled = !this->m_gui.texture_menu_enabled;
+                m_window_stack.push(&m_gui.texture_menu_enabled);
             }, "Toggle texture menu");
         // Simulation mode specific keybinds
     }

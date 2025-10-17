@@ -126,6 +126,7 @@ struct GameUI {
     inline static const glm::vec3 NORMAL_MODE_TEXT_COLOR = { .0, .5, .8 };
 
     std::weak_ptr<obj::CelestialBody> selected_body {};
+    bool selected_body_menu_enabled { false };
     SelectedBodyMenu selected_body_menu {};
     bool spawn_menu_enabled { false };
     SpawnMenu spawn_menu {};
