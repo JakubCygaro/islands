@@ -740,6 +740,7 @@ namespace gm{
                 m_gui.game_options_menu.resolutions.size())) {
             auto& selected = m_gui.game_options_menu.resolutions[m_gui.game_options_menu.current];
             glfwSetWindowSize(m_window_ptr, selected.width, selected.height);
+            this->m_maximize = MaximizeState::Minimize;
         }
         ImGui::Checkbox("Draw grid", &m_gui.game_options_menu.draw_grid);
         ImGui::Checkbox("Draw trails", &m_gui.game_options_menu.draw_trails);
