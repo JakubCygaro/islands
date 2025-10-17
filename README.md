@@ -41,7 +41,9 @@ Install the required libraries in case they are not already installed and build 
 
 ### Windows
 
-Use MinGW, but do not install cmake through MinGW. Add the `-G 'MinGW Makefiles'` option while configuring the build with cmake. Install all required libraries with MinGW.
+Use MinGW, but do not install cmake through MinGW. Add the `-G 'MinGW Makefiles'` option while configuring the build with cmake. Install all required libraries with MinGW. Freetype could possibly cause some problems (at least it always does for me) in that case I tend to build and install it manually and then set the required CMake variables myself to point to the `include` directory and `libfreetype.a` file.
+
+**There is a windows release available for you to download in case you are not interested in a manual build**
 
 ## Features
 
