@@ -1330,7 +1330,7 @@ namespace gm{
     {
         m_keybinds.add_binding(GLFW_KEY_H, GLFW_PRESS, BindMode::Editor, [this]() {
                 this->m_gui.help_menu_enabled = !this->m_gui.help_menu_enabled;
-                m_window_stack.push(&m_gui.help_menu_enabled);
+                if(m_gui.help_menu_enabled) m_window_stack.push(&m_gui.help_menu_enabled);
             }, "Toggle this help menu");
         m_keybinds.add_binding(GLFW_KEY_X, GLFW_PRESS, BindMode::Editor, [this]() {
                 m_gui.help_menu_enabled = false;
@@ -1415,11 +1415,11 @@ namespace gm{
         // Editor mode specific keybinds
         m_keybinds.add_binding(GLFW_KEY_O, GLFW_PRESS, BindMode::Editor, [this]() {
                 this->m_gui.game_options_menu_enabled = !this->m_gui.game_options_menu_enabled;
-                m_window_stack.push(&m_gui.game_options_menu_enabled);
+                if(m_gui.game_options_menu_enabled) m_window_stack.push(&m_gui.game_options_menu_enabled);
             }, "Open game settings");
         m_keybinds.add_binding(GLFW_KEY_S, GLFW_PRESS, BindMode::Editor, [this]() {
                 this->m_gui.spawn_menu_enabled = !this->m_gui.spawn_menu_enabled;
-                m_window_stack.push(&m_gui.spawn_menu_enabled);
+                if(m_gui.spawn_menu_enabled) m_window_stack.push(&m_gui.spawn_menu_enabled);
             }, "Open spawn menu");
         m_keybinds.add_binding(GLFW_KEY_D, GLFW_PRESS, BindMode::Editor, [this]() {
             if(!m_gui.selected_body.expired()){
@@ -1428,12 +1428,12 @@ namespace gm{
             } }, "Deselect currently selected body");
         m_keybinds.add_binding(GLFW_KEY_L, GLFW_PRESS, BindMode::Editor, [this]() {
                 this->m_gui.bodies_list_enabled = !this->m_gui.bodies_list_enabled;
-                m_window_stack.push(&m_gui.bodies_list_enabled);
+                if(m_gui.bodies_list_enabled) m_window_stack.push(&m_gui.bodies_list_enabled);
             }, "Open celestial bodies list");
         // // [T]exture menu
         m_keybinds.add_binding(GLFW_KEY_T, GLFW_PRESS, BindMode::Editor, [this]() {
                 this->m_gui.texture_menu_enabled = !this->m_gui.texture_menu_enabled;
-                m_window_stack.push(&m_gui.texture_menu_enabled);
+                if(m_gui.texture_menu_enabled) m_window_stack.push(&m_gui.texture_menu_enabled);
             }, "Toggle texture menu");
         // Simulation mode specific keybinds
     }
